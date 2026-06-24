@@ -1,0 +1,76 @@
+========================================================================
+             POST-QUANTUM CRYPTOGRAPHY (PQC) - RTL ROADMAP & THOUGHTS
+========================================================================
+
+1. INTRODUCTION & CONTEXT
+-------------------------
+Quantum computers utilizing Shor's Algorithm will be capable of breaking 
+classical public-key cryptosystems (RSA, Diffie-Hellman, ECC) in polynomial time.
+To mitigate this threat, the National Institute of Standards and Technology (NIST)
+has standardized several Post-Quantum Cryptography algorithms:
+
+- ML-KEM (formerly Kyber): A Key Encapsulation Mechanism based on the Module 
+  Learning-with-Errors (M-LWE) problem.
+- ML-DSA (formerly Dilithium): A digital signature scheme based on the Module 
+  Learning-with-Errors and Short Integer Solution (M-SIS) problems.
+- FN-DSA (formerly Falcon): A fast, compact digital signature scheme based on
+  NTRU lattices.
+- SLH-DSA (formerly SPHINCS+): A stateless hash-based signature scheme.
+
+For hardware implementations (RTL), Kyber (ML-KEM) and Dilithium (ML-DSA)
+are the most practical starting points due to their efficiency and reliance
+on similar mathematical foundations (Lattice-based cryptography using 
+polynomial rings over finite fields).
+
+
+2. RECOMMENDED PROJECT STRUCTURE FOR THIS REPOSITORY
+---------------------------------------------------
+Since the directories are currently empty, I propose structuring them as follows:
+
+Post_Quantum_Cryptography/
+├── rtl/
+│   ├── common/              # Shared cryptographic hardware primitives
+│   │   ├── keccak/          # Keccak (SHA-3 / SHAKE) core for pseudorandom expansion
+│   │   ├── ntt/             # Number Theoretic Transform (polynomial multiplier)
+│   │   └── barrett/         # Barrett reduction / Montgomery modular reduction
+│   ├── ml_kem/              # ML-KEM / Kyber hardware implementation
+│   │   ├── kem_keygen.v     # Key Generation block
+│   │   ├── kem_encaps.v     # Encapsulation block
+│   │   ├── kem_decaps.v     # Decapsulation block
+│   │   └── kem_top.v        # Top-level controller wrapper
+│   └── ml_dsa/              # ML-DSA / Dilithium hardware implementation
+│       ├── dsa_sign.v       # Signature Generation
+│       ├── dsa_verify.v     # Signature Verification
+│       └── dsa_top.v        # Top-level controller wrapper
+├── tb/                      # Simulation testbenches
+│   ├── tb_ntt.v
+│   ├── tb_keccak.v
+│   └── tb_kem_top.v
+├── pd/                      # Physical Design & Synthesis scripts
+│   ├── scripts/
+│   └── constraints/         # Timing constraints (.sdc)
+└── images/                  # Dataflow and block diagrams
+
+
+3. KEY HARDWARE DESIGN CHALLENGES
+---------------------------------
+To achieve high-throughput and low-area PQC hardware, we must design 
+efficient modules for:
+
+- Number Theoretic Transform (NTT): Fast polynomial multiplication in 
+  Z_q[X]/(X^256 + 1) with q = 3329 (for Kyber) or q = 8380417 (for Dilithium).
+  We need a configurable NTT butterfly unit (Cooley-Tukey or Gentleman-Sande).
+- Symmetric Keccak Core: SHA3-256, SHA3-512, SHAKE-128, and SHAKE-256 are heavily
+  used for matrix/vector generation and hashing. A high-throughput pipelined
+  Keccak_f1600 permutation engine is crucial.
+- Modular Reduction: Implementing fast modular reductions (Montgomery/Barrett)
+  to avoid division operations in hardware.
+- Memory/SRAM Interfacing: Storing vector/matrix coefficients efficiently to
+  minimize read/write conflicts during NTT butterfly computation.
+
+
+4. NEXT STEPS FOR IMPLEMENTATION
+---------------------------------
+1. Start with the Keccak (SHA3 / SHAKE) engine as it is used across all lattice PQC.
+2. Develop the NTT core, which is the performance bottleneck.
+3. Integrate these components into ML-KEM (Kyber) and ML-DSA (Dilithium) pipelines.
