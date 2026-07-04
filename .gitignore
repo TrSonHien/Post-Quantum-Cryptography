@@ -1,0 +1,140 @@
+# Project-local ignore rules for ML-KEM-768 RTL/ASIC research.
+#
+# Keep source, documentation, reference notes, RTL, testbenches, scripts, and
+# curated reports in Git. Ignore generated simulator, synthesis, PNR, editor,
+# cache, and temporary outputs.
+
+# ----------------------------------------------------------------------
+# OS, editor, and local tooling
+# ----------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+*.tmp
+*.bak
+
+.idea/
+.vscode/
+.cache/
+.codex/
+
+# ----------------------------------------------------------------------
+# Python/C reference-model scratch artifacts
+# ----------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+*.o
+*.a
+*.so
+*.exe
+*.out
+
+# ----------------------------------------------------------------------
+# ModelSim / QuestaSim / Verilator artifacts
+# ----------------------------------------------------------------------
+work/
+sim/work/
+vsim.dbg/
+transcript
+modelsim.ini
+*.ini
+*.log
+*.log.*
+*.wlf
+*.ucdb
+*.vstf
+obj_dir/
+*.d
+
+# Keep curated simulation folders visible, but ignore generated contents.
+sim/logs/*
+!sim/logs/.gitkeep
+sim/waves/*
+!sim/waves/.gitkeep
+sim/outputs/*
+!sim/outputs/.gitkeep
+
+# Waveform and dump formats
+*.vcd
+*.fst
+*.fsdb
+*.vpd
+*.shm/
+*.dsn
+*.trn
+
+# Coverage outputs
+coverage/
+covhtmlreport/
+*.gcda
+*.gcno
+*.gcov
+
+# ----------------------------------------------------------------------
+# Cadence / Synopsys / ASIC flow generated artifacts
+# ----------------------------------------------------------------------
+*.cmd
+*.cmd.*
+*.jou
+*.jou.*
+*.rpt
+*.rpt.*
+*.sdf
+*.spef
+*.spf
+*.sdc.tmp
+*.sdc.bak
+
+genus.log*
+innovus.log*
+tempus.log*
+voltus.log*
+dc.log*
+fm.log*
+
+fv/
+check_design/
+synth_resources/
+filenames.log
+
+# Local or server-side physical-design scratch directories.
+pd/runs/
+pd/work/
+pd/tmp/
+pd/temp/
+pd/logs/
+pd/reports/
+pd/outputs/
+pd/snapshots/
+
+# ----------------------------------------------------------------------
+# Generated report/media artifacts
+# ----------------------------------------------------------------------
+reports/**/raw/
+reports/**/tmp/
+figures/**/*.bak
+
+# ----------------------------------------------------------------------
+# Archives and compressed outputs
+# ----------------------------------------------------------------------
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# ----------------------------------------------------------------------
+# Project placeholders that must remain trackable
+# ----------------------------------------------------------------------
+!.gitkeep
+!**/.gitkeep

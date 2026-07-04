@@ -1,76 +1,81 @@
-# ML-KEM (Kyber) Hardware Exploration
+# Full RTL-to-GDSII Hardware Implementation of ML-KEM-768 / Kyber-768
 
-A learning-oriented RTL design and physical design (ASIC) exploration repository focused on studying and prototyping hardware architectures for the NIST ML-KEM (Kyber) Key Encapsulation Mechanism.
+This repository is a long-term learning and research project for building a hardware-oriented ML-KEM-768 accelerator from reference study through RTL, verification, synthesis handoff, physical-design execution on a server, timing analysis, and final reporting.
 
----
+The project is currently in the foundation phase. Existing Verilog files are structural simulation scaffolding only; they are not a verified ML-KEM implementation and are not claimed to be ASIC-ready.
 
-## Current Status
+## Current Milestone
 
-> [!NOTE]
-> This repository is in an early prototype and study phase. 
-> The current files serve as structural scaffolding to test the verification and simulation setups. Cryptographic hardware primitives for ML-KEM are currently in the planning phase.
+M1: Project Foundation
 
-- **Simulation Toolchain**: Basic simulation filelists and Makefiles are configured locally to verify local compilation, linting, and toolchain configurations.
-- **ASIC/Physical Design**: The `pd/` flow directory is initialized but empty. No synthesis or place-and-route scripts exist yet.
-- **Reference Documents**: Large specification PDFs and reference material are treated as local-only references and are not tracked in the remote Git repository.
+Current focus:
 
----
+- Organize mandatory documents and notes.
+- Prepare reference model and KAT workspaces.
+- Define RTL, testbench, simulation, synthesis, and PD handoff locations.
+- Keep roadmap and milestone status easy to resume.
 
-## Repository & Workspace Layout
+## Repository Structure
 
-The following layout describes how files are organized in the workspace, distinguishing between currently tracked files, planned files, and local-only reference directories.
+```text
+.
+├── docs/                 # Project specs, standards notes, math notes, architecture, verification, report
+├── references/           # Standards, papers, datasheets, and external links
+├── ref_model/            # C/Python reference models, KAT vectors, and comparison scripts
+├── rtl/                  # Synthesizable RTL organized by ML-KEM function block
+├── tb/                   # Unit, block, and system testbenches
+├── sim/                  # Simulation scripts, logs, waves, and outputs
+├── synth/genus/          # Cadence Genus scripts, constraints, reports, and outputs
+├── pd/                   # Empty placeholder for future server-controlled PD structure
+├── reports/              # Curated simulation, synthesis, PNR, timing, and power reports
+├── figures/              # Architecture diagrams, waveforms, layout images, and charts
+├── scripts/              # Utility scripts that are not tool-flow-specific
+└── archive/              # Preserved ambiguous or retired project material
+```
 
-### Currently Tracked / Staged
-* [README.md](file:///home/hien/Projects/Post_Quantum_Cryptography/README.md) - Project documentation (this file)
-* [thoughts.txt](file:///home/hien/Projects/Post_Quantum_Cryptography/thoughts.txt) - Initial design thoughts, target architectures, and hardware roadmaps
+## How To Navigate
 
-### Planned for Staging (Tracked in upcoming commits)
-* `rtl/` - Simulation setup, test compilation filelists, and testbenches (`module_top.v`, `tb.v`, `sim/Makefile`)
-* `.gitignore` - Git ignore configuration for EDA tool and simulator logs
-* `AGENTS.md` - Context and guidelines for agentic development
-* `.agents/` - Automation workflows (e.g., repository startup context)
+- Start every session with `TODO.md`, `docs/00_project_spec/milestone_status.md`, and `Roadmap.md`.
+- Use `docs/00_project_spec/` for project definition, roadmap mapping, and milestone status.
+- Use `references/standards/` for local standards PDFs and `references/papers/` for papers.
+- Use `docs/01_standard/` for reading notes on FIPS 203, Kyber Round 3, FIPS 202, and Keccak-related standards.
+- Use `docs/02_math/` for ML-KEM math notes: Module-LWE, polynomial rings, NTT, and modular arithmetic.
+- Use `docs/03_architecture/` for top-level, NTT, Keccak, memory, and PPA architecture planning.
+- Use `docs/04_verification/` for verification strategy, test vectors, and regression planning.
+- Use `docs/06_report/` for paper/report outlines and survey tables.
 
-### Local-Only (Untracked / Excluded from Git commits)
-* `documents/` - Local directory for specifications and reference implementations
-  * `kyber-specification-round3-20210804.pdf` (local copy of Kyber Round 3 spec)
-  * `NIST-PQ-Submission-Kyber-20201001/` (local copy of Kyber NIST submission package)
-* `images/` - Block diagrams and waveform screenshots
-* `pd/` - Future physical design and synthesis run scripts
+## Where To Work By Phase
 
----
+- Phase 0: `docs/00_project_spec/`, `references/`, `TODO.md`
+- Phase 1: `ref_model/c_ref/`, `ref_model/python_model/`, `ref_model/kat/`, `ref_model/compare/`, `docs/04_verification/`
+- Phase 2: `rtl/arithmetic/`, `tb/unit/`, `sim/scripts/`, `sim/logs/`, `docs/02_math/`
+- Phase 3: `rtl/ntt/`, `rtl/arithmetic/`, `tb/unit/`, `tb/block/`, `docs/02_math/`, `docs/03_architecture/`
+- Phase 4: `rtl/memory/`, `docs/03_architecture/memory_architecture.md`, `tb/block/`
+- Phase 5: `rtl/keccak/`, `tb/unit/`, `tb/block/`, `docs/01_standard/fips202_keccak_notes.md`, `docs/03_architecture/keccak_architecture.md`
+- Phase 6: `rtl/sampler/`, `rtl/codec/`, `tb/unit/`, `tb/block/`, `docs/04_verification/`
+- Phase 7: `rtl/control/`, `rtl/top/`, `tb/system/`, `ref_model/kat/`, `sim/scripts/`
+- Phase 8: `rtl/control/`, `rtl/top/`, `tb/system/`, `ref_model/kat/`, `sim/scripts/`
+- Phase 9: `rtl/control/`, `rtl/top/`, `tb/system/`, `ref_model/kat/`, `sim/scripts/`
+- Phase 10: `rtl/top/`, `rtl/control/`, `tb/system/`, `sim/scripts/`
+- Phase 11: `docs/03_architecture/ppa_plan.md`, `synth/genus/`, `reports/synthesis/`
+- Phase 12: `synth/genus/scripts/`, `synth/genus/constraints/`, `synth/genus/reports/`, `synth/genus/outputs/`
+- Phase 13: `pd/` for server-controlled physical design structure.
+- Phase 14: `pd/`, `reports/timing/`, `reports/power/`, `figures/layout/`
+- Phase 15: `docs/06_report/`, `reports/`, `figures/`
 
-## Verification & Simulation Setup (Planned for Commit)
+## Placement Rules
 
-The simulation configuration inside the `rtl/` directory is designed to support the following tools:
-* **Simulator**: ModelSim / QuestaSim (configured via `vsim`/`vlog`) for functional verification.
-* **Linter**: Verilator for design rule checks (linting/DRC).
+- Place documents and reading notes in `docs/`.
+- Place official PDFs, papers, datasheets, and external source links in `references/`.
+- Place C/Python golden model work and KAT material in `ref_model/`.
+- Place synthesizable RTL in `rtl/`, grouped by function block.
+- Place testbenches in `tb/unit/`, `tb/block/`, or `tb/system/`.
+- Place simulation scripts in `sim/scripts/`; generated logs, waves, and outputs stay under `sim/`.
+- Place Genus synthesis material under `synth/genus/`.
+- Place physical-design material under `pd/` when the server-side structure is defined.
+- Place curated result summaries under `reports/`.
+- Place diagrams, waveforms, layout images, and charts under `figures/`.
 
-Targets are provided in the `rtl/sim/` Makefile to support compilation flow checks (`make build`), functional runs (`make run`), linting (`make drc`), and code coverage generation.
+## Roadmap Reference
 
----
-
-## Limitations
-- **No cryptographic logic**: The repository does not currently contain active Kyber module implementations.
-- **Out of Scope**: Dilithium / ML-DSA is not planned or supported in this repository; the focus is strictly on ML-KEM.
-- **Not synthesizable/ASIC ready**: No constraints (SDC), timing analysis, or physical design scripts are set up.
-
----
-
-## Roadmap
-
-1. **Phase 1: Symmetric Engine Primitives**
-   - Implement Keccak-f[1600] permutation engine (SHA-3, SHAKE-128, SHAKE-256) for matrix/vector generation and hashing in Kyber.
-2. **Phase 2: Polynomial Primitives**
-   - Design a configurable Butterfly Unit for Number Theoretic Transform (NTT) multiplication.
-   - Implement Barrett/Montgomery modular reduction modules.
-3. **Phase 3: Integration**
-   - Integrate components into ML-KEM/Kyber (Keygen, Encapsulation, Decapsulation) state machines.
-4. **Phase 4: ASIC Flow Setup**
-   - Write SDC timing constraints.
-   - Develop Cadence Genus synthesis and Innovus place-and-route scripts under `pd/`.
-
----
-
-## References
-* **NIST FIPS 203 (ML-KEM)**: [FIPS 203 Standard Document](https://csrc.nist.gov/pubs/fips/203/ipd)
-* **Kyber Round 3 Specification**: Available in local `documents/` directory if downloaded, or online via [pq-crystals.org](https://pq-crystals.org/kyber/)
+The main two-year roadmap is `Roadmap.md`. The current milestone tracker is `docs/00_project_spec/milestone_status.md`.
