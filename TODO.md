@@ -1072,6 +1072,46 @@ Remains to do:
 
 - Confirm the pushed commit hash and clean working tree in the final response.
 
+### 2026-07-06 Post-Push RTL Cleanup Checkpoint
+
+Requested:
+
+- Save all remaining local progress to GitHub after the first checkpoint push.
+
+Files changed:
+
+- Updated `rtl/ntt/ntt_core.v` to block external load writes during the same
+  cycle as `start`.
+- Updated `rtl/ntt/zetas_rom.v` constants from 16-bit signed literals to
+  12-bit unsigned coefficient-width literals.
+- Updated `TODO.md` with this checkpoint entry.
+
+Commands run:
+
+- `git status --short`
+- `git log -1 --oneline`
+- `git rev-parse --short HEAD`
+- `git diff -- rtl/ntt/ntt_core.v`
+- `git diff -- rtl/ntt/zetas_rom.v`
+- `git diff --stat`
+- `git diff --check`
+- `./sim/scripts/run_zetas_rom.sh`
+- `./sim/scripts/run_ntt_core.sh`
+- `./sim/scripts/run_butterfly_unit.sh`
+- `apply_patch`
+
+Verified:
+
+- `git diff --check`: clean.
+- `run_zetas_rom.sh`: PASS, `pass_count=16 fail_count=0`.
+- `run_ntt_core.sh`: PASS, `pass_count=512 fail_count=0`.
+- `run_butterfly_unit.sh`: PASS, `pass_count=206 fail_count=0`.
+
+Remains to do:
+
+- Confirm the final pushed commit hash and clean working tree in the final
+  response.
+
 ## Next Session Start Here
 
 1. Read `TODO.md`.

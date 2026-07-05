@@ -177,7 +177,7 @@ module ntt_core #(
     // ------------------------------------------------------
     wire load_allowed;
 
-    assign load_allowed = load_en && !gen_busy;
+    assign load_allowed = load_en && !gen_busy && !start;
 
     assign buf_wr_en_a   = gen_valid || load_allowed;
     assign buf_wr_addr_a = gen_valid ? gen_addr_a : load_addr;
