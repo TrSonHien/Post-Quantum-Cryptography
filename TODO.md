@@ -798,10 +798,285 @@ Remains to do:
 
 - Stage, commit, and push this checkpoint.
 
+### 2026-07-06 NTT Core Testbench Bring-up
+
+Requested:
+
+- Test `rtl/ntt/ntt_core.v` and write a careful self-checking testbench.
+
+Files changed:
+
+- Added `tb/unit/tb_ntt_core.v`.
+- Added `sim/scripts/run_ntt_core.sh`.
+- Added `reports/simulation/ntt_core_report.md`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `pwd`
+- `sed -n '1,220p' TODO.md`
+- `rg --files`
+- `sed -n '1,260p' rtl/ntt/ntt_core.v`
+- `sed -n '1,220p' rtl/ntt/butterfly_unit.v`
+- `sed -n '1,220p' rtl/ntt/intt_butterfly_unit.v`
+- `sed -n '1,240p' rtl/ntt/ntt_addr_gen.v`
+- `sed -n '1,260p' rtl/memory/poly_buffer.v`
+- `sed -n '1,220p' rtl/arithmetic/mod_mul.v`
+- `sed -n '1,220p' rtl/arithmetic/reduction.v`
+- `sed -n '1,180p' rtl/common/kyber_params.vh`
+- `sed -n '1,220p' sim/scripts/run_ntt_addr_gen.sh`
+- `sed -n '1,360p' rtl/ntt/zetas_rom.v`
+- `apply_patch`
+- `chmod +x sim/scripts/run_ntt_core.sh`
+- `git status --short`
+- `./sim/scripts/run_ntt_core.sh`
+- `nl -ba rtl/ntt/ntt_core.v | sed -n '60,150p'`
+- `sed -n '1,160p' sim/logs/ntt_core_sim.log`
+
+Verified:
+
+- The new testbench is designed to load two full 256-coefficient input patterns,
+  run the forward NTT core, wait for `done`, read back all coefficients, and
+  compare every output against a behavioral Kyber forward NTT model.
+- The run script creates `sim/outputs`, `sim/logs`, and `sim/waves`, compiles
+  all required DUT dependencies with `iverilog -g2012`, runs `vvp`, tees the log,
+  and returns nonzero unless `PASS tb_ntt_core` is printed.
+- Current `ntt_core.v` does not compile, so polynomial-level simulation did not
+  run.
+- First blocking compile error: `rtl/ntt/ntt_core.v:82` uses `.addr-b`, which is
+  not a legal named port connection.
+- Additional DUT issues reported by the compiler include `doen`,
+  `buf_wr_data-a`, and `buf_wr_data-b`.
+- No RTL file was modified during this testbench bring-up.
+
+Remains to do:
+
+- Fix `rtl/ntt/ntt_core.v` compile errors, then rerun
+  `./sim/scripts/run_ntt_core.sh`.
+- After compilation succeeds, review any polynomial mismatches from
+  `tb_ntt_core` as either DUT scheduling/readback issues or reference-model
+  issues.
+
+### 2026-07-06 NTT Core Retest
+
+Requested:
+
+- Retest `rtl/ntt/ntt_core.v` after user-side DUT fixes.
+
+Files changed:
+
+- Updated `reports/simulation/ntt_core_report.md`.
+- Updated `TODO.md` with this retest entry.
+
+Commands run:
+
+- `sed -n '1,220p' TODO.md`
+- `git status --short`
+- `nl -ba rtl/ntt/ntt_core.v | sed -n '70,150p'`
+- `./sim/scripts/run_ntt_core.sh`
+- `nl -ba rtl/ntt/ntt_core.v | sed -n '90,104p'`
+- `rg -n "module zeta|module zetas|zeta_rom|zetas_rom" rtl/ntt tb/unit sim/scripts`
+- `sed -n '1,120p' sim/logs/ntt_core_sim.log`
+- `apply_patch`
+
+Verified:
+
+- The earlier syntax errors around `.addr_b`, `done`, `buf_wr_data_a`, and
+  `buf_wr_data_b` are no longer the first blockers in the inspected DUT.
+- `./sim/scripts/run_ntt_core.sh` still fails before simulation.
+- Current first blocker is elaboration: `rtl/ntt/ntt_core.v:96` instantiates
+  `zeta_rom`, but the available module is `zetas_rom` in
+  `rtl/ntt/zetas_rom.v`.
+- No RTL file was modified during this retest.
+
+Remains to do:
+
+- Fix the `ntt_core.v` ROM instance module name mismatch, then rerun
+  `./sim/scripts/run_ntt_core.sh`.
+- After elaboration succeeds, use `tb_ntt_core` to check the full polynomial
+  output comparison.
+
+### 2026-07-06 NTT Core Polynomial Retest
+
+Requested:
+
+- Retest `rtl/ntt/ntt_core.v` again after user-side ROM instance fix.
+
+Files changed:
+
+- Updated `reports/simulation/ntt_core_report.md`.
+- Updated `TODO.md` with this retest entry.
+
+Commands run:
+
+- `sed -n '1,120p' TODO.md`
+- `git status --short`
+- `nl -ba rtl/ntt/ntt_core.v | sed -n '90,104p'`
+- `./sim/scripts/run_ntt_core.sh`
+- `apply_patch`
+
+Verified:
+
+- `ntt_core` now compiles, elaborates, and runs simulation.
+- `tb_ntt_core` completed both deterministic 256-coefficient polynomial
+  patterns.
+- Result was `FAIL tb_ntt_core`.
+- Final counts: `pass_count=0 fail_count=512`.
+- First mismatch: pattern 0, index 0, expected 2429, actual 745.
+- Compile warnings show likely DUT width issue: `ntt_core.v` passes an 8-bit
+  `zeta` into `butterfly_unit`, while zeta/twiddle data should be coefficient
+  width.
+- No RTL file was modified during this retest.
+
+Remains to do:
+
+- Inspect and fix the `zeta` signal width in `rtl/ntt/ntt_core.v`; it is
+  currently declared with `ADDR_WIDTH` instead of coefficient data width.
+- After that, rerun `./sim/scripts/run_ntt_core.sh` and inspect any remaining
+  mismatches.
+
+### 2026-07-06 RTL Review And Documentation Notes
+
+Requested:
+
+- Carefully review the current Verilog files, point out potential errors and
+  improvements, and add explanatory notes where the code is sound.
+
+Files changed:
+
+- Added explanatory algorithm/source notes to:
+  - `rtl/arithmetic/mod_add.v`
+  - `rtl/arithmetic/mod_sub.v`
+  - `rtl/arithmetic/mod_mul.v`
+  - `rtl/arithmetic/reduction.v`
+  - `rtl/ntt/butterfly_unit.v`
+  - `rtl/ntt/intt_butterfly_unit.v`
+  - `rtl/ntt/ntt_addr_gen.v`
+  - `rtl/ntt/ntt_core.v`
+  - `rtl/ntt/zetas_rom.v`
+  - `rtl/memory/poly_buffer.v`
+- Cleaned testbench port-width declarations in:
+  - `tb/unit/tb_mod_mul.v`
+  - `tb/unit/tb_butterfly_unit.v`
+  - `tb/unit/tb_zetas_rom.v`
+- Updated `reports/simulation/ntt_core_report.md` to the current PASS result.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `pwd`
+- `sed -n '1,220p' TODO.md`
+- `rg --files -g '*.v' rtl tb`
+- `rg -n "Post_Quantum_Cryptography|ML-KEM|Kyber|ntt_core|ntt_addr_gen|arithmetic RTL" /home/hien/.codex/memories/MEMORY.md`
+- `git status --short`
+- `nl -ba /home/hien/.codex/memories/MEMORY.md | sed -n '1,42p'`
+- `sed -n ...` on RTL arithmetic, NTT, memory, testbench, and reference C files
+- `./sim/scripts/run_mod_add.sh`
+- `./sim/scripts/run_mod_sub.sh`
+- `./sim/scripts/run_reduction.sh`
+- `./sim/scripts/run_mod_mul.sh`
+- `./sim/scripts/run_zetas_rom.sh`
+- `./sim/scripts/run_butterfly_unit.sh`
+- `./sim/scripts/run_ntt_addr_gen.sh`
+- `./sim/scripts/run_ntt_core.sh`
+- `iverilog -g2012 -Wall -I rtl/common -o /tmp/intt_butterfly_unit_check.out rtl/arithmetic/mod_add.v rtl/arithmetic/mod_sub.v rtl/arithmetic/reduction.v rtl/arithmetic/mod_mul.v rtl/ntt/intt_butterfly_unit.v`
+- `rg -n "KYBER_Q_WIDTH:0|canoninal|Rederence|caculations" rtl tb`
+- `git diff --check`
+- `git diff --stat`
+- `apply_patch`
+
+Verified:
+
+- `run_mod_add.sh`: PASS, `pass_count=1009 fail_count=0`.
+- `run_mod_sub.sh`: PASS, `pass_count=1012 fail_count=0`.
+- `run_reduction.sh`: PASS, `pass_count=620 fail_count=0`.
+- `run_mod_mul.sh`: PASS, `pass_count=1010 fail_count=0`.
+- `run_zetas_rom.sh`: PASS, `pass_count=16 fail_count=0`.
+- `run_butterfly_unit.sh`: PASS, `pass_count=206 fail_count=0`.
+- `run_ntt_addr_gen.sh`: PASS, `pass_count=1792 fail_count=0`.
+- `run_ntt_core.sh`: PASS, `pass_count=512 fail_count=0`.
+- `intt_butterfly_unit.v` compiles cleanly with its arithmetic dependencies.
+- The old testbench width warnings for `mod_mul`, `butterfly_unit`, and
+  `zetas_rom` were removed.
+- Review notes added to the RTL explain the reference C source, datapath range,
+  address schedule, memory timing, and current verification assumptions.
+
+Review findings and improvement notes:
+
+- `barrett_reduce` previously had a misleading 48-bit concatenate assigned into
+  a 32-bit wire. It was behavior-equivalent for current callers but fragile, so
+  it was replaced with a direct signed assignment and documented.
+- `mod_sub` is functionally correct in the current tests, but it relies on
+  fixed-width wraparound on underflow. The added comment explains that behavior;
+  a future style cleanup could rewrite it with an explicit wider add/sub path.
+- `ntt_core` still depends on the caller obeying the interface rule not to
+  assert `load_en` in the same cycle as `start`. A future hardening change could
+  gate `load_allowed` with `!start` as well.
+- `intt_butterfly_unit.v` has no dedicated self-checking unit test yet. It
+  compiles cleanly, but should not be treated as fully verified until a testbench
+  is added.
+
+Remains to do:
+
+- Add a self-checking testbench and run script for `intt_butterfly_unit.v`.
+- Consider converting `zetas_rom` constants from `16'sd...` literals to
+  coefficient-width unsigned literals for stricter lint cleanliness.
+- Consider hardening the `ntt_core` load/start interface.
+
+### 2026-07-06 GitHub Push After RTL Review
+
+Requested:
+
+- Push the current RTL review/documentation checkpoint to GitHub.
+
+Files changed:
+
+- Updated `TODO.md` with this checkpoint entry.
+- Checkpoint includes the reviewed RTL documentation notes, testbench width
+  cleanup, `ntt_core` verification files, and the current `ntt_core` simulation
+  report.
+
+Commands run:
+
+- `pwd`
+- `sed -n '1,120p' TODO.md`
+- `rg -n "Post_Quantum_Cryptography|M1: Algorithm|reports/simulation|pd/" /home/hien/.codex/memories/MEMORY.md`
+- `git status --short`
+- `./sim/scripts/run_mod_add.sh`
+- `./sim/scripts/run_mod_sub.sh`
+- `./sim/scripts/run_reduction.sh`
+- `./sim/scripts/run_mod_mul.sh`
+- `./sim/scripts/run_zetas_rom.sh`
+- `./sim/scripts/run_butterfly_unit.sh`
+- `./sim/scripts/run_ntt_addr_gen.sh`
+- `./sim/scripts/run_ntt_core.sh`
+- `git diff --check`
+- `iverilog -g2012 -Wall -I rtl/common -o /tmp/intt_butterfly_unit_check.out rtl/arithmetic/mod_add.v rtl/arithmetic/mod_sub.v rtl/arithmetic/reduction.v rtl/arithmetic/mod_mul.v rtl/ntt/intt_butterfly_unit.v`
+- `git remote -v`
+- `apply_patch`
+
+Verified:
+
+- `run_mod_add.sh`: PASS, `pass_count=1009 fail_count=0`.
+- `run_mod_sub.sh`: PASS, `pass_count=1012 fail_count=0`.
+- `run_reduction.sh`: PASS, `pass_count=620 fail_count=0`.
+- `run_mod_mul.sh`: PASS, `pass_count=1010 fail_count=0`.
+- `run_zetas_rom.sh`: PASS, `pass_count=16 fail_count=0`.
+- `run_butterfly_unit.sh`: PASS, `pass_count=206 fail_count=0`.
+- `run_ntt_addr_gen.sh`: PASS, `pass_count=1792 fail_count=0`.
+- `run_ntt_core.sh`: PASS, `pass_count=512 fail_count=0`.
+- `git diff --check`: clean.
+- `intt_butterfly_unit.v` compiles cleanly with its arithmetic dependencies.
+
+Remains to do:
+
+- Confirm the pushed commit hash and clean working tree in the final response.
+
 ## Next Session Start Here
 
 1. Read `TODO.md`.
 2. Read `docs/00_project_spec/milestone_status.md`.
 3. Read `README.md`.
 4. Read `docs/04_verification/verification_plan.md`.
-5. Start by filling `docs/01_standard/fips203_notes.md` and selecting the first KAT comparison target.
+5. Start by adding self-checking verification for `intt_butterfly_unit.v`, then
+   decide whether to harden `ntt_core` load/start gating.

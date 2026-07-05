@@ -35,6 +35,10 @@
 // Notes:
 //   - This module only generates the 896 butterfly operations.
 //   - INTT final scaling by zetas_inv[127] is NOT generated here.
+//   - On a start pulse, the first valid schedule appears immediately after the
+//     capturing posedge. Testbenches should sample the outputs after that
+//     posedge, not after an extra cycle.
+//   - done pulses for one cycle after the final valid schedule.
 // -----------------------------------------------------------------------------
 
 module ntt_addr_gen #(
@@ -68,7 +72,7 @@ module ntt_addr_gen #(
     reg [ADDR_WIDTH-1:0] j_reg;
     reg [ZETA_WIDTH-1:0] zeta_reg;
 
-    // 9-bit caculations are needed because start + 2*len can become 256
+    // 9-bit calculations are needed because start + 2*len can become 256.
     wire [8:0] group_last_j;
     wire [8:0] next_start;
     wire       at_last_j_in_group;

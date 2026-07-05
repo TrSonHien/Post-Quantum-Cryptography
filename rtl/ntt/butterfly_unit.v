@@ -26,15 +26,19 @@
 // Notes:
 //   - This block is combinational.
 //   - Pipeline/registering should be handled later when building ntt_core.
+//   - The zeta input is already selected from zetas_rom by the address
+//     generator. Forward NTT uses zetas[1..127] in the nested loop.
+//   - This module does not know about addresses, memory, or scheduling; it only
+//     implements one mathematical butterfly.
 // -----------------------------------------------------------------------------
 
 module butterfly_unit (
-    input  wire [`KYBER_Q_WIDTH:0] a_in,
-    input  wire [`KYBER_Q_WIDTH:0] b_in,
-    input  wire [`KYBER_Q_WIDTH:0] zeta,
-    
-    output wire [`KYBER_Q_WIDTH:0] a_out,
-    output wire [`KYBER_Q_WIDTH:0] b_out
+    input  wire [`KYBER_Q_WIDTH-1:0] a_in,
+    input  wire [`KYBER_Q_WIDTH-1:0] b_in,
+    input  wire [`KYBER_Q_WIDTH-1:0] zeta,
+
+    output wire [`KYBER_Q_WIDTH-1:0] a_out,
+    output wire [`KYBER_Q_WIDTH-1:0] b_out
 );
 
     wire [`KYBER_Q_WIDTH-1:0] t;

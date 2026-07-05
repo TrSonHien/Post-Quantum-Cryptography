@@ -1,10 +1,11 @@
 `timescale 1ns/1ps
+`include "kyber_params.vh"
 
 module tb_zetas_rom;
 
     reg inverse;
     reg [6:0] addr;
-    wire [15:0] zeta;
+    wire [`KYBER_Q_WIDTH-1:0] zeta;
 
     integer pass_count;
     integer fail_count;
@@ -18,7 +19,7 @@ module tb_zetas_rom;
     task check_case;
         input inv;
         input [6:0] a;
-        input [15:0] expected;
+        input [`KYBER_Q_WIDTH-1:0] expected;
         begin
             inverse = inv;
             addr = a;

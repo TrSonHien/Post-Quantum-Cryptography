@@ -1,6 +1,22 @@
 `timescale 1ns/1ps
 `include "kyber_params.vh"
 
+// -----------------------------------------------------------------------------
+// Module: mod_sub
+//
+// Operation:
+//   c = (a - b) mod KYBER_Q
+//
+// Reference:
+//   - Kyber parameter q = 3329 from kyber768/params.h.
+//   - This block uses the RTL datapath convention:
+//       0 <= a,b,c < q
+//
+// Width notes:
+//   - A 13-bit subtraction is used so the MSB of diff indicates underflow.
+//   - If underflow occurs, adding q and taking the low coefficient bits gives
+//     the canonical result. This relies on normal fixed-width Verilog wrapping.
+// -----------------------------------------------------------------------------
 module mod_sub (
     input  wire [`KYBER_Q_WIDTH-1:0] a,
     input  wire [`KYBER_Q_WIDTH-1:0] b,

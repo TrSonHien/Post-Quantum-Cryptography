@@ -33,6 +33,8 @@
 //   - This block is combinational.
 //   - Final INTT scaling by zetas_inv[127] is NOT done here.
 //   - Final scaling belongs in intt_core.v.
+//   - This unit has only been syntax/elaboration checked in the current tree;
+//     add a dedicated self-checking testbench before relying on it as verified.
 // -----------------------------------------------------------------------------
 
 module intt_butterfly_unit (

@@ -1,11 +1,26 @@
 `timescale 1ns/1ps
 `include "kyber_params.vh"
 
-// --------------------------------
-// Rederence
-// kyber768/reduce.c
-// --------------------------------
+// -----------------------------------------------------------------------------
+// Reduction helpers for the Kyber / ML-KEM arithmetic datapath.
+//
+// Reference:
+//   ref_model/c_ref/.../Reference_Implementation/crypto_kem/kyber768/reduce.c
+//
+// These modules intentionally mirror the C reference at the arithmetic level.
+// They are not yet optimized for area, timing, or constant-latency pipeline use.
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+// montgomery_reduce
+//
+// C reference:
+//   int16_t montgomery_reduce(int32_t a)
+//
+// Computes a * R^-1 mod q, where R = 2^16. The C function returns a signed
+// representative in approximately {-q+1, ..., q-1}. mod_mul wraps this module
+// and converts the signed representative into the canonical unsigned RTL range.
+// -----------------------------------------------------------------------------
 module montgomery_reduce #(
     parameter signed [31:0] Q = `KYBER_Q
 )(
@@ -33,7 +48,17 @@ module montgomery_reduce #(
 
 endmodule
 
-
+// -----------------------------------------------------------------------------
+// barrett_reduce
+//
+// C reference:
+//   int16_t barrett_reduce(int16_t a)
+//
+// This approximates a / q with v = round(2^26 / q), then subtracts t*q.
+// The reference function is used in inverse NTT paths after additions. It may
+// return q as a valid representative, so a caller that requires strict
+// canonical [0, q-1] output should apply a conditional subtract afterward.
+// -----------------------------------------------------------------------------
 module barrett_reduce #(
     parameter signed [31:0] Q = `KYBER_Q
 )(
@@ -49,7 +74,8 @@ module barrett_reduce #(
     wire signed [31:0] tq;
     wire signed [31:0] r_full;
 
-    assign a_ext = {{16{a[15]}}, a};
+    // The port is already signed and wide enough for current RTL callers.
+    assign a_ext = a;
 
     // t = (v * a) >> 26
     assign prod =  $signed(V) * $signed(a_ext);
@@ -63,7 +89,15 @@ module barrett_reduce #(
 
 endmodule
 
-
+// -----------------------------------------------------------------------------
+// conditional_sub_q
+//
+// C reference:
+//   int16_t csubq(int16_t a)
+//
+// Subtracts q once when a >= q. This helper assumes the input is already in a
+// range where one subtraction is sufficient, such as [0, 2*q).
+// -----------------------------------------------------------------------------
 module conditional_sub_q #(
     parameter signed [31:0] Q = `KYBER_Q
 )(
@@ -74,4 +108,3 @@ module conditional_sub_q #(
     assign r = (a >= Q) ? (a - Q) : a;
 
 endmodule
-

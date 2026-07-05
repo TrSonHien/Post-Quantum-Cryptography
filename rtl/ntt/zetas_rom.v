@@ -1,4 +1,5 @@
 `timescale 1ns/1ps
+`include "kyber_params.vh"
 
 // -----------------------------------------------------------------------------
 // Module: zetas_rom
@@ -16,12 +17,16 @@
 //   - Forward NTT in ntt.c starts with k = 1, so zetas[0] is not used by ntt().
 //   - Inverse NTT uses zetas_inv[0..126] in the loop and zetas_inv[127]
 //     for final scaling.
+//   - The constants are copied from kyber768/ntt.c. They are all positive
+//     canonical representatives less than q, so KYBER_Q_WIDTH bits are enough.
+//   - This is a combinational lookup table. A later memory-mapped or registered
+//     ROM can preserve the same addr/inverse/zeta interface.
 // -----------------------------------------------------------------------------
 
 module zetas_rom (
-    input  wire        inverse,  // 0: zetas[], 1: zetas_inv[]
-    input  wire [6:0]  addr,
-    output reg  [15:0] zeta
+    input  wire                      inverse,  // 0: zetas[], 1: zetas_inv[]
+    input  wire [6:0]                addr,
+    output reg  [`KYBER_Q_WIDTH-1:0] zeta
 );
 
     always @(*) begin

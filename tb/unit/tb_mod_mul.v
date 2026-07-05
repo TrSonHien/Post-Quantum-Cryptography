@@ -3,9 +3,9 @@
 
 module tb_mod_mul;
 
-    reg  [`KYBER_Q_WIDTH:0] a;
-    reg  [`KYBER_Q_WIDTH:0] b;
-    wire [`KYBER_Q_WIDTH:0] c;
+    reg  [`KYBER_Q_WIDTH-1:0] a;
+    reg  [`KYBER_Q_WIDTH-1:0] b;
+    wire [`KYBER_Q_WIDTH-1:0] c;
 
     integer pass_count;
     integer fail_count;
@@ -33,9 +33,9 @@ module tb_mod_mul;
         end
     endfunction
 
-    function [`KYBER_Q_WIDTH:0] expected_mod_mul;
-        input [`KYBER_Q_WIDTH:0] x;
-        input [`KYBER_Q_WIDTH:0] y;
+    function [`KYBER_Q_WIDTH-1:0] expected_mod_mul;
+        input [`KYBER_Q_WIDTH-1:0] x;
+        input [`KYBER_Q_WIDTH-1:0] y;
         reg signed [31:0] product;
         reg signed [15:0] mont_result;
         reg signed [16:0] mont_ext;
@@ -46,15 +46,15 @@ module tb_mod_mul;
             if (mont_ext < 0) begin
                 expected_mod_mul = mont_ext + `KYBER_Q;
             end else begin
-                expected_mod_mul = mont_ext[`KYBER_Q_WIDTH:0];
+                expected_mod_mul = mont_ext[`KYBER_Q_WIDTH-1:0];
             end
         end
     endfunction
 
     task check_case;
-        input [`KYBER_Q_WIDTH:0] x;
-        input [`KYBER_Q_WIDTH:0] y;
-        reg [`KYBER_Q_WIDTH:0] expected;
+        input [`KYBER_Q_WIDTH-1:0] x;
+        input [`KYBER_Q_WIDTH-1:0] y;
+        reg [`KYBER_Q_WIDTH-1:0] expected;
         begin
             a = x;
             b = y;

@@ -3,11 +3,11 @@
 
 module tb_butterfly_unit;
 
-    reg  [`KYBER_Q_WIDTH:0] a_in;
-    reg  [`KYBER_Q_WIDTH:0] b_in;
-    reg  [`KYBER_Q_WIDTH:0] zeta;
-    wire [`KYBER_Q_WIDTH:0] a_out;
-    wire [`KYBER_Q_WIDTH:0] b_out;
+    reg  [`KYBER_Q_WIDTH-1:0] a_in;
+    reg  [`KYBER_Q_WIDTH-1:0] b_in;
+    reg  [`KYBER_Q_WIDTH-1:0] zeta;
+    wire [`KYBER_Q_WIDTH-1:0] a_out;
+    wire [`KYBER_Q_WIDTH-1:0] b_out;
 
     integer pass_count;
     integer fail_count;
@@ -38,9 +38,9 @@ module tb_butterfly_unit;
         end
     endfunction
 
-    function [`KYBER_Q_WIDTH:0] canonical_montgomery_product;
-        input [`KYBER_Q_WIDTH:0] x;
-        input [`KYBER_Q_WIDTH:0] y;
+    function [`KYBER_Q_WIDTH-1:0] canonical_montgomery_product;
+        input [`KYBER_Q_WIDTH-1:0] x;
+        input [`KYBER_Q_WIDTH-1:0] y;
         reg signed [31:0] product;
         reg signed [15:0] mont_result;
         reg signed [16:0] mont_ext;
@@ -51,28 +51,28 @@ module tb_butterfly_unit;
             if (mont_ext < 0) begin
                 canonical_montgomery_product = mont_ext + `KYBER_Q;
             end else begin
-                canonical_montgomery_product = mont_ext[`KYBER_Q_WIDTH:0];
+                canonical_montgomery_product = mont_ext[`KYBER_Q_WIDTH-1:0];
             end
         end
     endfunction
 
-    function [`KYBER_Q_WIDTH:0] expected_mod_add;
-        input [`KYBER_Q_WIDTH:0] x;
-        input [`KYBER_Q_WIDTH:0] y;
+    function [`KYBER_Q_WIDTH-1:0] expected_mod_add;
+        input [`KYBER_Q_WIDTH-1:0] x;
+        input [`KYBER_Q_WIDTH-1:0] y;
         reg [`KYBER_SUM_WIDTH-1:0] sum;
         begin
             sum = x + y;
             if (sum >= `KYBER_Q) begin
                 expected_mod_add = sum - `KYBER_Q;
             end else begin
-                expected_mod_add = sum[`KYBER_Q_WIDTH:0];
+                expected_mod_add = sum[`KYBER_Q_WIDTH-1:0];
             end
         end
     endfunction
 
-    function [`KYBER_Q_WIDTH:0] expected_mod_sub;
-        input [`KYBER_Q_WIDTH:0] x;
-        input [`KYBER_Q_WIDTH:0] y;
+    function [`KYBER_Q_WIDTH-1:0] expected_mod_sub;
+        input [`KYBER_Q_WIDTH-1:0] x;
+        input [`KYBER_Q_WIDTH-1:0] y;
         begin
             if (x >= y) begin
                 expected_mod_sub = x - y;
@@ -83,12 +83,12 @@ module tb_butterfly_unit;
     endfunction
 
     task check_case;
-        input [`KYBER_Q_WIDTH:0] a_val;
-        input [`KYBER_Q_WIDTH:0] b_val;
-        input [`KYBER_Q_WIDTH:0] zeta_val;
-        reg [`KYBER_Q_WIDTH:0] t;
-        reg [`KYBER_Q_WIDTH:0] expected_a;
-        reg [`KYBER_Q_WIDTH:0] expected_b;
+        input [`KYBER_Q_WIDTH-1:0] a_val;
+        input [`KYBER_Q_WIDTH-1:0] b_val;
+        input [`KYBER_Q_WIDTH-1:0] zeta_val;
+        reg [`KYBER_Q_WIDTH-1:0] t;
+        reg [`KYBER_Q_WIDTH-1:0] expected_a;
+        reg [`KYBER_Q_WIDTH-1:0] expected_b;
         begin
             a_in = a_val;
             b_in = b_val;
