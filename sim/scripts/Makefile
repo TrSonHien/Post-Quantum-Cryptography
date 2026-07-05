@@ -1,5 +1,5 @@
-TESTNAME ?= test
-TB_NAME  ?= test_bench
+TESTNAME ?= mod_add
+TB_NAME  ?= tb_mod_add
 RADIX    ?= decimal
 MEALY_FSM ?= 0
 

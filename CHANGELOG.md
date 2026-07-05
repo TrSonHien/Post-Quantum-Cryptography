@@ -17,3 +17,10 @@
 
 - Replaced the active `pnr/` scaffold with an empty `pd/` placeholder for future server-controlled physical design structure.
 - Updated README and project spec references to avoid prescribing a local PD folder structure.
+
+## 2026-07-04 Current Phase Simplification
+
+- Refocused active repository documentation on algorithm study, reference models, KATs, RTL, testbenches, simulation, architecture, and verification.
+- Moved original PDFs from `docs/` into `references/papers/`.
+- Archived inactive synthesis and non-simulation report scaffolding under `archive/inactive_flow_scaffold_2026-07-04/`.
+- Left `pd/` untouched.

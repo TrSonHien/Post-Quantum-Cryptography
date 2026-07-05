@@ -1,26 +1,29 @@
-# Roadmap
+# Current Phase Roadmap
 
-The authoritative roadmap is maintained at:
+This file tracks the active algorithm and verification foundation phase.
 
-`Roadmap.md`
+Long-term physical implementation work is intentionally excluded from the current active workspace.
 
-Use this directory for milestone summaries, roadmap refinements, and project control documents.
+## Current Flow
 
-## Phase Map
+```text
+standard reading -> reference model -> test vectors -> arithmetic RTL -> unit verification
+```
 
-- Phase 0: Project setup and document control
-- Phase 1: Golden model and test vectors
-- Phase 2: Modular arithmetic RTL
-- Phase 3: NTT / INTT / polynomial multiplication
-- Phase 4: Memory architecture
-- Phase 5: Keccak / SHAKE core
-- Phase 6: Sampler / codec / packing
-- Phase 7: KeyGen RTL
-- Phase 8: Encaps RTL
-- Phase 9: Decaps RTL
-- Phase 10: Full top integration
-- Phase 11: PPA exploration
-- Phase 12: Genus synthesis
-- Phase 13: Server-side physical design setup
-- Phase 14: Placement, CTS, routing, STA on the PD server
-- Phase 15: Final report
+## Active Milestones
+
+- M1: Algorithm and Verification Foundation
+- M2: Modular Arithmetic RTL and Unit Tests
+- M3: NTT / INTT RTL and Block Tests
+- M4: Keccak / SHAKE RTL and Block Tests
+- M5: Sampler, Codec, and Packing Verification
+- M6: KeyGen / Encaps / Decaps Integration Simulation
+
+## Explicitly Excluded For Now
+
+- Genus
+- Innovus
+- PnR
+- STA
+- GDSII
+- Physical Design

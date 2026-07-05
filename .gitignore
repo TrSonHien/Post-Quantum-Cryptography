@@ -44,6 +44,7 @@ env/
 work/
 sim/work/
 vsim.dbg/
+vsim.dbg
 transcript
 modelsim.ini
 *.ini
