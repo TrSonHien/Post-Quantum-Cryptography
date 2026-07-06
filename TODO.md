@@ -1950,3 +1950,60 @@ Remains to do:
    `./sim/scripts/run_poly_basemul_montgomery.sh`.
 3. Add a unified regression script or begin polyvec pointwise accumulation
    planning on top of the verified poly basemul block.
+
+### 2026-07-07 Ignore Local Agent Workflows
+
+Requested:
+
+- Add `.agents/workflows` to `.gitignore`.
+- Commit and push the ignore/untrack change after GitHub still showed the
+  previously tracked `.agents/workflows` directory.
+
+Files changed:
+
+- `.gitignore`
+- `TODO.md`
+- `.agents/workflows/AGENT.md` will be removed from Git tracking while kept
+  locally, because ignored tracked files are still tracked by Git.
+
+Commands run:
+
+- `pwd && git rev-parse --show-toplevel && git status --short --branch`
+- `sed -n '1,180p' TODO.md`
+- `sed -n '1,240p' .gitignore`
+- `git ls-files .agents/workflows .agents/workflows/AGENT.md`
+- `find .agents -maxdepth 3 -type f -print`
+- `tail -n 100 TODO.md`
+- `apply_patch`
+- `git rm --cached .agents/workflows/AGENT.md`
+- `git status --short --branch`
+- `git check-ignore -v .agents/workflows/AGENT.md`
+- `git diff --check`
+- `ls -la CHANGELOG.md .agents/workflows/AGENT.md`
+- `git diff --name-status`
+- `git diff --cached --name-status`
+- `git status --ignored --short .agents/workflows/AGENT.md CHANGELOG.md .gitignore TODO.md`
+- `git add .gitignore TODO.md`
+- `git commit -m "chore: ignore local agent workflows"`
+- `git push origin main`
+
+Verified:
+
+- `.gitignore` contains `.agents/workflows/`.
+- `.agents/workflows/AGENT.md` is removed from Git tracking but remains present
+  locally.
+- `git check-ignore -v .agents/workflows/AGENT.md` reports the
+  `.agents/workflows/` rule from `.gitignore`.
+- `git diff --check`: clean.
+- Pending final verification: confirm `main` is aligned with `origin/main`
+  after push.
+
+Remains to do:
+
+- None after final push verification.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Continue from the ML-KEM/Kyber algorithm and verification work.
+3. Keep local agent workflow files under `.agents/workflows/` out of Git.

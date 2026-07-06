@@ -19,6 +19,7 @@ Thumbs.db
 .vscode/
 .cache/
 .codex/
+.agents/workflows/
 
 # ----------------------------------------------------------------------
 # Python/C reference-model scratch artifacts
