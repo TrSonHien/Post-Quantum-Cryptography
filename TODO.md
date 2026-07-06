@@ -2032,15 +2032,22 @@ Commands run:
 - `sed -n '1,120p' TODO.md`
 - `tail -n 80 TODO.md`
 - `apply_patch`
+- `git add CHANGELOG.md TODO.md`
+- `git status --short --branch`
+- `git diff --cached --name-status`
+- `git diff --cached --check`
+- `git commit -m "chore: remove obsolete changelog"`
+- `git push origin main`
 
 Verified:
 
-- Current status before staging shows only `CHANGELOG.md` deleted.
-- Pending final verification after commit and push.
+- Staged changes were exactly `CHANGELOG.md` deletion and `TODO.md` update.
+- `git diff --cached --check`: clean.
+- Pushed commit `72b22e1 chore: remove obsolete changelog` to `origin/main`.
 
 Remains to do:
 
-- Stage, commit, push, and verify `main` is aligned with `origin/main`.
+- None after final status verification.
 
 ## Next Session Start Here
 
