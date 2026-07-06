@@ -55,7 +55,7 @@ module ntt_core #(
     output wire done,
 
     // Load input polynomial before start
-    input  wire                 load_en, 
+    input  wire                  load_en,
     input  wire [ADDR_WIDTH-1:0] load_addr,
     input  wire [DATA_WIDTH-1:0] load_data,
 

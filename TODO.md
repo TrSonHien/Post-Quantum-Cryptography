@@ -1120,3 +1120,313 @@ Remains to do:
 4. Read `docs/04_verification/verification_plan.md`.
 5. Start by adding self-checking verification for `intt_butterfly_unit.v`, then
    decide whether to harden `ntt_core` load/start gating.
+
+### 2026-07-06 Repository Orientation For Project Understanding
+
+Requested:
+
+- Understand the current repository and explain the project status.
+
+Files changed:
+
+- Updated `reports/simulation/arithmetic_ntt_smoke_report.md` to match the
+  current passing arithmetic and NTT simulation results.
+- Updated `reports/simulation/reduction_mod_mul_report.md` to remove stale
+  blocked status for `mod_mul.v`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `pwd`
+- `rg -n "Post_Quantum_Cryptography|ML-KEM|Kyber|TODO|M1|simulation|pd" /home/hien/.codex/memories/MEMORY.md`
+- `ls`
+- `sed -n ... TODO.md`
+- `find . -maxdepth 3 -type f | sort`
+- `find . -maxdepth 3 -type d | sort`
+- `git status --short`
+- `sed -n ... README.md docs/00_project_spec/project_spec.md docs/00_project_spec/milestone_status.md docs/README.md rtl/README.md sim/README.md`
+- `sed -n ... docs/04_verification/verification_plan.md docs/04_verification/test_vector_plan.md docs/02_math/modular_arithmetic_notes.md docs/03_architecture/ntt_architecture.md`
+- `sed -n ... reports/simulation/mod_add_report.md reports/simulation/ntt_core_report.md`
+- `sed -n ... rtl/common/kyber_params.vh rtl/arithmetic/mod_add.v rtl/arithmetic/mod_sub.v rtl/arithmetic/mod_mul.v rtl/ntt/ntt_core.v`
+- `rg -n '^module ' ...` over RTL and unit testbench files
+- `./sim/scripts/run_mod_add.sh`
+- `./sim/scripts/run_mod_sub.sh`
+- `./sim/scripts/run_reduction.sh`
+- `./sim/scripts/run_mod_mul.sh`
+- `./sim/scripts/run_zetas_rom.sh`
+- `./sim/scripts/run_butterfly_unit.sh`
+- `./sim/scripts/run_ntt_addr_gen.sh`
+- `./sim/scripts/run_ntt_core.sh`
+- `sed -n ... Roadmap.md ref_model/README.md sim/scripts/rtl.f sim/scripts/tb.f sim/scripts/Makefile`
+- `git diff --stat`
+- `git diff -- rtl/ntt/ntt_core.v`
+- `git diff -- .agents/workflows/startpqc.md`
+- `apply_patch`
+
+Verified:
+
+- Current milestone is still `M1: Algorithm and Verification Foundation`.
+- Active repo scope is standards/reference model/KAT/RTL/testbench/simulation/
+  architecture/verification; physical design remains out of current scope.
+- Existing arithmetic and NTT simulation scripts pass:
+  `mod_add`, `mod_sub`, `reduction`, `mod_mul`, `zetas_rom`,
+  `butterfly_unit`, `ntt_addr_gen`, and `ntt_core`.
+- `sim/scripts/Makefile`, `rtl.f`, and `tb.f` still default to the original
+  `mod_add` flow; broader checks are run through individual scripts.
+- Pre-existing local modifications were observed in `.agents/workflows/startpqc.md`
+  and `rtl/ntt/ntt_core.v`.
+
+Remains to do:
+
+- Add self-checking verification for `intt_butterfly_unit.v`.
+- Decide whether to create a single top-level regression script for all current
+  unit simulations.
+- Fill FIPS 203 notes and connect future RTL checks to a trusted KAT/golden
+  reference flow.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Read `README.md` and `docs/00_project_spec/milestone_status.md`.
+3. Run the current unit checks with the individual scripts under `sim/scripts/`.
+4. Start the next technical task with `intt_butterfly_unit.v` verification or a
+   unified regression script.
+
+### 2026-07-06 intt_core Verification
+
+Requested:
+
+- Verify and test the newly written inverse NTT core, `rtl/ntt/intt_core.v`.
+
+Files changed:
+
+- Fixed compile/connectivity issues in `rtl/ntt/intt_core.v` while preserving
+  the intended inverse NTT architecture.
+- Added `tb/unit/tb_intt_core.v`.
+- Added `sim/scripts/run_intt_core.sh`.
+- Added `reports/simulation/intt_core_report.md`.
+- Updated `reports/simulation/arithmetic_ntt_smoke_report.md` to include
+  `intt_core`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `sed -n '1,180p' TODO.md`
+- `rg -n "intt|innt|ntt_core|butterfly" /home/hien/.codex/memories/MEMORY.md`
+- `find rtl tb sim/scripts reports/simulation -maxdepth 3 -type f | sort | rg 'intt|innt|ntt_core|butterfly|ntt_addr'`
+- `git status --short`
+- `sed -n ... rtl/ntt/intt_core.v`
+- `sed -n ... tb/unit/tb_ntt_core.v`
+- `sed -n ... rtl/ntt/ntt_addr_gen.v`
+- `sed -n ... rtl/ntt/intt_butterfly_unit.v`
+- `sed -n ... sim/scripts/run_ntt_core.sh`
+- `sed -n ... rtl/ntt/zetas_rom.v rtl/memory/poly_buffer.v tb/unit/tb_butterfly_unit.v`
+- `sed -n ... ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001/Reference_Implementation/crypto_kem/kyber768/ntt.c`
+- `iverilog -g2012 -Wall -I rtl/common -o /tmp/intt_core_check.out ... rtl/ntt/intt_core.v`
+- `chmod +x sim/scripts/run_intt_core.sh`
+- `./sim/scripts/run_intt_core.sh`
+- `./sim/scripts/run_zetas_rom.sh`
+- `./sim/scripts/run_butterfly_unit.sh`
+- `./sim/scripts/run_ntt_addr_gen.sh`
+- `./sim/scripts/run_ntt_core.sh`
+- `./sim/scripts/run_mod_add.sh`
+- `./sim/scripts/run_mod_sub.sh`
+- `./sim/scripts/run_reduction.sh`
+- `./sim/scripts/run_mod_mul.sh`
+- `apply_patch`
+
+Verified:
+
+- `intt_core.v` elaborates with Icarus Verilog after fixes.
+- `run_intt_core.sh`: PASS, `pass_count=768 fail_count=0`.
+- `run_zetas_rom.sh`: PASS, `pass_count=16 fail_count=0`.
+- `run_butterfly_unit.sh`: PASS, `pass_count=206 fail_count=0`.
+- `run_ntt_addr_gen.sh`: PASS, `pass_count=1792 fail_count=0`.
+- `run_ntt_core.sh`: PASS, `pass_count=512 fail_count=0`.
+- `run_mod_add.sh`: PASS, `pass_count=1009 fail_count=0`.
+- `run_mod_sub.sh`: PASS, `pass_count=1012 fail_count=0`.
+- `run_reduction.sh`: PASS, `pass_count=620 fail_count=0`.
+- `run_mod_mul.sh`: PASS, `pass_count=1010 fail_count=0`.
+
+Remains to do:
+
+- Add a dedicated self-checking unit test for `intt_butterfly_unit.v`, or
+  replace duplicated inverse butterfly logic in `intt_core.v` with the existing
+  unit after that unit is verified.
+- Consider adding one top-level regression script that runs all current
+  arithmetic, NTT, and INTT tests.
+- Connect NTT/INTT validation to trusted KAT/golden-reference vectors before
+  making cryptographic correctness claims.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Run `./sim/scripts/run_intt_core.sh`.
+3. Review `reports/simulation/intt_core_report.md`.
+4. Next best task: add `tb/unit/tb_intt_butterfly_unit.v` or create a unified
+   regression script for all current unit tests.
+
+### 2026-07-06 NTT-INTT Round-Trip Verification
+
+Requested:
+
+- Test the flow `poly -> NTT -> INTT -> poly`.
+- Write a testbench.
+- Do not modify RTL code.
+
+Files changed:
+
+- Added `tb/block/tb_ntt_intt_roundtrip.v`.
+- Added `sim/scripts/run_ntt_intt_roundtrip.sh`.
+- Added `reports/simulation/ntt_intt_roundtrip_report.md`.
+- Updated `reports/simulation/arithmetic_ntt_smoke_report.md` to include the
+  round-trip test.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `sed -n '1,180p' TODO.md`
+- `git status --short`
+- `sed -n ... rtl/ntt/ntt_core.v`
+- `sed -n ... rtl/ntt/intt_core.v`
+- `sed -n ... tb/unit/tb_intt_core.v`
+- `chmod +x sim/scripts/run_ntt_intt_roundtrip.sh`
+- `./sim/scripts/run_ntt_intt_roundtrip.sh`
+- `./sim/scripts/run_ntt_core.sh`
+- `./sim/scripts/run_intt_core.sh`
+- `apply_patch`
+
+Verified:
+
+- No RTL files were intentionally modified for this task.
+- Initial exact raw-poly comparison exposed the expected Kyber representation:
+  `NTT -> INTT` returns `input * R mod q`, not raw input, where
+  `R = 2^16 mod 3329 = 2285`.
+- `run_ntt_intt_roundtrip.sh`: PASS, `pass_count=1024 fail_count=0`, checking
+  four 256-coefficient patterns against Montgomery-domain output.
+- `run_ntt_core.sh`: PASS, `pass_count=512 fail_count=0`.
+- `run_intt_core.sh`: PASS, `pass_count=768 fail_count=0`.
+
+Remains to do:
+
+- If a raw polynomial output is required after INTT, add a planned conversion
+  step after the current Montgomery-domain result, or define a separate
+  non-Montgomery inverse flow.
+- Add `tb/unit/tb_intt_butterfly_unit.v`.
+- Consider adding a unified regression script for all current arithmetic, NTT,
+  INTT, and round-trip checks.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Run `./sim/scripts/run_ntt_intt_roundtrip.sh`.
+3. Review `reports/simulation/ntt_intt_roundtrip_report.md`.
+4. Decide whether the next target is raw-domain post-INTT conversion,
+   `intt_butterfly_unit` verification, or a unified regression script.
+
+### 2026-07-06 basemul_unit Verification
+
+Requested:
+
+- Test `rtl/ntt/basemul_unit.v`.
+
+Files changed:
+
+- Fixed mechanical compile blockers in `rtl/ntt/basemul_unit.v`:
+  trailing output-port comma, duplicate `a0_reg`, `status` typo, `to_reg`
+  typo, missing case-label colon, and `ST_MUL_T0_ZETA` state-name mismatch.
+- Added `tb/unit/tb_basemul_unit.v`.
+- Added `sim/scripts/run_basemul_unit.sh`.
+- Added `reports/simulation/basemul_unit_report.md`.
+- Updated `reports/simulation/arithmetic_ntt_smoke_report.md`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `sed -n '1,160p' TODO.md`
+- `rg -n "basemul|ntt_core|intt_core|butterfly" /home/hien/.codex/memories/MEMORY.md`
+- `find rtl tb sim/scripts reports/simulation -maxdepth 3 -type f | sort | rg 'basemul|ntt|mul|butterfly'`
+- `git status --short`
+- `sed -n ... rtl/ntt/basemul_unit.v`
+- `sed -n ... ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001/Reference_Implementation/crypto_kem/kyber768/ntt.c`
+- `sed -n ... tb/unit/tb_mod_mul.v`
+- `sed -n ... sim/scripts/run_mod_mul.sh`
+- `iverilog -g2012 -Wall -I rtl/common -o /tmp/basemul_unit_check.out ... rtl/ntt/basemul_unit.v`
+- `chmod +x sim/scripts/run_basemul_unit.sh`
+- `./sim/scripts/run_basemul_unit.sh`
+- `./sim/scripts/run_mod_mul.sh`
+- `./sim/scripts/run_mod_add.sh`
+- `apply_patch`
+
+Verified:
+
+- `basemul_unit.v` elaborates with Icarus Verilog after mechanical fixes.
+- `run_basemul_unit.sh`: PASS, `pass_count=507 fail_count=0`.
+- `run_mod_mul.sh`: PASS, `pass_count=1010 fail_count=0`.
+- `run_mod_add.sh`: PASS, `pass_count=1009 fail_count=0`.
+- Testbench covers seven directed cases and 500 random canonical coefficient
+  tuples against the Kyber `basemul()` equation.
+
+Remains to do:
+
+- Decide whether to integrate `basemul_unit` into a higher-level pointwise
+  polynomial/vector multiplication block.
+- Add a unified regression script for arithmetic, butterfly, basemul, NTT,
+  INTT, and round-trip checks.
+- Continue KAT/golden-reference planning before cryptographic correctness
+  claims.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Run `./sim/scripts/run_basemul_unit.sh`.
+3. Review `reports/simulation/basemul_unit_report.md`.
+4. Next useful target: pointwise multiplication planning or a unified regression
+   script.
+
+### 2026-07-06 GitHub Push Checkpoint
+
+Requested:
+
+- Push the current code to GitHub to save progress.
+
+Files changed:
+
+- Included the current INTT core, NTT/INTT round-trip, basemul unit, testbench,
+  run-script, report, TODO, and agent-workflow updates in one checkpoint.
+- Removed trailing whitespace from `.agents/workflows/startpqc.md` and
+  `rtl/ntt/ntt_core.v` so `git diff --check` is clean.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `tail -n 140 TODO.md`
+- `git status --short`
+- `git diff --stat`
+- `git remote -v`
+- `git branch --show-current`
+- `./sim/scripts/run_basemul_unit.sh`
+- `./sim/scripts/run_intt_core.sh`
+- `./sim/scripts/run_ntt_intt_roundtrip.sh`
+- `./sim/scripts/run_ntt_core.sh`
+- `git diff --check`
+- `apply_patch`
+
+Verified:
+
+- `run_basemul_unit.sh`: PASS, `pass_count=507 fail_count=0`.
+- `run_intt_core.sh`: PASS, `pass_count=768 fail_count=0`.
+- `run_ntt_intt_roundtrip.sh`: PASS, `pass_count=1024 fail_count=0`.
+- `run_ntt_core.sh`: PASS, `pass_count=512 fail_count=0`.
+- `git diff --check` was run before staging; trailing whitespace was fixed.
+
+Remains to do:
+
+- Stage, commit, push to `origin/main`, and record the final commit hash.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Confirm the latest pushed commit hash.
+3. Run the desired next regression script or start pointwise multiplication
+   planning.

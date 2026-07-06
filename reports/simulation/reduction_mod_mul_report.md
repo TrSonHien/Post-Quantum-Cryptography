@@ -34,13 +34,15 @@ Status: PASS
 `mod_mul.v` result:
 
 ```text
-rtl/arithmetic/mod_mul.v:9: error: Superfluous comma in port declaration list.
+INFO tb_mod_mul: KYBER_Q=3329
+INFO tb_mod_mul: pass_count=1010 fail_count=0
+PASS tb_mod_mul
 ```
 
-Status: BLOCKED by RTL compile error.
+Status: PASS
 
 ## Notes
 
 - `reduction.v` was tested with directed and random checks for `montgomery_reduce`, `barrett_reduce`, and `conditional_sub_q`.
-- `mod_mul.v` could not be simulated because compilation stops before elaboration.
-- The likely fix is to remove the trailing comma after output port `c` in `mod_mul.v`.
+- `mod_mul.v` wraps `montgomery_reduce(a * b)` and converts the signed Montgomery result back to the unsigned canonical coefficient range.
+- Last refreshed during repository orientation on 2026-07-06.
