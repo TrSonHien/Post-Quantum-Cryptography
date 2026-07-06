@@ -2012,3 +2012,39 @@ Remains to do:
 1. Read `TODO.md`.
 2. Continue from the ML-KEM/Kyber algorithm and verification work.
 3. Keep local agent workflow files under `.agents/workflows/` out of Git.
+
+### 2026-07-07 Remove CHANGELOG
+
+Requested:
+
+- Confirmed that `CHANGELOG.md` was intentionally deleted because it is no
+  longer needed.
+- Commit and push the deletion so GitHub matches the local repository state.
+
+Files changed:
+
+- `CHANGELOG.md`
+- `TODO.md`
+
+Commands run:
+
+- `git status --short --branch`
+- `sed -n '1,120p' TODO.md`
+- `tail -n 80 TODO.md`
+- `apply_patch`
+
+Verified:
+
+- Current status before staging shows only `CHANGELOG.md` deleted.
+- Pending final verification after commit and push.
+
+Remains to do:
+
+- Stage, commit, push, and verify `main` is aligned with `origin/main`.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Continue from the ML-KEM/Kyber algorithm and verification work.
+3. `CHANGELOG.md` has been removed intentionally; use `TODO.md`, reports, and
+   commit history for handoff/status tracking.
