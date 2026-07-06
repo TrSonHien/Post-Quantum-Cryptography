@@ -1419,10 +1419,12 @@ Verified:
 - `run_ntt_intt_roundtrip.sh`: PASS, `pass_count=1024 fail_count=0`.
 - `run_ntt_core.sh`: PASS, `pass_count=512 fail_count=0`.
 - `git diff --check` was run before staging; trailing whitespace was fixed.
+- Created commit `3646f2b` with the RTL and verification checkpoint.
+- Pushed `3646f2b` to `origin/main`.
 
 Remains to do:
 
-- Stage, commit, push to `origin/main`, and record the final commit hash.
+- Continue from the pushed checkpoint on `origin/main`.
 
 ## Next Session Start Here
 
