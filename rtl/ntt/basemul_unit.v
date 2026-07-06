@@ -4,10 +4,10 @@
 // -----------------------------------------------------------------------------
 // Module: basemul_unit
 // Description:
-//   Sequential resource-optimized base multiplication unit for Kyber / ML-KEM.
+//   High-throughput pipelined base multiplication unit for Kyber / ML-KEM.
 //
 // Reference:
-//   kyber768/ntt.c
+//   kyber768/ntt.c: basemul()
 //
 // C reference:
 //
@@ -29,19 +29,42 @@
 //   t4 = mod_mul(a1, b0)
 //   r1 = mod_add(t3, t4)
 //
-// Architecture:
-//   - 1 shared mod_mul
-//   - 1 shared mod_add
-//   - FSM controlled multi-cycle operation
+// Architecture priority:
+//   This is the main high-frequency/high-throughput basemul implementation.
+//   It intentionally spends area to reduce cycle count and improve throughput.
 //
-// Datapath convention:
-//   All inputs and outputs are canonical unsigned coefficients:
-//       0 <= coeff < KYBER_Q
+// Pipeline:
+//   Stage 1:
+//       t0 = mod_mul(a1, b1)
+//       t2 = mod_mul(a0, b0)
+//       t3 = mod_mul(a0, b1)
+//       t4 = mod_mul(a1, b0)
+//       register t0/t2/t3/t4/zeta and valid
 //
-// Handshake:
-//   - Assert start for at least 1 cycle when busy=0.
-//   - Inputs are latched when start is accepted.
-//   - done pulses for 1 cycle when r0/r1 are valid.
+//   Stage 2:
+//       t1 = mod_mul(t0, zeta)
+//       register t1/t2/t3/t4 and valid
+//
+//   Stage 3:
+//       r0 = mod_add(t1, t2)
+//       r1 = mod_add(t3, t4)
+//       register r0/r1 and out_valid
+//
+// Expected timing:
+//   - Latency: 3 cycles from in_valid input to out_valid output.
+//   - Throughput: 1 basemul result per cycle after pipeline fill.
+//   - Resources: 5 mod_mul and 2 mod_add.
+//
+// Interface:
+//   - Coefficients are canonical unsigned values: 0 <= coeff < KYBER_Q.
+//   - No in_ready/out_ready backpressure is implemented.
+//   - This module has no backpressure support.
+//   - The downstream block must accept r0/r1 whenever out_valid is high.
+//
+// Future note:
+//   This module assumes the current mod_mul and mod_add blocks are
+//   combinational. If future mod_mul/Montgomery reduction becomes pipelined,
+//   this module will need latency realignment for t1/t2/t3/t4 and out_valid.
 // -----------------------------------------------------------------------------
 
 module basemul_unit #(
@@ -50,222 +73,127 @@ module basemul_unit #(
     input  wire clk,
     input  wire rst_n,
 
-    input  wire start,
-    output wire busy,
-    output wire done,
-
+    input  wire             in_valid,
     input  wire [WIDTH-1:0] a0,
     input  wire [WIDTH-1:0] a1,
     input  wire [WIDTH-1:0] b0,
     input  wire [WIDTH-1:0] b1,
     input  wire [WIDTH-1:0] zeta,
 
-    output wire [WIDTH-1:0] r0,
-    output wire [WIDTH-1:0] r1
+    output reg              out_valid,
+    output reg  [WIDTH-1:0] r0,
+    output reg  [WIDTH-1:0] r1
 );
-    
-    //-----------------------------------------------------------------------------
-    // FSM states
-    //-----------------------------------------------------------------------------
-    localparam [2:0] ST_IDLE        = 3'd0;
-    localparam [2:0] ST_MUL_A1B1    = 3'd1;
-    localparam [2:0] ST_MUL_TO_ZETA = 3'd2;
-    localparam [2:0] ST_MUL_A0B0    = 3'd3;
-    localparam [2:0] ST_ADD_R0      = 3'd4;
-    localparam [2:0] ST_MUL_A0B1    = 3'd5;
-    localparam [2:0] ST_MUL_A1B0    = 3'd6;
-    localparam [2:0] ST_ADD_R1      = 3'd7;
 
-    reg [2:0] state;
+    // -------------------------------------------------------------------------
+    // Stage 1: four independent fqmul operations.
+    // -------------------------------------------------------------------------
+    wire [WIDTH-1:0] s1_t0_next;
+    wire [WIDTH-1:0] s1_t2_next;
+    wire [WIDTH-1:0] s1_t3_next;
+    wire [WIDTH-1:0] s1_t4_next;
 
-    //-----------------------------------------------------------------------------
-    // Latched inputs
-    //-----------------------------------------------------------------------------
-    reg [WIDTH-1:0] a0_reg;
-    reg [WIDTH-1:0] a1_reg;
-    reg [WIDTH-1:0] b0_reg;
-    reg [WIDTH-1:0] b1_reg;
-    reg [WIDTH-1:0] zeta_reg;
+    reg              s1_valid;
+    reg  [WIDTH-1:0] s1_t0;
+    reg  [WIDTH-1:0] s1_t2;
+    reg  [WIDTH-1:0] s1_t3;
+    reg  [WIDTH-1:0] s1_t4;
+    reg  [WIDTH-1:0] s1_zeta;
 
-    //-----------------------------------------------------------------------------
-    // Tempotary registers
-    //-----------------------------------------------------------------------------
-    reg [WIDTH-1:0] t0_reg;  // fqmul(a1, b1)
-    reg [WIDTH-1:0] t1_reg;  // fqmul(a0, zeta)
-    reg [WIDTH-1:0] t2_reg;  // fqmul(a0, b0)
-    reg [WIDTH-1:0] t3_reg;  // fqmul(a0, b1)
-    reg [WIDTH-1:0] t4_reg;  // fqmul(a1, b0)
-
-    reg [WIDTH-1:0] r0_reg;
-    reg [WIDTH-1:0] r1_reg;
-
-    reg done_reg;
-
-    assign busy = (state != ST_IDLE);
-    assign done = done_reg;
-
-    assign r0   = r0_reg;
-    assign r1   = r1_reg;
-
-    //-----------------------------------------------------------------------------
-    // Shared mod_mul operand mux
-    //-----------------------------------------------------------------------------
-    reg  [WIDTH-1:0] mul_a;
-    reg  [WIDTH-1:0] mul_b;
-    wire [WIDTH-1:0] mul_out;
-
-    always @(*) begin
-        case (state)
-            ST_MUL_A1B1: begin
-                mul_a = a1_reg;
-                mul_b = b1_reg;
-            end
-
-            ST_MUL_TO_ZETA: begin
-                mul_a = t0_reg;
-                mul_b = zeta_reg;
-            end
-
-            ST_MUL_A0B0: begin
-                mul_a = a0_reg;
-                mul_b = b0_reg;
-            end
-
-            ST_MUL_A0B1: begin
-                mul_a = a0_reg;
-                mul_b = b1_reg;
-            end
-
-            ST_MUL_A1B0: begin
-                mul_a = a1_reg;
-                mul_b = b0_reg;
-            end
-
-            default: begin
-                mul_a = {WIDTH{1'b0}};
-                mul_b = {WIDTH{1'b0}};
-            end
-        endcase
-    end
-
-    mod_mul u_mod_mul (
-        .a (mul_a),
-        .b (mul_b),
-        .c (mul_out)
+    mod_mul u_mul_a1_b1 (
+        .a (a1),
+        .b (b1),
+        .c (s1_t0_next)
     );
 
-    //-----------------------------------------------------------------------------
-    // Shared mod_add operand mux
-    //-----------------------------------------------------------------------------
-    reg [WIDTH-1:0] add_a;
-    reg [WIDTH-1:0] add_b;
-    wire [WIDTH-1:0] add_out;
-
-    always @(*) begin
-        case (state)
-            ST_ADD_R0: begin
-                add_a = t1_reg;
-                add_b = t2_reg;
-            end
-
-            ST_ADD_R1: begin
-                add_a = t3_reg;
-                add_b = t4_reg;
-            end
-
-            default: begin
-                add_a = {WIDTH{1'b0}};
-                add_b = {WIDTH{1'b0}};
-            end
-        endcase
-    end
-
-    mod_add u_mod_add (
-        .a (add_a),
-        .b (add_b),
-        .c (add_out)
+    mod_mul u_mul_a0_b0 (
+        .a (a0),
+        .b (b0),
+        .c (s1_t2_next)
     );
-    
-    //-----------------------------------------------------------------------------
-    // FSM sequential logic
-    //-----------------------------------------------------------------------------
+
+    mod_mul u_mul_a0_b1 (
+        .a (a0),
+        .b (b1),
+        .c (s1_t3_next)
+    );
+
+    mod_mul u_mul_a1_b0 (
+        .a (a1),
+        .b (b0),
+        .c (s1_t4_next)
+    );
+
+    // -------------------------------------------------------------------------
+    // Stage 2: multiply t0 by zeta and align the remaining terms.
+    // -------------------------------------------------------------------------
+    wire [WIDTH-1:0] s2_t1_next;
+
+    reg              s2_valid;
+    reg  [WIDTH-1:0] s2_t1;
+    reg  [WIDTH-1:0] s2_t2;
+    reg  [WIDTH-1:0] s2_t3;
+    reg  [WIDTH-1:0] s2_t4;
+
+    mod_mul u_mul_t0_zeta (
+        .a (s1_t0),
+        .b (s1_zeta),
+        .c (s2_t1_next)
+    );
+
+    // -------------------------------------------------------------------------
+    // Stage 3: final modular additions.
+    // -------------------------------------------------------------------------
+    wire [WIDTH-1:0] r0_next;
+    wire [WIDTH-1:0] r1_next;
+
+    mod_add u_add_r0 (
+        .a (s2_t1),
+        .b (s2_t2),
+        .c (r0_next)
+    );
+
+    mod_add u_add_r1 (
+        .a (s2_t3),
+        .b (s2_t4),
+        .c (r1_next)
+    );
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            state    <= ST_IDLE;
+            s1_valid <= 1'b0;
+            s1_t0    <= {WIDTH{1'b0}};
+            s1_t2    <= {WIDTH{1'b0}};
+            s1_t3    <= {WIDTH{1'b0}};
+            s1_t4    <= {WIDTH{1'b0}};
+            s1_zeta  <= {WIDTH{1'b0}};
 
-            a0_reg   <= {WIDTH{1'b0}};
-            a1_reg   <= {WIDTH{1'b0}};
-            b0_reg   <= {WIDTH{1'b0}};
-            b1_reg   <= {WIDTH{1'b0}};
-            zeta_reg <= {WIDTH{1'b0}};
-                
-            t0_reg   <= {WIDTH{1'b0}};
-            t1_reg   <= {WIDTH{1'b0}};
-            t2_reg   <= {WIDTH{1'b0}};
-            t3_reg   <= {WIDTH{1'b0}};
-            t4_reg   <= {WIDTH{1'b0}};
+            s2_valid <= 1'b0;
+            s2_t1    <= {WIDTH{1'b0}};
+            s2_t2    <= {WIDTH{1'b0}};
+            s2_t3    <= {WIDTH{1'b0}};
+            s2_t4    <= {WIDTH{1'b0}};
 
-            r0_reg   <= {WIDTH{1'b0}};
-            r1_reg   <= {WIDTH{1'b0}};
-
-            done_reg <= 1'b0;
+            out_valid <= 1'b0;
+            r0        <= {WIDTH{1'b0}};
+            r1        <= {WIDTH{1'b0}};
         end else begin
-            done_reg <= 1'b0;
+            s1_valid <= in_valid;
+            s1_t0    <= s1_t0_next;
+            s1_t2    <= s1_t2_next;
+            s1_t3    <= s1_t3_next;
+            s1_t4    <= s1_t4_next;
+            s1_zeta  <= zeta;
 
-            case (state)
-                ST_IDLE: begin
-                    if (start) begin
-                        a0_reg   <= a0;  
-                        a1_reg   <= a1;
-                        b0_reg   <= b0;
-                        b1_reg   <= b1;
-                        zeta_reg <= zeta;
+            s2_valid <= s1_valid;
+            s2_t1    <= s2_t1_next;
+            s2_t2    <= s1_t2;
+            s2_t3    <= s1_t3;
+            s2_t4    <= s1_t4;
 
-                        state <= ST_MUL_A1B1;
-                    end
-                end
-
-                ST_MUL_A1B1: begin
-                    t0_reg <= mul_out;
-                    state  <= ST_MUL_TO_ZETA;
-                end
-
-                ST_MUL_TO_ZETA: begin
-                    t1_reg <= mul_out;
-                    state  <= ST_MUL_A0B0;
-                end
-
-                ST_MUL_A0B0: begin
-                    t2_reg <= mul_out;
-                    state  <= ST_ADD_R0;
-                end
-
-                ST_ADD_R0: begin
-                    r0_reg <= add_out;
-                    state  <= ST_MUL_A0B1;
-                end
-
-                ST_MUL_A0B1: begin
-                    t3_reg <= mul_out;
-                    state  <= ST_MUL_A1B0;
-                end
-
-                ST_MUL_A1B0: begin
-                    t4_reg <= mul_out;
-                    state  <= ST_ADD_R1;
-                end
-
-                ST_ADD_R1: begin
-                    r1_reg   <= add_out;
-                    done_reg <= 1'b1;
-                    state    <= ST_IDLE;
-                end
-
-                default: begin
-                    state    <= ST_IDLE;
-                    done_reg <= 1'b0;
-                end
-            endcase
+            out_valid <= s2_valid;
+            r0        <= r0_next;
+            r1        <= r1_next;
         end
     end
 

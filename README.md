@@ -1,6 +1,8 @@
 # ML-KEM-768 / Kyber-768 RTL and Verification Workspace
 
-This repository is currently focused on the algorithm and verification foundation for a hardware-oriented ML-KEM-768 / Kyber-768 implementation.
+This repository is currently focused on the algorithm and verification foundation for a high-frequency ASIC-oriented ML-KEM-768 / Kyber-768 hardware implementation.
+
+The implementation direction is correctness first, then timing closure / high operating frequency / Fmax, then throughput, then area. Area is still tracked, but the main datapath should prefer pipelined high-frequency RTL over area-saving resource sharing.
 
 Current workflow:
 
@@ -8,7 +10,7 @@ Current workflow:
 standard reading -> reference model -> test vectors -> arithmetic RTL -> unit verification
 ```
 
-Existing Verilog files are structural scaffolding only. They are not a verified ML-KEM implementation, and no RTL behavior was changed during the latest repository cleanup.
+The RTL is being built and verified incrementally. Passing unit/block tests are local confidence points, not a full ML-KEM cryptographic correctness claim until trusted KAT or golden-reference comparison is in place.
 
 ## Current Milestone
 
@@ -25,6 +27,14 @@ Active work includes:
 - Unit, block, and system testbench workspace
 - Simulation scripts, logs, waveforms, outputs, and comparison workspace
 - Architecture and verification documentation
+
+Current verified milestones include:
+
+- arithmetic foundation
+- NTT core
+- INTT core
+- NTT -> INTT round-trip
+- basemul foundation
 
 Explicitly excluded from the current phase:
 
@@ -78,4 +88,4 @@ The `pd/` directory is intentionally left as a placeholder for later manual use.
 
 ## Current Next Target
 
-Collect mandatory ML-KEM documents, fill the FIPS 203 notes, prepare the reference model workspace, and define the first arithmetic RTL unit verification flow.
+Continue building high-frequency RTL foundations: validate pipelined basemul as the main basemul architecture, update the poly-level plan to feed pipelined datapaths, and connect the RTL tests to trusted KAT/golden-reference comparison.

@@ -23,6 +23,33 @@ Physical design is intentionally not the active scope yet.
 
 ---
 
+## Architecture Priority
+
+The project architecture priority is:
+
+```text
+1. Correctness
+2. Timing closure / high operating frequency / Fmax
+3. Throughput
+4. Area
+```
+
+Correctness comes first. After correctness, the main implementation goal is a
+high-frequency ASIC-oriented datapath that can close timing and reach strong
+Fmax. Throughput comes after Fmax. Area is tracked, but it is not the leading
+optimization objective.
+
+Main datapaths should prefer pipelined high-frequency architecture. Area-saving
+sequential variants may exist only as comparison/reference variants and should
+not be treated as the default implementation style.
+
+Future agents should not assume area optimization is the default. When reviewing
+or extending RTL, prefer timing-friendly pipelining, explicit latency tracking,
+and clean valid/data alignment over resource sharing unless the user explicitly
+asks for an area comparison.
+
+---
+
 ## Repository Structure
 
 ```text
@@ -170,6 +197,8 @@ Prefer:
 - localparam for local constants
 - shared constants from rtl/common/kyber_params.vh
 - small modules with dedicated testbenches
+- pipeline registers on critical arithmetic paths when they improve Fmax
+- explicit valid/latency alignment for pipelined datapaths
 ```
 
 ---

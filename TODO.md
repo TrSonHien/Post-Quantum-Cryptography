@@ -19,6 +19,9 @@ M1: Algorithm and Verification Foundation
 - [ ] Prepare Known Answer Test vector workspace
 - [ ] Prepare RTL output comparison workspace
 - [ ] Prepare first arithmetic RTL unit verification plan
+- [ ] Validate pipelined basemul as the main basemul architecture
+- [ ] Update the poly-level plan to use pipelined basemul
+- [ ] Later pipeline `mod_mul` / Montgomery reduction if synthesis shows it is the critical path
 
 ## Blocked By
 
@@ -33,6 +36,20 @@ Collect mandatory documents, start reading FIPS 203, and define the first refere
 ```text
 standard reading -> reference model -> test vectors -> arithmetic RTL -> unit verification
 ```
+
+## Project Priority
+
+```text
+1. Correctness
+2. Timing closure / high operating frequency / Fmax
+3. Throughput
+4. Area
+```
+
+Fmax/timing closure is the main implementation priority after correctness.
+Area is tracked, but it is not the leading objective. Main datapaths should
+prefer pipelined high-frequency architecture; area-saving sequential variants
+are comparison/reference variants only.
 
 ## Explicitly Excluded From Current Phase
 
@@ -1432,3 +1449,504 @@ Remains to do:
 2. Confirm the latest pushed commit hash.
 3. Run the desired next regression script or start pointwise multiplication
    planning.
+
+### 2026-07-06 High-Frequency Basemul Direction Update
+
+Requested:
+
+- Update the project direction globally from area-saving/resource-optimized
+  style to correctness-first, high-frequency/Fmax-first RTL after correctness.
+- Keep the repository structure unchanged.
+- Convert `rtl/ntt/basemul_unit.v` into the main high-throughput pipelined
+  basemul implementation.
+- Update the basemul testbench, run script, reports, and project handoff.
+
+Files changed:
+
+- Updated `.agents/workflows/AGENT.md` with architecture priority and future
+  agent behavior.
+- Updated `README.md`.
+- Updated `docs/00_project_spec/project_spec.md`.
+- Updated `docs/00_project_spec/roadmap.md`.
+- Updated `docs/03_architecture/ntt_architecture.md`.
+- Updated `rtl/ntt/basemul_unit.v` from sequential `start/busy/done` style to
+  a valid-only 3-stage pipelined implementation.
+- Updated `tb/unit/tb_basemul_unit.v` for the pipeline interface and latency
+  checks.
+- Updated `sim/scripts/run_basemul_unit.sh`.
+- Updated `reports/simulation/basemul_unit_report.md`.
+- Updated `reports/simulation/arithmetic_ntt_smoke_report.md`.
+- Updated `TODO.md` with priority and this handoff entry.
+
+Commands run:
+
+- `pwd`
+- `sed -n '1,180p' TODO.md`
+- `rg -n "basemul|high-frequency|Fmax|Architecture Priority|area|pipeline|pipelined|Post_Quantum_Cryptography" /home/hien/.codex/memories/MEMORY.md`
+- `git status --short`
+- `find . -name 'AGENTS.md' -o -name 'AGENT.md' -o -name 'agent.md' | sort`
+- `sed -n ... .agents/workflows/AGENT.md README.md docs/00_project_spec/project_spec.md docs/00_project_spec/roadmap.md docs/03_architecture/ntt_architecture.md`
+- `sed -n ... rtl/ntt/basemul_unit.v tb/unit/tb_basemul_unit.v sim/scripts/run_basemul_unit.sh reports/simulation/basemul_unit_report.md reports/simulation/arithmetic_ntt_smoke_report.md`
+- `./sim/scripts/run_basemul_unit.sh`
+- `./sim/scripts/run_mod_mul.sh`
+- `./sim/scripts/run_mod_add.sh`
+- `./sim/scripts/run_ntt_core.sh`
+- `./sim/scripts/run_intt_core.sh`
+- `./sim/scripts/run_ntt_intt_roundtrip.sh`
+- `git diff --check`
+- `git status --short`
+- `git diff --stat`
+- `apply_patch`
+
+Verified:
+
+- `run_basemul_unit.sh`: PASS, `tx_count=514`, `pass_count=514`,
+  `fail_count=0`.
+- `run_mod_mul.sh`: PASS, `pass_count=1010 fail_count=0`.
+- `run_mod_add.sh`: PASS, `pass_count=1009 fail_count=0`.
+- `run_ntt_core.sh`: PASS, `pass_count=512 fail_count=0`.
+- `run_intt_core.sh`: PASS, `pass_count=768 fail_count=0`.
+- `run_ntt_intt_roundtrip.sh`: PASS, `pass_count=1024 fail_count=0`.
+- `git diff --check`: clean after final edits.
+
+Remains to do:
+
+- Integrate the pipelined `basemul_unit` into future poly-level pointwise
+  multiplication.
+- Delay write addresses, zeta indices, coefficient-pair indices, and valid
+  strobes by the basemul pipeline latency in future poly-level users.
+- Pipeline `mod_mul` / Montgomery reduction later if synthesis or timing review
+  identifies it as the critical path; this will require basemul latency
+  realignment.
+- Connect these block tests to trusted KAT/golden-reference verification before
+  full ML-KEM correctness claims.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Run `./sim/scripts/run_basemul_unit.sh`.
+3. Review `reports/simulation/basemul_unit_report.md`.
+4. Start poly-level pointwise multiplication planning around the 3-cycle
+   valid-only pipelined `basemul_unit` interface.
+
+### 2026-07-06 Markdown Project Orientation Refresh
+
+Requested:
+
+- Read the project Markdown files to understand what the project needs to do.
+
+Files changed:
+
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `pwd`
+- `rg --files -g 'TODO.md' -g '*.md'`
+- `rg -n "Post_Quantum_Cryptography|ML-KEM|Kyber|TODO|M1|Algorithm|Verification" /home/hien/.codex/memories/MEMORY.md`
+- `sed -n ... TODO.md`
+- `sed -n ... README.md`
+- `sed -n ... Roadmap.md`
+- `sed -n ... CHANGELOG.md`
+- `wc -l ...` over repository Markdown files
+- `awk ...` over active docs, report docs, reference docs, folder READMEs, and archived Markdown scaffolds
+- `git status --short`
+- `tail -n 80 TODO.md`
+
+Verified:
+
+- `TODO.md` exists in the project root and is the persistent handoff file.
+- Repository Markdown files were reviewed, including active project docs,
+  standards/math/architecture/verification notes, simulation reports, reference
+  docs, folder READMEs, and archived scaffold notes.
+- Current milestone remains `M1: Algorithm and Verification Foundation`.
+- Active scope remains standards/reference model/KAT/RTL/testbench/simulation/
+  architecture/verification.
+- Current phase still excludes Genus, Innovus, PnR, STA, GDSII, and Physical
+  Design.
+- Existing docs point the next technical work toward pipelined basemul
+  integration, pointwise multiplication planning, unified regression, and
+  trusted KAT/golden-reference comparison.
+
+Remains to do:
+
+- Integrate the 3-cycle valid-only pipelined `basemul_unit` into future
+  poly-level pointwise multiplication.
+- Add or finish a unified regression script for current unit/block tests.
+- Fill FIPS 203 notes and choose the exact trusted ML-KEM/Kyber-768 KAT
+  baseline.
+- Connect RTL simulation outputs to a trusted golden-reference/KAT comparison
+  before making full cryptographic correctness claims.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Review `README.md`, `docs/00_project_spec/roadmap.md`, and
+   `docs/03_architecture/ntt_architecture.md`.
+3. Run the relevant current script, especially
+   `./sim/scripts/run_basemul_unit.sh`, before changing datapath logic.
+4. Start from poly-level pointwise multiplication planning around the 3-cycle
+   valid-only pipelined `basemul_unit`, or create the unified regression script.
+
+### 2026-07-06 poly_basemul_addr_gen Verification
+
+Requested:
+
+- User wrote `rtl/poly/poly_basemul_addr_gen.v`.
+- Add a self-checking testbench and test it.
+- Do not modify the user's RTL.
+
+Files changed:
+
+- Added `tb/unit/tb_poly_basemul_addr_gen.v`.
+- Added `sim/scripts/run_poly_basemul_addr_gen.sh`.
+- Added `reports/simulation/poly_basemul_addr_gen_report.md`.
+- Updated `reports/simulation/arithmetic_ntt_smoke_report.md`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `sed -n '1,220p' TODO.md`
+- `rg --files rtl tb sim/scripts reports/simulation | sort`
+- `rg -n "poly_basemul|basemul|pointwise|poly" /home/hien/.codex/memories/MEMORY.md`
+- `nl -ba rtl/poly/poly_basemul_addr_gen.v`
+- `sed -n ... tb/unit/tb_ntt_addr_gen.v`
+- `sed -n ... tb/unit/tb_basemul_unit.v`
+- `sed -n ... sim/scripts/run_ntt_addr_gen.sh`
+- `sed -n ... sim/scripts/run_basemul_unit.sh`
+- `sed -n '1,180p' rtl/common/kyber_params.vh`
+- `git status --short`
+- `apply_patch`
+- `chmod +x sim/scripts/run_poly_basemul_addr_gen.sh`
+- `./sim/scripts/run_poly_basemul_addr_gen.sh`
+
+Verified:
+
+- The new testbench checks the documented Kyber `poly_basemul_montgomery`
+  schedule for all 128 base-multiplication operations.
+- Checked every generated operation for `op_index`, `a_addr0/a_addr1`,
+  `b_addr0/b_addr1`, `r_addr0/r_addr1`, `zeta_addr`, and `zeta_neg`.
+- Checked reset idle behavior, active `valid`/`busy`, one-cycle `done`, and
+  idle state after completion.
+- Ran the full 128-operation schedule twice.
+- During the second run, pulsed `start` while `busy` was already high and
+  verified that the active schedule continued instead of restarting.
+- `./sim/scripts/run_poly_basemul_addr_gen.sh`: PASS,
+  `pass_count=256 fail_count=0`.
+- `rtl/poly/poly_basemul_addr_gen.v` was not modified.
+
+Remains to do:
+
+- Integrate this address generator with the 3-cycle pipelined `basemul_unit` in
+  the future poly-level pointwise multiplication block.
+- Delay output write addresses, coefficient-pair metadata, zeta-control
+  metadata, and valid strobes to match basemul pipeline latency.
+- Continue connecting poly-level tests to trusted KAT/golden-reference
+  comparison before full cryptographic correctness claims.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Run `./sim/scripts/run_poly_basemul_addr_gen.sh`.
+3. Review `reports/simulation/poly_basemul_addr_gen_report.md`.
+4. Next best technical target: integrate `poly_basemul_addr_gen` with the
+   3-cycle valid-only pipelined `basemul_unit` while delaying write/control
+   metadata by the same latency.
+
+### 2026-07-06 poly_basemul_montgomery Testbench Bring-up
+
+Requested:
+
+- User wrote `rtl/poly/poly_basemul_montgomery.v`.
+- Add a testbench and test it.
+- Do not modify the user's RTL.
+
+Files changed:
+
+- Added `tb/unit/tb_poly_basemul_montgomery.v`.
+- Added `sim/scripts/run_poly_basemul_montgomery.sh`.
+- Added `reports/simulation/poly_basemul_montgomery_report.md`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `sed -n '1,180p' TODO.md`
+- `rg --files rtl tb sim/scripts reports/simulation | sort`
+- `git status --short`
+- `nl -ba rtl/poly/poly_basemul_montgomery.v`
+- `nl -ba rtl/poly/poly_basemul_addr_gen.v`
+- `nl -ba rtl/ntt/basemul_unit.v`
+- `sed -n ... tb/unit/tb_poly_basemul_addr_gen.v`
+- `nl -ba rtl/memory/poly_buffer.v`
+- `nl -ba rtl/ntt/zetas_rom.v`
+- `rg -n "poly_basemul_montgomery|poly_basemul" ref_model/c_ref docs rtl tb sim reports -S`
+- `apply_patch`
+- `chmod +x sim/scripts/run_poly_basemul_montgomery.sh`
+- `./sim/scripts/run_poly_basemul_montgomery.sh`
+- `git diff --check`
+- `tail -n 120 sim/logs/poly_basemul_montgomery.log`
+
+Verified:
+
+- Added a self-checking full-polynomial testbench for the intended
+  `poly_basemul_montgomery` interface.
+- The testbench is designed to load full A and B polynomials, compute expected
+  output with the Kyber `poly_basemul_montgomery` / `basemul` equations, wait
+  for `done`, and compare all 256 R coefficients for three deterministic
+  polynomial patterns.
+- The run script compiles all current dependencies:
+  `reduction`, `mod_mul`, `mod_add`, `basemul_unit`, `zetas_rom`,
+  `poly_buffer`, `poly_basemul_addr_gen`, and `poly_basemul_montgomery`.
+- Current DUT test is blocked at RTL compile.
+- First compiler blocker:
+  `rtl/poly/poly_basemul_montgomery.v:85: error: Superfluous comma in port declaration list.`
+- Additional visible RTL blockers include malformed `poly_buffer` instance
+  punctuation, duplicate `r_addr0_d0`, typo `always $(`, missing semicolon after
+  `r_addr1_d1 <= r_addr1_d0`, implicit `r_write_valid/r_write_last`, and
+  duplicated/misnamed R-buffer write ports.
+- `rtl/poly/poly_basemul_montgomery.v` was not modified.
+- `git diff --check`: clean.
+
+Remains to do:
+
+- Fix `rtl/poly/poly_basemul_montgomery.v` compile blockers, starting with the
+  port list around line 85.
+- Add the missing intended A-load ports (`a_load_en`, `a_load_addr`,
+  `a_load_data`) to the module interface or otherwise define how polynomial A is
+  loaded; the RTL already references those signals internally.
+- After RTL compiles, rerun `./sim/scripts/run_poly_basemul_montgomery.sh` for
+  functional full-polynomial comparison.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Fix `rtl/poly/poly_basemul_montgomery.v` compile blockers.
+3. Rerun `./sim/scripts/run_poly_basemul_montgomery.sh`.
+4. If compile passes but output mismatches remain, inspect address/data latency
+   alignment between `poly_basemul_addr_gen`, `poly_buffer`, and the 3-cycle
+   pipelined `basemul_unit`.
+
+### 2026-07-07 poly_basemul_montgomery Retest
+
+Requested:
+
+- Retest `rtl/poly/poly_basemul_montgomery.v` after user-side fixes.
+- Do not modify RTL.
+
+Files changed:
+
+- Updated `reports/simulation/poly_basemul_montgomery_report.md`.
+- Updated `TODO.md` with this retest entry.
+
+Commands run:
+
+- `sed -n '1,220p' TODO.md`
+- `git status --short`
+- `nl -ba rtl/poly/poly_basemul_montgomery.v | sed -n '1,380p'`
+- `./sim/scripts/run_poly_basemul_montgomery.sh`
+- `nl -ba rtl/poly/poly_basemul_montgomery.v | sed -n '168,225p'`
+- `nl -ba rtl/poly/poly_basemul_montgomery.v | sed -n '288,330p'`
+- `tail -n 80 sim/logs/poly_basemul_montgomery.log`
+
+Verified:
+
+- The previous top-level trailing comma and duplicate `r_addr0_d0` declaration
+  are fixed.
+- Test remains blocked at RTL compile.
+- Current first compiler error:
+  `rtl/poly/poly_basemul_montgomery.v:191: syntax error`.
+- Remaining visible blockers include trailing commas at the final named port
+  connections of the A, B, and R `poly_buffer` instances, duplicate instance
+  name `u_a_buffer` for the B buffer, misspelled declarations
+  `r_wrire_valid/r_wrire_last`, and missing intended A-load ports in the module
+  interface.
+- `rtl/poly/poly_basemul_montgomery.v` was not modified.
+
+Remains to do:
+
+- Remove trailing commas from final named port connections at the A/B/R
+  `poly_buffer` instances.
+- Rename the B buffer instance from `u_a_buffer` to a unique name such as
+  `u_b_buffer`.
+- Rename `r_wrire_valid/r_wrire_last` to `r_write_valid/r_write_last`.
+- Add intended `a_load_en`, `a_load_addr`, and `a_load_data` ports to the
+  module interface, or define another A-load interface and update the testbench
+  accordingly.
+- Rerun `./sim/scripts/run_poly_basemul_montgomery.sh`.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Fix the remaining compile blockers in `rtl/poly/poly_basemul_montgomery.v`.
+3. Rerun `./sim/scripts/run_poly_basemul_montgomery.sh`.
+4. If it compiles, inspect any coefficient mismatches for basemul/data/address
+   latency alignment.
+
+### 2026-07-07 poly_basemul_montgomery Retest 2
+
+Requested:
+
+- Retest `rtl/poly/poly_basemul_montgomery.v` after another user-side fix.
+- Do not modify RTL.
+
+Files changed:
+
+- Updated `reports/simulation/poly_basemul_montgomery_report.md`.
+- Updated `TODO.md` with this retest entry.
+
+Commands run:
+
+- `sed -n '1,180p' TODO.md`
+- `git status --short`
+- `nl -ba rtl/poly/poly_basemul_montgomery.v | sed -n '66,340p'`
+- `./sim/scripts/run_poly_basemul_montgomery.sh`
+- `tail -n 80 sim/logs/poly_basemul_montgomery.log`
+- `nl -ba rtl/poly/poly_basemul_montgomery.v | sed -n '72,86p;170,206p'`
+
+Verified:
+
+- The previous final-port trailing commas and `r_write_*` spelling issue are
+  fixed.
+- Test remains blocked at RTL compile.
+- Current hard compiler error:
+  `rtl/poly/poly_basemul_montgomery.v:202: error: 'u_a_buffer' has already been declared in this scope.`
+- Current warnings show `a_load_addr` and `a_load_data` are still implicit
+  wires because the module port list exposes only B-load ports.
+- `rtl/poly/poly_basemul_montgomery.v` was not modified.
+
+Remains to do:
+
+- Rename the B buffer instance from `u_a_buffer` to a unique name such as
+  `u_b_buffer`.
+- Add intended `a_load_en`, `a_load_addr`, and `a_load_data` ports to the
+  module interface, or define another A-load interface and update the testbench
+  accordingly.
+- Rerun `./sim/scripts/run_poly_basemul_montgomery.sh`.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Rename the B-buffer instance and finish the A-load interface in
+   `rtl/poly/poly_basemul_montgomery.v`.
+3. Rerun `./sim/scripts/run_poly_basemul_montgomery.sh`.
+4. If it compiles, evaluate any full-polynomial coefficient mismatches.
+
+### 2026-07-07 poly_basemul_montgomery Retest PASS
+
+Requested:
+
+- Retest `rtl/poly/poly_basemul_montgomery.v` after user-side fixes.
+- Do not modify RTL.
+
+Files changed:
+
+- Updated `reports/simulation/poly_basemul_montgomery_report.md`.
+- Updated `reports/simulation/arithmetic_ntt_smoke_report.md`.
+- Updated `TODO.md` with this retest entry.
+
+Commands run:
+
+- `sed -n '1,160p' TODO.md`
+- `git status --short`
+- `nl -ba rtl/poly/poly_basemul_montgomery.v | sed -n '72,220p'`
+- `./sim/scripts/run_poly_basemul_montgomery.sh`
+
+Verified:
+
+- `poly_basemul_montgomery.v` now compiles.
+- `./sim/scripts/run_poly_basemul_montgomery.sh`: PASS,
+  `pass_count=768 fail_count=0`.
+- The testbench checked three deterministic full-polynomial A/B patterns.
+- All 256 R coefficients per pattern matched the behavioral Kyber
+  `poly_basemul_montgomery` / `basemul` reference.
+- `rtl/poly/poly_basemul_montgomery.v` was not modified by the reviewer.
+
+Remains to do:
+
+- Add `poly_basemul_montgomery` to any future unified regression script.
+- Consider a higher-level polyvec accumulation test after the poly-level
+  basemul datapath is stable.
+- Continue connecting these RTL checks to trusted KAT/golden-reference flow
+  before full ML-KEM correctness claims.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Run `./sim/scripts/run_poly_basemul_montgomery.sh`.
+3. Review `reports/simulation/poly_basemul_montgomery_report.md`.
+4. Next useful target: add a unified regression script or start polyvec
+   pointwise accumulation planning on top of the verified poly basemul block.
+
+### 2026-07-07 GitHub Checkpoint Push
+
+Requested:
+
+- Push the repository to GitHub to save the current progress.
+
+Files changed:
+
+- `.agents/workflows/AGENT.md`
+- `README.md`
+- `TODO.md`
+- `docs/00_project_spec/project_spec.md`
+- `docs/00_project_spec/roadmap.md`
+- `docs/03_architecture/ntt_architecture.md`
+- `reports/simulation/arithmetic_ntt_smoke_report.md`
+- `reports/simulation/basemul_unit_report.md`
+- `reports/simulation/poly_basemul_addr_gen_report.md`
+- `reports/simulation/poly_basemul_montgomery_report.md`
+- `rtl/ntt/basemul_unit.v`
+- `rtl/poly/poly_basemul_addr_gen.v`
+- `rtl/poly/poly_basemul_montgomery.v`
+- `sim/scripts/run_basemul_unit.sh`
+- `sim/scripts/run_poly_basemul_addr_gen.sh`
+- `sim/scripts/run_poly_basemul_montgomery.sh`
+- `tb/unit/tb_basemul_unit.v`
+- `tb/unit/tb_poly_basemul_addr_gen.v`
+- `tb/unit/tb_poly_basemul_montgomery.v`
+
+Commands run:
+
+- `pwd && git rev-parse --show-toplevel && git status --short --branch`
+- `sed -n '1,220p' TODO.md`
+- `git diff --cached --stat`
+- `git diff --cached --name-status`
+- `git diff --cached -- rtl/ntt/basemul_unit.v rtl/poly/poly_basemul_addr_gen.v rtl/poly/poly_basemul_montgomery.v tb/unit/tb_basemul_unit.v tb/unit/tb_poly_basemul_addr_gen.v tb/unit/tb_poly_basemul_montgomery.v sim/scripts/run_basemul_unit.sh sim/scripts/run_poly_basemul_addr_gen.sh sim/scripts/run_poly_basemul_montgomery.sh`
+- `tail -n 180 TODO.md`
+- `./sim/scripts/run_basemul_unit.sh`
+- `./sim/scripts/run_poly_basemul_addr_gen.sh`
+- `./sim/scripts/run_poly_basemul_montgomery.sh`
+- `git diff --cached --check`
+- `nl -ba rtl/poly/poly_basemul_addr_gen.v | sed -n '36,46p'`
+- `nl -ba rtl/poly/poly_basemul_montgomery.v | sed -n '64,92p;148,190p;204,218p;242,286p;310,320p'`
+- `apply_patch`
+- `git diff --check`
+
+Verified:
+
+- `./sim/scripts/run_basemul_unit.sh`: PASS,
+  `pass_count=514 fail_count=0`.
+- `./sim/scripts/run_poly_basemul_addr_gen.sh`: PASS,
+  `pass_count=256 fail_count=0`.
+- `./sim/scripts/run_poly_basemul_montgomery.sh`: PASS,
+  `pass_count=768 fail_count=0`.
+- `git diff --check`: clean after removing staged trailing whitespace.
+
+Remains to do:
+
+- Add a unified regression script for the arithmetic, NTT, and poly-level
+  unit tests.
+- Consider polyvec pointwise accumulation after the poly basemul datapath
+  remains stable.
+- Continue connecting the RTL checks to trusted KAT/golden-reference flow
+  before full ML-KEM correctness claims.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Run the focused checks:
+   `./sim/scripts/run_basemul_unit.sh`,
+   `./sim/scripts/run_poly_basemul_addr_gen.sh`, and
+   `./sim/scripts/run_poly_basemul_montgomery.sh`.
+3. Add a unified regression script or begin polyvec pointwise accumulation
+   planning on top of the verified poly basemul block.
