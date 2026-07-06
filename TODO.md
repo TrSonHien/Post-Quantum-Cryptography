@@ -1986,6 +1986,10 @@ Commands run:
 - `git add .gitignore TODO.md`
 - `git commit -m "chore: ignore local agent workflows"`
 - `git push origin main`
+- `git status --short --branch`
+- `git log -1 --oneline`
+- `git check-ignore -v .agents/workflows/AGENT.md`
+- `git diff --check`
 
 Verified:
 
@@ -1995,12 +1999,13 @@ Verified:
 - `git check-ignore -v .agents/workflows/AGENT.md` reports the
   `.agents/workflows/` rule from `.gitignore`.
 - `git diff --check`: clean.
-- Pending final verification: confirm `main` is aligned with `origin/main`
-  after push.
+- Pushed commit `9d0358c chore: ignore local agent workflows` to `origin/main`.
+- Final branch check reports `main...origin/main`; the only remaining worktree
+  change is the unrelated local deletion of `CHANGELOG.md`.
 
 Remains to do:
 
-- None after final push verification.
+- None for `.agents/workflows`.
 
 ## Next Session Start Here
 
