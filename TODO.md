@@ -26,10 +26,12 @@ M2: Contract-compliant RTL foundations
 - [x] M2.2.5 pipelined forward butterfly (butterfly_pipe)
 - [x] M2.2.6 pipelined inverse butterfly (intt_butterfly_pipe)
 - [x] M2.2.7 unified arithmetic-pipeline regression & M2.3 handoff
+- [x] M2.3a pipelined arithmetic synthesis infrastructure preparation (reproducible scripts, wrappers, and constraints completed)
 
 ## In Progress
 
-- [ ] M2.3: ASIC synthesis gate (deferred/planning)
+- [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
+- [ ] M3: Fmax-oriented NTT/INTT with banked synchronous memory (planning)
 
 ## Blocked By
 
@@ -37,7 +39,7 @@ M2: Contract-compliant RTL foundations
 
 ## Next Target
 
-Await approval before starting M2.3. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+M2.3b server ASIC synthesis comparison. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -74,6 +76,46 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M2.3 ASIC Synthesis Comparison
+
+Requested:
+
+- Implement M2.3: focused ASIC synthesis comparison of M2.2 arithmetic candidates.
+
+Files changed:
+
+- Added synthesis-only wrappers for combinational legacy blocks under [synth/m2_3/wrappers/](file:///home/hien/Projects/Post_Quantum_Cryptography/synth/m2_3/wrappers/).
+- Added SDC constraints file [constraints.sdc](file:///home/hien/Projects/Post_Quantum_Cryptography/synth/m2_3/constraints.sdc).
+- Added Cadence Genus synthesis script [genus_synth.tcl](file:///home/hien/Projects/Post_Quantum_Cryptography/synth/m2_3/genus_synth.tcl).
+- Added Yosys synthesis script [yosys_synth.tcl](file:///home/hien/Projects/Post_Quantum_Cryptography/synth/m2_3/yosys_synth.tcl).
+- Added synthesis sweep runner script [run_synth_sweep.sh](file:///home/hien/Projects/Post_Quantum_Cryptography/synth/m2_3/run_synth_sweep.sh).
+- Added synthesis report [m2_3_synthesis_comparison.md](file:///home/hien/Projects/Post_Quantum_Cryptography/reports/m2_3_synthesis_comparison.md).
+- Updated [TODO.md](file:///home/hien/Projects/Post_Quantum_Cryptography/TODO.md) and [milestone_status.md](file:///home/hien/Projects/Post_Quantum_Cryptography/docs/00_project_spec/milestone_status.md).
+
+Commands run:
+
+- `./sim/scripts/run_m2_2_regression.sh` (pre-synthesis regression check)
+- `chmod +x synth/m2_3/run_synth_sweep.sh && ./synth/m2_3/run_synth_sweep.sh`
+- `./sim/scripts/run_m2_2_regression.sh` (post-synthesis regression verification)
+
+Verified:
+
+- Blocker verified: No ASIC synthesis tools (Genus, Yosys, Design Compiler) or Liberty PDK files are present in the environment PATH.
+- Reproducible synthesis sweep runner and tcl scripts verified correctly falling back to printing the blocker.
+- Unified regression runs and passes all 10 unit tests successfully.
+- Functional RTL verification shows no changes made to any functional modules.
+
+Remains to do:
+
+- Run M2.3b server ASIC synthesis comparison and candidate selection.
+
+Next Session Start Here:
+
+- Begin M2.3b server ASIC synthesis run.
+
+
+
 
 ### 2026-07-13 M2.2.7 Unified Handoff
 
