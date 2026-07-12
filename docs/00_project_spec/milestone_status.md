@@ -34,10 +34,11 @@ M2: Contract-compliant RTL foundations
 - M2.2.4 pipelined Barrett reduction (barrett_reduce_pipe).
 - M2.2.5 pipelined forward butterfly (butterfly_pipe).
 - M2.2.6 pipelined inverse butterfly (intt_butterfly_pipe).
+- M2.2.7 unified arithmetic-pipeline regression & M2.3 handoff.
 
 ## In Progress
 
-- M2.2.7: Unified regression & handoff.
+- M2.3: ASIC synthesis gate (deferred/planning).
 
 ## Blocked By
 
@@ -49,7 +50,7 @@ None
 
 ## Next Target
 
-M2.2.7 unified regression & handoff. Final CAVP/ACVP ML-KEM verification remains pending.
+Await approval before starting M2.3. Final CAVP/ACVP ML-KEM verification remains pending.
 
 ## Current Focus
 

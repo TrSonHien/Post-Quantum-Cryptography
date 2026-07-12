@@ -25,10 +25,11 @@ M2: Contract-compliant RTL foundations
 - [x] M2.2.4 pipelined Barrett reduction (barrett_reduce_pipe)
 - [x] M2.2.5 pipelined forward butterfly (butterfly_pipe)
 - [x] M2.2.6 pipelined inverse butterfly (intt_butterfly_pipe)
+- [x] M2.2.7 unified arithmetic-pipeline regression & M2.3 handoff
 
 ## In Progress
 
-- [ ] M2.2.7: Unified regression & handoff
+- [ ] M2.3: ASIC synthesis gate (deferred/planning)
 
 ## Blocked By
 
@@ -36,7 +37,7 @@ M2: Contract-compliant RTL foundations
 
 ## Next Target
 
-Implement and verify M2.2.7 unified regression & handoff. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+Await approval before starting M2.3. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -73,6 +74,41 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M2.2.7 Unified Handoff
+
+Requested:
+
+- Implement M2.2.7: Unified arithmetic-pipeline regression & M2.3 handoff.
+
+Files changed:
+
+- Added unified regression script [run_m2_2_regression.sh](file:///home/hien/Projects/Post_Quantum_Cryptography/sim/scripts/run_m2_2_regression.sh).
+- Added [m2_2_unified_handoff_report.md](file:///home/hien/Projects/Post_Quantum_Cryptography/reports/simulation/m2_2_unified_handoff_report.md).
+- Updated [TODO.md](file:///home/hien/Projects/Post_Quantum_Cryptography/TODO.md) and [milestone_status.md](file:///home/hien/Projects/Post_Quantum_Cryptography/docs/00_project_spec/milestone_status.md).
+
+Commands run:
+
+- `chmod +x sim/scripts/run_m2_2_regression.sh`
+- `./sim/scripts/run_m2_2_regression.sh`
+- Rerun of all legacy core, roundtrip, and polynomial tests.
+
+Verified:
+
+- Unified regression script runs and passes all 10 unit testbenches.
+- Summary table maps all pipelined modules correctly.
+- All pipeline contracts, delays, widths, and reset characteristics are verified compliant.
+
+Remains to do:
+
+- Await M2 completion approval, then plan and start M2.3 synthesis gates.
+
+Next Session Start Here:
+
+- Start M2.3 synthesis planning.
+
+
+
 
 ### 2026-07-13 M2.2.6 Inverse Butterfly Implementation
 
