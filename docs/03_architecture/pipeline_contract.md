@@ -34,3 +34,13 @@ cycle `t+1` presents operands and valid metadata; arithmetic then advances
 through its documented `L_bf` stages; the destination write commits at
 `t+1+L_bf`. Consecutive butterflies issue every cycle (`II=1`). Stage swapping
 waits until the final write of that stage commits.
+
+## M2.1 implementation
+
+`rtl/control/fixed_latency_delay.v` delays valid, payload, and metadata by a
+parameterized `LATENCY>=1` at `II=1`. Reset clears only valid state.
+
+`rtl/control/rv_register_slice.v` is a one-entry elastic boundary register. It
+has one-cycle no-stall latency, supports simultaneous consume/refill at `II=1`,
+holds output payload/metadata stable under backpressure, and resets only
+`out_valid`.

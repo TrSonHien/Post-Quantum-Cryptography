@@ -14,3 +14,14 @@ Folder map:
 - `control/` for KeyGen, Encaps, Decaps, and top-level controllers.
 
 Current RTL is scaffold only and is not a verified ML-KEM implementation.
+
+M2.1 contract primitives:
+
+- `memory/sync_1r1w_ram.v`: synchronous 1R/1W RAM, one-cycle read;
+- `memory/ntt_bank_map.v`: M1 conflict-free logical bank/address map;
+- `memory/ntt_pingpong_banks.v`: four-bank out-of-place ping-pong wrapper;
+- `control/fixed_latency_delay.v`: fixed-latency valid/metadata alignment;
+- `control/rv_register_slice.v`: one-entry valid/ready register slice.
+
+These modules do not implement NTT arithmetic or a controller and carry no
+synthesis/Fmax claim.

@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M1: Interface, representation, timing, and memory architecture freeze v0.1
+M2: Contract-compliant RTL foundations
 
 ## Completed
 
@@ -25,10 +25,13 @@ M1: Interface, representation, timing, and memory architecture freeze v0.1
   forward/inverse stage tables.
 - Python-vector-to-RTL mapping and architecture assertion/verification plan.
 - Stale `poly_sub` report reconciled against a live 1024/0 PASS regression.
+- M2.1 synchronous memory and pipeline-control primitives.
+- M2.1 exhaustive bank mapping/ping-pong, collision, reset, latency, metadata,
+  and backpressure unit verification.
 
 ## In Progress
 
-- None. Do not start M2 without explicit approval.
+- None. Do not start M2.2 without explicit approval.
 
 ## Blocked By
 
@@ -40,9 +43,9 @@ None
 
 ## Next Target
 
-Await explicit approval before M2. M1 freezes documentation contracts only;
-existing RTL is a legacy baseline and is not automatically contract-compliant.
-Final CAVP/ACVP ML-KEM verification remains pending.
+Await explicit approval before M2.2. M2.1 provides reusable storage/control
+primitives only; no arithmetic or NTT controller has started. Final CAVP/ACVP
+ML-KEM verification remains pending.
 
 ## Current Focus
 

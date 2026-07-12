@@ -50,3 +50,9 @@ and verified in M3. Multi-lane variants are deferred to M3.
 Protocol errors, illegal commands, and memory collisions are assertions during
 unit verification. Architecturally detectable input/type failures set
 `rsp_error`; no partial successful result may be reported.
+
+## M2.1 reusable boundary primitive
+
+`rtl/control/rv_register_slice.v` implements the approved one-entry registered
+valid/ready boundary. It may be instantiated between engines or used as the
+building block for deeper buffering. It does not define an engine command.

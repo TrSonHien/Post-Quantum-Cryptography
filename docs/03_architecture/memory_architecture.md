@@ -46,3 +46,17 @@ different bandwidth from the two-coefficient NTT datapath.
 Polynomial-vector, matrix, key, ciphertext, and shared-secret capacities remain
 for later milestones. They must reuse this synchronous request/response
 discipline and explicit ownership/domain metadata.
+
+## M2.1 implementation
+
+- `rtl/memory/sync_1r1w_ram.v` implements each 1R/1W bank with one-cycle
+  registered read data/valid, synchronous writes, unreset memory contents, and
+  a simulation-fatal same-address read/write check.
+- `rtl/memory/ntt_bank_map.v` implements boundary and transition formulas.
+- `rtl/memory/ntt_pingpong_banks.v` composes four 128x12 banks, maps logical
+  coefficient pairs, routes responses back to logical order, and swaps roles
+  only with no request or pending read.
+
+The wrapper supports one logical two-coefficient read and one logical
+two-coefficient write each cycle (`II=1`). It is a storage primitive only; stage
+scheduling and NTT arithmetic are intentionally absent.

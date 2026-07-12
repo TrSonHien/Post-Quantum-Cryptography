@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M1: Interface, representation, timing, and memory architecture freeze v0.1
+M2: Contract-compliant RTL foundations
 
 ## Completed
 
@@ -18,10 +18,11 @@ M1: Interface, representation, timing, and memory architecture freeze v0.1
 - [x] M0.4b complete deterministic internal Python ML-KEM-768 golden model
 - [x] M0.5 comparison tools, vector export infrastructure, and M0 closure
 - [x] M1 v0.1 documentation-only architecture freeze
+- [x] M2.1 synchronous memory and pipeline-control primitives
 
 ## In Progress
 
-- None. Do not start M2 without explicit approval.
+- None. Do not start M2.2 without explicit approval.
 
 ## Blocked By
 
@@ -29,9 +30,9 @@ M1: Interface, representation, timing, and memory architecture freeze v0.1
 
 ## Next Target
 
-Await explicit approval before M2. Existing RTL is a verified legacy baseline,
-not automatically compliant with the M1 contracts. Final NIST CAVP/ACVP
-ML-KEM vector verification remains pending.
+Await explicit approval before M2.2. M2.1 adds reusable synchronous storage and
+pipeline-control primitives only; arithmetic and NTT control remain unstarted.
+Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -2857,3 +2858,55 @@ Remains to do:
    `reports/m1_architecture_freeze_v0_1.md`.
 2. Treat M1 contracts as governing future RTL; existing RTL remains baseline-only.
 3. Await explicit M2 approval; do not modify RTL beforehand.
+
+### 2026-07-13 M2.1 Synchronous Memory and Pipeline Primitives
+
+Requested:
+
+- Implement only generic synchronous 1R/1W RAM, conflict-free NTT ping-pong
+  banks/mapping, fixed-latency metadata delay, and one valid/ready register slice.
+- Verify memory latency/reset/collision, all NTT stage maps, role swaps,
+  metadata alignment, backpressure, and adjacent regressions.
+
+Files changed:
+
+- Added `rtl/memory/sync_1r1w_ram.v`, `ntt_bank_map.v`, and
+  `ntt_pingpong_banks.v`.
+- Added `rtl/control/fixed_latency_delay.v` and `rv_register_slice.v`.
+- Added four unit testbenches and five simulation scripts for M2.1.
+- Added `docs/00_project_spec/m2_plan.md` and
+  `reports/simulation/m2_1_primitives_report.md`.
+- Updated `TODO.md`, milestone status, RTL README, and M1 architecture contracts
+  with the implemented M2.1 boundary.
+
+Commands run:
+
+- `bash sim/scripts/run_m2_1_primitives.sh`
+- `bash sim/scripts/run_ntt_core.sh`
+- `bash sim/scripts/run_intt_core.sh`
+- `bash sim/scripts/run_ntt_intt_roundtrip.sh`
+- `bash sim/scripts/run_poly_add.sh`
+- `bash sim/scripts/run_poly_sub.sh`
+- `bash sim/scripts/run_poly_basemul_montgomery.sh`
+- `git diff --check` and restricted-path/reference-baseline checks.
+
+Verified:
+
+- RAM: 515/0 PASS; expected collision assertion PASS.
+- Bank mapping/ping-pong: 4866/0 PASS over all coefficients/stages and swaps.
+- Pipeline/control: 35/0 PASS including latency, metadata, reset, and stall checks.
+- Adjacent NTT/INTT/roundtrip/poly regressions all PASS with zero failures.
+- Memory contents and payload registers are not reset; only valid/control state is.
+- No arithmetic, NTT controller, model, or M2.2 work was added.
+
+Remains to do:
+
+- Do not start M2.2 without explicit approval.
+- No synthesis/Fmax claim exists; later implementation must measure timing.
+- Final NIST CAVP/ACVP validation remains pending.
+
+## Next Session Start Here
+
+1. Read `AGENTS.md`, `TODO.md`, `docs/00_project_spec/m2_plan.md`, and the M2.1 report.
+2. Preserve legacy RTL while integrating M1-compliant primitives incrementally.
+3. Await explicit approval and a module contract before M2.2.
