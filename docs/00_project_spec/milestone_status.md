@@ -36,11 +36,13 @@ M2: Contract-compliant RTL foundations
 - M2.2.6 pipelined inverse butterfly (intt_butterfly_pipe).
 - M2.2.7 unified arithmetic-pipeline regression & M2.3 handoff.
 - M2.3a pipelined arithmetic synthesis infrastructure preparation (reproducible scripts, wrappers, and constraints completed).
+- M3.0 Fmax-oriented NTT/INTT audit and implementation plan (completed).
+- M3.1 Fmax-oriented forward NTT scheduler (completed).
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M3: Fmax-oriented NTT/INTT with banked synchronous memory (planning).
+- M3.2: Banked NTT forward core integration (planning).
 
 ## Blocked By
 
@@ -52,7 +54,7 @@ None
 
 ## Next Target
 
-M2.3b server ASIC synthesis comparison. Final CAVP/ACVP ML-KEM verification remains pending.
+M2.3b server ASIC synthesis comparison & M3.2 banked NTT forward core. Final CAVP/ACVP ML-KEM verification remains pending.
 
 ## Current Focus
 

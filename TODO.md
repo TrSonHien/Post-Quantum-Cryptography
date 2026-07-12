@@ -27,11 +27,13 @@ M2: Contract-compliant RTL foundations
 - [x] M2.2.6 pipelined inverse butterfly (intt_butterfly_pipe)
 - [x] M2.2.7 unified arithmetic-pipeline regression & M2.3 handoff
 - [x] M2.3a pipelined arithmetic synthesis infrastructure preparation (reproducible scripts, wrappers, and constraints completed)
+- [x] M3.0 Fmax-oriented NTT/INTT audit and implementation plan (completed)
+- [x] M3.1 Fmax-oriented forward NTT scheduler (completed)
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
-- [ ] M3: Fmax-oriented NTT/INTT with banked synchronous memory (planning)
+- [ ] M3.2: Banked NTT forward core integration (planning)
 
 ## Blocked By
 
@@ -39,7 +41,7 @@ M2: Contract-compliant RTL foundations
 
 ## Next Target
 
-M2.3b server ASIC synthesis comparison. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+M2.3b server ASIC synthesis comparison & M3.2 banked NTT forward core. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -108,11 +110,41 @@ Verified:
 
 Remains to do:
 
-- Run M2.3b server ASIC synthesis comparison and candidate selection.
+- Run M2.3b server ASIC synthesis.
+- Implement M3.2 banked NTT forward core integration.
 
 Next Session Start Here:
 
-- Begin M2.3b server ASIC synthesis run.
+- Begin M3.2 design and implementation.
+
+### 2026-07-13 M3.1 Forward NTT Address Scheduler
+
+Requested:
+
+- Implement M3.1: forward NTT scheduler and address-generation candidate v0.
+- Correct docs/00_project_spec/m3_plan.md cycle labels.
+
+Files changed:
+
+- Added [ntt_scheduler_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/rtl/ntt/ntt_scheduler_pipe.v)
+- Added [tb_ntt_scheduler_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/tb/unit/tb_ntt_scheduler_pipe.v)
+- Added [run_ntt_scheduler_pipe.sh](file:///home/hien/Projects/Post_Quantum_Cryptography/sim/scripts/run_ntt_scheduler_pipe.sh)
+- Added [m3_1_ntt_scheduler_report.md](file:///home/hien/Projects/Post_Quantum_Cryptography/reports/simulation/m3_1_ntt_scheduler_report.md)
+- Updated [m3_plan.md](file:///home/hien/Projects/Post_Quantum_Cryptography/docs/00_project_spec/m3_plan.md), [TODO.md](file:///home/hien/Projects/Post_Quantum_Cryptography/TODO.md), and [milestone_status.md](file:///home/hien/Projects/Post_Quantum_Cryptography/docs/00_project_spec/milestone_status.md).
+
+Commands run:
+
+- `chmod +x sim/scripts/run_ntt_scheduler_pipe.sh && ./sim/scripts/run_ntt_scheduler_pipe.sh`
+- `./sim/scripts/run_m2_1_primitives.sh && ./sim/scripts/run_m2_2_regression.sh`
+
+Verified:
+
+- Checked all 896 Cooley-Tukey butterfly requests.
+- Validated correct source read bank mapping (no collisions).
+- Verified zeta ROM addresses sweep stages and remain constant per group.
+- Checked pause-and-wait FSM behavior with stage_advance controls.
+- Validated FSM illegal transitions error output.
+- All M2 regressions passed.
 
 
 
