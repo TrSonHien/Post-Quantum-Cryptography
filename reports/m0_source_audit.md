@@ -117,3 +117,42 @@ sha256sum -c references/SHA256SUMS
 ```
 
 This report does not claim FIPS compliance, KAT validation, C/Python equivalence, RTL correctness, synthesis success, or timing success.
+
+## M0.2 update: detailed FIPS 203 algorithm tracking
+
+M0.2 expanded the canonical tracking file:
+
+```text
+docs/00_project_spec/fips203_algorithm_tracking.md
+```
+
+The tracking file now records:
+
+- ML-KEM-768 parameters from FIPS 203 Section 8, Table 2 and Table 3.
+- FIPS 203 Algorithms 3 through 21 where relevant to ML-KEM-768 implementation
+  and validation.
+- Exact inputs, outputs, hash/XOF dependencies, compression/encoding widths,
+  key sizes, ciphertext sizes, and deterministic internal interfaces.
+- Legacy Kyber 2020 C function candidates only where structurally applicable.
+- Explicit non-direct mappings for legacy Kyber KEM top-level functions where
+  FIPS 203 changed shared-secret derivation, encapsulation randomness handling,
+  implicit rejection, and input-check requirements.
+- Verification requirements for later CAVP/ACVP vectors, project-owned C
+  harnesses, independent Python oracles, directed codec vectors, and invalid
+  input tests.
+
+M0.2 did not modify RTL, testbenches, simulation scripts, imported Kyber C
+source, Python model files, KAT files, or comparison tools. It does not claim
+that any local C function, Python model, KAT, or RTL block is FIPS 203-valid.
+
+### M0.2 unresolved items
+
+- Final NIST CAVP/ACVP ML-KEM vectors are still missing locally.
+- The local Kyber 2020 `.rsp` files remain legacy regression vectors only.
+- The legacy Kyber KEM top-level functions are not direct FIPS 203 oracles.
+- `K-PKE.KeyGen`, `K-PKE.Encrypt`, `K-PKE.Decrypt`, codec, sampler, NTT, and
+  base-multiply C candidates still require deterministic harness proof.
+- The Montgomery/lazy representation bridge between FIPS algebra, legacy C, and
+  RTL remains unresolved.
+- FIPS encapsulation/decapsulation input-check behavior needs a future wrapper
+  and invalid-input vector plan.

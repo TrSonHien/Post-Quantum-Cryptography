@@ -82,10 +82,17 @@ Gate:
 
 Gate:
 
-- build/run flow for the selected local legacy Kyber768 C reference uses `ref_model/c_ref/build/` or `/tmp`;
-- local Kyber 2020 KAT parser preserves provenance and labels output as legacy Kyber regression material;
-- no generated files are written into the imported source package;
-- final NIST CAVP/ACVP ML-KEM vector acquisition path is documented.
+- build/run flow for the selected local legacy Kyber768 C reference uses `ref_model/c_ref/build/` or `/tmp` — complete for Kyber768 via `ref_model/c_ref/run_kyber768_kat.sh`;
+- local Kyber 2020 KAT parser preserves provenance and labels output as legacy Kyber regression material — complete via `ref_model/kat/parse_legacy_kyber_kat.py` and `ref_model/kat/kyber768_legacy_provenance.md`;
+- no generated files are written into the imported source package — verified by Git status/diff checks against `ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001`;
+- final NIST CAVP/ACVP ML-KEM vector acquisition path is documented as still missing external validation material.
+
+M0.3 result:
+
+- copied, built, and ran the local Kyber768 2020 reference implementation from ignored `ref_model/c_ref/build/kyber768_ref/`;
+- reproduced `PQCkemKAT_2400.req` and `PQCkemKAT_2400.rsp` exactly against the local legacy KAT files;
+- parsed and validated all 100 Kyber768 records for `count`, `seed`, `pk`, `sk`, `ct`, and `ss`;
+- did not implement Python models, comparison tools, RTL, testbenches, or simulation collateral.
 
 ### M0.4 Independent Python golden model
 

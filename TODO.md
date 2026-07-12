@@ -11,12 +11,12 @@ M0: Standards, algorithm tracking, KAT, and independent golden models
 - [x] Repository structure reorganized for ML-KEM-768 RTL and verification work
 - [x] Current active phase excludes Genus, Innovus, PnR, STA, GDSII, and Physical Design
 - [x] Root `AGENTS.md` symlink exists for project instructions
+- [x] M0.1 source, standards, and provenance audit
+- [x] M0.2 detailed FIPS 203 algorithm tracking
+- [x] M0.3 legacy Kyber768 C/KAT harness
 
 ## In Progress
 
-- [ ] M0.1 source, standards, and provenance audit
-- [ ] M0.2 FIPS 203 algorithm tracking
-- [ ] M0.3 C/KAT harness
 - [ ] M0.4 independent Python ML-KEM-768 golden model
 - [ ] M0.5 comparison tools and final M0 report
 
@@ -26,7 +26,9 @@ M0: Standards, algorithm tracking, KAT, and independent golden models
 
 ## Next Target
 
-Complete M0.1, then continue to M0.2 FIPS 203 algorithm tracking.
+Start M0.4 independent Python ML-KEM-768 golden model only after explicit
+approval. M0.3 did not implement Python models, comparison tools, RTL,
+testbenches, simulation collateral, or final FIPS 203 validation vectors.
 
 ## Current Focus
 
@@ -2433,3 +2435,138 @@ Remains to do:
    - `sha256sum -c references/SHA256SUMS`
 5. If M0.1 is accepted, continue to M0.2 and refine FIPS 203 algorithm
    tracking without modifying RTL.
+
+### 2026-07-12 M0.2 Detailed FIPS 203 Algorithm Tracking
+
+Requested:
+
+- Implement M0.2 only: complete detailed FIPS 203 algorithm tracking.
+- Extract FIPS algorithm numbers, inputs, outputs, dependencies, ML-KEM-768
+  parameters, verification requirements, legacy C candidate mappings, and
+  unresolved FIPS-vs-Kyber differences.
+- Update `TODO.md`, `milestone_status.md`, and the relevant M0 report.
+- Do not modify RTL, TB, sim, C source, Python model, KATs, or comparison
+  tools. Do not start M0.3.
+
+Files changed:
+
+- `TODO.md`
+- `docs/00_project_spec/fips203_algorithm_tracking.md`
+- `docs/00_project_spec/milestone_status.md`
+- `reports/m0_source_audit.md`
+
+Commands run:
+
+- `pwd`
+- `git branch --show-current`
+- `git status --short`
+- `git worktree list`
+- `sed -n ... AGENTS.md TODO.md docs/00_project_spec/fips203_algorithm_tracking.md`
+- `sed -n ... docs/00_project_spec/milestone_status.md reports/m0_source_audit.md`
+- `pdftotext -layout -f 27 -l 48 references/standards/NIST.FIPS.203.pdf -`
+- `pdftotext -layout references/standards/NIST.FIPS.203.pdf - | rg ...`
+- Per-page `pdftotext` extraction for FIPS 203 algorithm and Appendix C page
+  anchors.
+- `rg -n ... ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001/.../kyber768`
+- `apply_patch`
+- `git diff --check`
+- `git status --short`
+- `git diff --stat`
+- `git status --short -- rtl tb sim ref_model/c_ref ref_model/python_model ref_model/kat ref_model/compare reports/simulation`
+
+Verified:
+
+- Current branch is `test`.
+- `git diff --check` passed.
+- Changed-path scope is limited to the four approved documentation files.
+- M0.2 tracking file records the required FIPS 203 algorithms and dependency
+  functions with source anchors, interfaces, ML-KEM-768 parameters, legacy C
+  candidate mappings, planned RTL milestone, verification requirements, status,
+  and unresolved differences.
+- Local Kyber 2020 KEM top-level functions remain classified as legacy
+  candidates only and not as FIPS 203-equivalent oracles.
+- No implementation directories were intentionally modified.
+
+Remains to do:
+
+- Begin M0.3 C/KAT harness only after explicit approval.
+- Obtain final NIST CAVP/ACVP ML-KEM vectors in a later M0 task.
+
+## Next Session Start Here
+
+1. Read `AGENTS.md` and `TODO.md`.
+2. Inspect `docs/00_project_spec/fips203_algorithm_tracking.md`.
+3. If approved, start M0.3 by designing a generated-output location under
+   `ref_model/c_ref/build/` without writing into the imported Kyber package.
+4. Do not modify RTL before M1 architecture decisions are explicitly reopened.
+
+### 2026-07-12 M0.3 Legacy Kyber768 C/KAT Harness
+
+Requested:
+
+- Implement M0.3 only: build and run the local Kyber768 2020 reference
+  implementation without modifying the imported source tree.
+- Use ignored `ref_model/c_ref/build/` or a temporary directory for generated
+  files.
+- Reproduce `PQCgenKAT_kem` output and compare exactly against the local
+  `KAT/kyber768/PQCkemKAT_2400.rsp`.
+- Add a strict `.req/.rsp` parser under `ref_model/kat/`.
+- Parse all 100 Kyber768 cases and validate `count`, `seed`, `pk`, `sk`, `ct`,
+  and `ss`.
+- Create a provenance manifest labeling vectors as legacy Kyber 2020, not final
+  FIPS 203 ML-KEM vectors.
+- Add reproducible scripts and an M0.3 report.
+- Do not modify RTL, TB, sim, Python model, comparison tools, or `PQC_main`.
+
+Files changed:
+
+- `.gitignore`
+- `TODO.md`
+- `docs/00_project_spec/m0_plan.md`
+- `docs/00_project_spec/milestone_status.md`
+- `ref_model/c_ref/run_kyber768_kat.sh`
+- `ref_model/kat/parse_legacy_kyber_kat.py`
+- `ref_model/kat/kyber768_legacy_provenance.md`
+- `reports/m0_3_c_kat_harness.md`
+
+Commands run:
+
+- `pwd`
+- `git branch --show-current`
+- `git status --short`
+- `git worktree list`
+- `git log --oneline --decorate -5`
+- `sed -n ... AGENTS.md TODO.md docs/00_project_spec/m0_plan.md docs/00_project_spec/milestone_status.md`
+- `find ref_model ...`
+- `sed -n ... .gitignore Makefile PQCgenKAT_kem.c`
+- `sha256sum .../KAT/kyber768/PQCkemKAT_2400.req .../PQCkemKAT_2400.rsp`
+- `chmod +x ref_model/c_ref/run_kyber768_kat.sh ref_model/kat/parse_legacy_kyber_kat.py`
+- `bash ref_model/c_ref/run_kyber768_kat.sh`
+- `python3 ref_model/kat/parse_legacy_kyber_kat.py --expect kyber768-2020 --req ... --rsp ...`
+- `git status --short -- ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001`
+- `git diff -- ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001`
+- `apply_patch`
+
+Verified:
+
+- The Kyber768 reference implementation was copied to
+  `ref_model/c_ref/build/kyber768_ref/`, built, and run there.
+- Generated `PQCkemKAT_2400.req` exactly matches the local legacy request file.
+- Generated `PQCkemKAT_2400.rsp` exactly matches the local legacy response file.
+- Strict parser validated 100 request records and 100 response records.
+- Parser validated sequential `count`, matching request/response `seed`, and
+  required byte lengths for `seed`, `pk`, `sk`, `ct`, and `ss`.
+- Imported Kyber source tree status/diff checks produced no output.
+
+Remains to do:
+
+- Start M0.4 only after explicit approval.
+- Final NIST CAVP/ACVP ML-KEM vectors remain missing locally.
+
+## Next Session Start Here
+
+1. Read `AGENTS.md`, `TODO.md`, and `reports/m0_3_c_kat_harness.md`.
+2. Confirm M0.3 generated files remain under ignored `ref_model/c_ref/build/`.
+3. Do not treat legacy Kyber 2020 KATs as FIPS 203 ML-KEM validation vectors.
+4. If approved, start M0.4 independent Python ML-KEM-768 golden model from
+   FIPS 203 tracking, not from blind C translation.
