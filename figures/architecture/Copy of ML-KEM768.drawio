@@ -686,7 +686,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="5Cm7OuIweOBN_RuLE83S" name="L5: RTL Module Mapping">
-    <mxGraphModel dx="6213" dy="2797" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1434" dy="645" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -1417,7 +1417,7 @@
             <mxPoint x="980" y="1760" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="s7z8jtaEaO5wdnHbDbeO-36" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;poly_sub&lt;/b&gt;&lt;div&gt;&lt;i&gt;Subtract two polynomials coefficient-wise modulo q&lt;/i&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;div&gt;&lt;b&gt;----------------&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&amp;nbsp; &amp;nbsp;mod_sub&lt;/div&gt;&lt;/div&gt;" vertex="1">
+        <mxCell id="s7z8jtaEaO5wdnHbDbeO-36" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;poly_sub&lt;/b&gt;&lt;div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Subtract two polynomials coefficient-wise&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;----------------&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="200" width="120" x="510" y="1880" as="geometry" />
         </mxCell>
         <mxCell id="s7z8jtaEaO5wdnHbDbeO-37" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;fontSize=12;startSize=8;endSize=8;curved=1;shadow=0;fillColor=#f8cecc;strokeColor=#b85450;" value="clk">

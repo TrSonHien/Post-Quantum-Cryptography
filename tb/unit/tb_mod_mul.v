@@ -20,34 +20,31 @@ module tb_mod_mul;
         .c(c)
     );
 
-    function signed [15:0] expected_montgomery_reduce;
-        input signed [31:0] x;
-        reg signed [31:0] qinv;
-        reg signed [15:0] u;
-        reg signed [31:0] t;
+    function [15:0] expected_montgomery_reduce;
+        input [31:0] x;
+        reg [47:0] x_qdash;
+        reg [15:0] m;
+        reg [47:0] m_q;
+        reg [32:0] sum;
+        reg [16:0] t;
         begin
-            qinv = -3327;
-            u = x * qinv;
-            t = x - (u * `KYBER_Q);
-            expected_montgomery_reduce = t >>> 16;
+            x_qdash = x * 16'd3327;
+            m = x_qdash[15:0];
+            m_q = m * `KYBER_Q;
+            sum = {1'b0, x} + m_q[32:0];
+            t = sum[32:16];
+            expected_montgomery_reduce =
+                (t >= `KYBER_Q) ? (t - `KYBER_Q) : t;
         end
     endfunction
 
     function [`KYBER_Q_WIDTH-1:0] expected_mod_mul;
         input [`KYBER_Q_WIDTH-1:0] x;
         input [`KYBER_Q_WIDTH-1:0] y;
-        reg signed [31:0] product;
-        reg signed [15:0] mont_result;
-        reg signed [16:0] mont_ext;
+        reg [31:0] product;
         begin
             product = x * y;
-            mont_result = expected_montgomery_reduce(product);
-            mont_ext = {mont_result[15], mont_result};
-            if (mont_ext < 0) begin
-                expected_mod_mul = mont_ext + `KYBER_Q;
-            end else begin
-                expected_mod_mul = mont_ext[`KYBER_Q_WIDTH-1:0];
-            end
+            expected_mod_mul = expected_montgomery_reduce(product);
         end
     endfunction
 

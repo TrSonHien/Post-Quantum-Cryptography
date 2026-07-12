@@ -13,8 +13,7 @@
 //
 // Datapath convention:
 //   - Inputs are canonical unsigned Kyber coefficients: 0 <= a,b < q.
-//   - montgomery_reduce returns a signed representative roughly in
-//     {-q+1, ..., q-1}; this wrapper converts negative results by adding q.
+//   - montgomery_reduce returns a canonical unsigned result.
 //   - The output is therefore canonical: 0 <= c < q.
 //
 // Note:
@@ -22,34 +21,27 @@
 //   timing/PPA pass may replace the 32-bit multiply and reduction datapath with
 //   a pipelined or resource-shared architecture.
 // -----------------------------------------------------------------------------
-module mod_mul #(
-    parameter signed [31:0] Q = `KYBER_Q
-)(
+module mod_mul (
     input  wire [`KYBER_Q_WIDTH-1:0] a,
     input  wire [`KYBER_Q_WIDTH-1:0] b,
     output wire [`KYBER_Q_WIDTH-1:0] c
 );
 
-    wire signed [31:0] product;
-    wire signed [15:0] mont_result;
-
-    wire signed [16:0] mont_ext;
-    wire signed [16:0] canonical;
+    wire [23:0] product;
+    wire [31:0] product_extended;
+    wire [15:0] mont_result;
 
     // a and b are unsigned canonical coefficients.
     // Product is positive and fits easily in 32 bits.
 
-    assign product = $signed({20'd0, a}) * $signed({20'd0, b});
-    
-    montgomery_reduce #(.Q(Q)) u_montgomery_reduce ( .a(product), .r(mont_result) );
-    
-    // montgomery_reduce returns a signed value roughly in:
-    //     {-q+1, ..., q-1}
-    //
-    // Convert it to canonical unsigned:
-    //     if negative, add q
-    assign mont_ext  = {mont_result[15], mont_result};
-    assign canonical = (mont_ext < 0) ? (mont_ext + Q) : mont_ext;
-    assign c         = canonical[`KYBER_Q_WIDTH-1:0];
+    assign product          = a * b;
+    assign product_extended = {{8{1'b0}}, product};
+
+    montgomery_reduce u_montgomery_reduce (
+        .a(product_extended),
+        .r(mont_result)
+    );
+
+    assign c = mont_result[`KYBER_Q_WIDTH-1:0];
 
 endmodule

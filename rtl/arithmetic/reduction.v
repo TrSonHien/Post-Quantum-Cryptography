@@ -2,108 +2,213 @@
 `include "kyber_params.vh"
 
 // -----------------------------------------------------------------------------
-// Reduction helpers for the Kyber / ML-KEM arithmetic datapath.
+// Unsigned reduction helpers for Kyber / ML-KEM.
 //
-// Reference:
-//   ref_model/c_ref/.../Reference_Implementation/crypto_kem/kyber768/reduce.c
+// Project convention:
+//   - All arithmetic signals are unsigned.
+//   - All public coefficient outputs are canonical:
 //
-// These modules intentionally mirror the C reference at the arithmetic level.
-// They are not yet optimized for area, timing, or constant-latency pipeline use.
+//         0 <= coefficient < KYBER_Q
+//
+//   - No signed declarations.
+//   - No $signed casts.
+//   - No arithmetic right shifts.
+//   - No division or modulo operators in synthesizable datapaths.
+//
+// Important semantic difference from the C reference:
+//   The C implementation may return a centered representative, including
+//   negative values. These RTL modules return the equivalent canonical
+//   unsigned representative modulo KYBER_Q.
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 // montgomery_reduce
 //
-// C reference:
-//   int16_t montgomery_reduce(int32_t a)
+// Computes:
 //
-// Computes a * R^-1 mod q, where R = 2^16. The C function returns a signed
-// representative in approximately {-q+1, ..., q-1}. mod_mul wraps this module
-// and converts the signed representative into the canonical unsigned RTL range.
+//     r = a * R^-1 mod q
+//
+// where:
+//
+//     q = 3329
+//     R = 2^16
+//
+// This implementation uses the fully unsigned Montgomery REDC equation:
+//
+//     m = (a * q_dash) mod R
+//     t = (a + m*q) / R
+//     r = (t >= q) ? t - q : t
+//
+// where:
+//
+//     q_dash = -q^-1 mod R = 3327
+//
+// The addition form is used because q_dash is the negative modular inverse.
+//
+// Supported input range:
+//
+//     0 <= a < q*R
+//
+// The current mod_mul caller satisfies the stronger bound:
+//
+//     a <= (q-1)^2
+//
+// Under this range, t < 2*q, so one conditional subtraction is sufficient.
+//
+// Output:
+//
+//     0 <= r < q
 // -----------------------------------------------------------------------------
-module montgomery_reduce #(
-    parameter signed [31:0] Q = `KYBER_Q
-)(
-    input  wire signed [31:0] a,
-    output wire signed [15:0] r
+module montgomery_reduce (
+    input  wire [31:0] a,
+    output wire [15:0] r
 );
 
-    localparam signed [31:0] QINV = -32'sd3327;
+    localparam [31:0] Q = `KYBER_Q;
 
-    wire signed [63:0] a_qinv_full;
-    wire signed [15:0] u;
-    wire signed [32:0] uq;
-    wire signed [32:0] t;
+    // -q^-1 mod 2^16
+    //
+    // q^-1 mod 2^16  = 62209
+    // -p^-1 mod 2^16 = 3327
+    localparam [15:0] MONT_Q_DASH = 16'd3327;
+
+    // m = low_16_bits(a * MONT_Q_DASH)
+    wire signed [47:0] a_qdash_full;
+    wire signed [15:0] m;
     
-    // Therefore only the low 16 bits are kept and interpreted as signed
-    assign a_qinv_full = $signed(a) * $signed(QINV);
-    assign u           = a_qinv_full[15:0];
+    // Operands are explicitly zero-extanded to preserve the full product
+    assign a_qdash_full = {16'b0, a} * {{32{1'b0}}, MONT_Q_DASH};
+    assign m           = a_qdash_full[15:0];
 
-    // t = a - (int32_t)u * q
-    assign uq = $signed(u) * $signed(Q);
-    assign t  = $signed(a) - $signed(uq);
+    // t = (a + m*q) >> 16
+    wire [47:0] m_q_full;
+    wire [32:0] sum_full;
+    wire [16:0] t_raw;
 
-    // arithmetic right shift by 16
-    assign r = t >>> 16;
+    assign m_q_full = {{32{1'b0}}, m} * {16'b0, Q};
+
+    // For Kyber's valid input range, m*q fits comfortably below bit 32
+    assign sum_full = {1'b0, a} + m_q_full[32:0];
+
+    // Logical shift is sufficient because the complete datapath is unsigned
+    assign t_raw = sum_full[32:16];
+
+    // Canonical correction
+    wire [16:0] t_canonical;
+
+    assign t_canonical = (t_raw >= Q[16:0]) ? (t_raw - Q[16:0]) : t_raw;
+    assign r = t_canonical[15:0];
 
 endmodule
 
 // -----------------------------------------------------------------------------
 // barrett_reduce
 //
-// C reference:
-//   int16_t barrett_reduce(int16_t a)
+// Computes the exact canonical unsigned remainder:
 //
-// This approximates a / q with v = round(2^26 / q), then subtracts t*q.
-// The reference function is used in inverse NTT paths after additions. It may
-// return q as a valid representative, so a caller that requires strict
-// canonical [0, q-1] output should apply a conditional subtract afterward.
+//     r = a mod q
+//
+// without using the Verilog modulo or division operators.
+//
+// The reciprocal constant is:
+//
+//     BARRETT_MU = floor(2^48 / q)
+//                = 84552411147
+//
+// Quotient approximation:
+//
+//     quotient = floor((a * BARRETT_MU) / 2^48)
+//
+// Because:
+//
+//     0 <= a < 2^32
+//
+// and BARRETT_MU is the floor reciprocal at 48-bit precision, quotient is
+// either:
+//
+//     floor(a/q)
+//
+// or:
+//
+//     floor(a/q) - 1
+//
+// Therefore:
+//
+//     remainder0 = a - quotient*q
+//
+// is guaranteed to be in:
+//
+//     0 <= remainder0 < 2*q
+//
+// One conditional subtraction produces the canonical remainder.
+//
+// Output:
+//
+//     0 <= r < q
+//
+// This implementation supports the full unsigned 32-bit input range.
 // -----------------------------------------------------------------------------
-module barrett_reduce #(
-    parameter signed [31:0] Q = `KYBER_Q
-)(
-    input  wire signed [31:0] a,
-    output wire signed [15:0] r
+module barrett_reduce (
+    input  wire [31:0] a,
+    output wire [15:0] r
 );
 
-    localparam signed [31:0] V = 32'sd20159;
+    localparam [31:0] Q = `KYBER_Q;
 
-    wire signed [31:0] a_ext;
-    wire signed [31:0] prod;
-    wire signed [31:0] t;
-    wire signed [31:0] tq;
-    wire signed [31:0] r_full;
+    // floor(2^48 / 3329)
+    localparam [36:0] BARRETT_MU = 37'd84_552_411_147;
 
-    // The port is already signed and wide enough for current RTL callers.
-    assign a_ext = a;
+    // quotient = (a * BARRETT_MU) >> 48
+    wire [68:0] a_mu_full;
+    wire [20:0] quotient;
 
-    // t = (v * a) >> 26
-    assign prod =  $signed(V) * $signed(a_ext);
-    assign t    =  prod >>> 26;
+    // 32-bit a time 37-bit reciprocal produces a 69-bit result
+    // Explicit zero extention avoids accidental expression truncation
+    assign a_mu_full = {{37{1'b0}}, a} * {{32{1'b0}}, BARRETT_MU};
+    assign quotient  = a_mu_full[68:48];
 
-    // r = a - t * q
-    assign tq     = $signed(t) * $signed(Q);
-    assign r_full = $signed(a_ext) - $signed(tq);
+    // remainder0 = a - quotient*q
+    wire [52:0] quotient_q_full;
+    wire [52:0] a_extended;
+    wire [52:0] remainder0;
 
-    assign r = r_full[15:0];
+    assign quotient_q_full = {{32{1'b0}}, quotient} * {21'b0, Q};
+    assign a_extended      = {{21{1'b0}}, a};
+
+    // quotient never exceeds floor(a/q), so this subtraction is non-negative
+    assign remainder0 = a_extended - quotient_q_full;
+
+    // Canonical correction
+    wire [52:0] remainder1;
+    assign remainder1 = (remainder0 >= Q) ? (remainder0 - Q) : remainder0;
+    assign r          = remainder1[15:0];
 
 endmodule
 
 // -----------------------------------------------------------------------------
 // conditional_sub_q
 //
-// C reference:
-//   int16_t csubq(int16_t a)
+// Applies one unsigned conditional subtraction:
 //
-// Subtracts q once when a >= q. This helper assumes the input is already in a
-// range where one subtraction is sufficient, such as [0, 2*q).
+//     r = (a >= q) ? a - q : a
+//
+// Required input range:
+//
+//     0 <= a < 2*q
+//
+// Output:
+//
+//     0 <= r < q
+//
+// This module is useful when range analysis proves that one subtraction is
+// sufficient.
 // -----------------------------------------------------------------------------
-module conditional_sub_q #(
-    parameter signed [31:0] Q = `KYBER_Q
-)(
+module conditional_sub_q (
     input  wire [15:0] a,
     output wire [15:0] r
 );
+
+    localparam [31:0] Q = `KYBER_Q;
 
     assign r = (a >= Q) ? (a - Q) : a;
 

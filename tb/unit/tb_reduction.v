@@ -3,11 +3,11 @@
 
 module tb_reduction;
 
-    reg  signed [31:0] mont_in;
-    wire signed [15:0] mont_out;
+    reg  [31:0] mont_in;
+    wire [15:0] mont_out;
 
-    reg  signed [31:0] barrett_in;
-    wire signed [15:0] barrett_out;
+    reg  [31:0] barrett_in;
+    wire [15:0] barrett_out;
 
     reg  [15:0] csub_in;
     wire [15:0] csub_out;
@@ -16,7 +16,7 @@ module tb_reduction;
     integer fail_count;
     integer i;
     integer seed;
-    integer rand_val;
+    reg [31:0] rand_val;
 
     montgomery_reduce u_montgomery_reduce (
         .a(mont_in),
@@ -33,29 +33,24 @@ module tb_reduction;
         .r(csub_out)
     );
 
-    function signed [15:0] expected_montgomery_reduce;
-        input signed [31:0] x;
-        reg signed [31:0] qinv;
-        reg signed [15:0] u;
-        reg signed [31:0] t;
+    function [15:0] expected_montgomery_reduce;
+        input [31:0] x;
+        reg [63:0] m;
+        reg [63:0] t;
         begin
-            qinv = -3327;
-            u = x * qinv;
-            t = x - (u * `KYBER_Q);
-            expected_montgomery_reduce = t >>> 16;
+            m = (x * 32'd3327) & 64'hffff;
+            t = (x + (m * `KYBER_Q)) >> 16;
+            if (t >= `KYBER_Q)
+                expected_montgomery_reduce = t - `KYBER_Q;
+            else
+                expected_montgomery_reduce = t[15:0];
         end
     endfunction
 
-    function signed [15:0] expected_barrett_reduce;
-        input signed [31:0] x;
-        reg signed [31:0] v;
-        reg signed [31:0] t;
-        reg signed [31:0] reduced;
+    function [15:0] expected_barrett_reduce;
+        input [31:0] x;
         begin
-            v = 20159;
-            t = (v * x) >>> 26;
-            reduced = x - (t * `KYBER_Q);
-            expected_barrett_reduce = reduced[15:0];
+            expected_barrett_reduce = x % `KYBER_Q;
         end
     endfunction
 
@@ -71,8 +66,8 @@ module tb_reduction;
     endfunction
 
     task check_montgomery;
-        input signed [31:0] x;
-        reg signed [15:0] expected;
+        input [31:0] x;
+        reg [15:0] expected;
         begin
             mont_in = x;
             #1;
@@ -87,8 +82,8 @@ module tb_reduction;
     endtask
 
     task check_barrett;
-        input signed [31:0] x;
-        reg signed [15:0] expected;
+        input [31:0] x;
+        reg [15:0] expected;
         begin
             barrett_in = x;
             #1;
@@ -127,19 +122,17 @@ module tb_reduction;
 
         check_montgomery(0);
         check_montgomery(1);
-        check_montgomery(-1);
         check_montgomery(3329);
-        check_montgomery(-3329);
         check_montgomery(123456);
-        check_montgomery(-123456);
+        check_montgomery((`KYBER_Q * 32'd65536) - 1);
 
         check_barrett(0);
         check_barrett(1);
         check_barrett(3328);
         check_barrett(3329);
         check_barrett(6656);
-        check_barrett(-1);
-        check_barrett(-3329);
+        check_barrett(32'hffff_ffff);
+        check_barrett(32'h8000_0000);
 
         check_csubq(0);
         check_csubq(1);
@@ -150,11 +143,8 @@ module tb_reduction;
 
         for (i = 0; i < 200; i = i + 1) begin
             rand_val = $random(seed);
-            check_montgomery(rand_val % 1000000);
-            check_barrett(rand_val % 10000);
-            if (rand_val < 0) begin
-                rand_val = -rand_val;
-            end
+            check_montgomery(rand_val % (`KYBER_Q * 32'd65536));
+            check_barrett(rand_val);
             check_csubq(rand_val % (2*`KYBER_Q));
         end
 

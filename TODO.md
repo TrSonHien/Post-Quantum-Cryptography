@@ -2055,3 +2055,295 @@ Remains to do:
 2. Continue from the ML-KEM/Kyber algorithm and verification work.
 3. `CHANGELOG.md` has been removed intentionally; use `TODO.md`, reports, and
    commit history for handoff/status tracking.
+
+### 2026-07-12 poly_add Testbench Bring-up
+
+Requested:
+
+- User wrote `rtl/poly/poly_add.v`.
+- Add a testbench and test it.
+- Do not modify the user's RTL; report RTL issues for the user to fix.
+
+Files changed:
+
+- Added `tb/unit/tb_poly_add.v`.
+- Added `sim/scripts/run_poly_add.sh`.
+- Added `reports/simulation/poly_add_report.md`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `sed -n '1,220p' TODO.md`
+- `sed -n '1,260p' rtl/poly/poly_add.v`
+- `sed -n '1,220p' tb/unit/tb_poly_basemul_montgomery.v`
+- `sed -n '1,140p' sim/scripts/run_poly_basemul_montgomery.sh`
+- `git status --short --untracked-files=all`
+- `sed -n '1,220p' rtl/memory/poly_buffer.v`
+- `sed -n '1,120p' rtl/arithmetic/mod_add.v`
+- `sed -n '1,220p' sim/scripts/run_poly_basemul_addr_gen.sh`
+- `sed -n '1,140p' reports/simulation/poly_basemul_addr_gen_report.md`
+- `ls tb/unit sim/scripts reports/simulation | rg 'poly_add|poly'`
+- `apply_patch`
+- `chmod +x sim/scripts/run_poly_add.sh`
+- `./sim/scripts/run_poly_add.sh`
+- `nl -ba rtl/poly/poly_add.v | sed -n '68,82p'`
+- `tail -n 30 sim/logs/poly_add.log`
+
+Verified:
+
+- Added a self-checking full-polynomial testbench for `poly_add`.
+- The testbench loads full A and B polynomials, pulses `start`, waits for
+  `done`, reads all 256 R coefficients, and compares each result against
+  `(a[i] + b[i]) mod KYBER_Q`.
+- Test patterns cover all-zero operands, complementary operands, max canonical
+  operands, and nontrivial arithmetic sequences.
+- `./sim/scripts/run_poly_add.sh`: PASS, `pass_count=1024 fail_count=0`.
+- `rtl/poly/poly_add.v` was not modified.
+
+RTL warning for user to fix:
+
+- `rtl/poly/poly_add.v` line 75 declares `start_acccepted`, but line 76 assigns
+  `start_accepted`. Icarus Verilog creates `start_accepted` as an implicit wire,
+  so the simulation still passes, but the typo should be fixed in RTL.
+
+Remains to do:
+
+- User should fix the `start_acccepted` / `start_accepted` spelling mismatch in
+  `rtl/poly/poly_add.v`.
+- Add `poly_add` to any future unified regression script.
+- Consider adding `poly_sub` after the polynomial-add path is clean.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Fix the `start_acccepted` typo in `rtl/poly/poly_add.v`.
+3. Rerun `./sim/scripts/run_poly_add.sh`.
+4. If clean, add `poly_add` to the future unified regression script.
+
+### 2026-07-12 poly_add Retest After RTL Typo Fix
+
+Requested:
+
+- User fixed the `start_acccepted` / `start_accepted` typo in
+  `rtl/poly/poly_add.v`.
+- Rerun the focused `poly_add` test.
+
+Files changed:
+
+- Updated `reports/simulation/poly_add_report.md`.
+- Updated `TODO.md` with this retest entry.
+
+Commands run:
+
+- `./sim/scripts/run_poly_add.sh`
+- `nl -ba rtl/poly/poly_add.v | sed -n '70,78p'`
+
+Verified:
+
+- `rtl/poly/poly_add.v` now declares and assigns `start_accepted` consistently.
+- `./sim/scripts/run_poly_add.sh`: PASS, `pass_count=1024 fail_count=0`.
+- The prior implicit-wire warning is gone.
+
+Remains to do:
+
+- Add `poly_add` to any future unified regression script.
+- Consider adding `poly_sub` after the polynomial-add path is clean.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Run `./sim/scripts/run_poly_add.sh` if continuing polynomial-add work.
+3. Add `poly_add` to the future unified regression script or start `poly_sub`
+   planning.
+
+### 2026-07-12 poly_sub Testbench Bring-up
+
+Requested:
+
+- Verify `rtl/poly/poly_sub.v`.
+- Add a testbench and test it.
+- Do not modify the user's RTL; report RTL issues for the user to fix.
+
+Files changed:
+
+- Added `tb/unit/tb_poly_sub.v`.
+- Added `sim/scripts/run_poly_sub.sh`.
+- Added `reports/simulation/poly_sub_report.md`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `tail -n 140 TODO.md`
+- `ls rtl/poly tb/unit sim/scripts reports/simulation | rg 'poly_sub|poly_add' || true`
+- `test -f rtl/poly/poly_sub.v && sed -n '1,260p' rtl/poly/poly_sub.v || true`
+- `sed -n '1,260p' tb/unit/tb_poly_add.v`
+- `sed -n '1,120p' sim/scripts/run_poly_add.sh`
+- `sed -n '1,120p' rtl/arithmetic/mod_sub.v`
+- `apply_patch`
+- `chmod +x sim/scripts/run_poly_sub.sh`
+- `./sim/scripts/run_poly_sub.sh`
+- `nl -ba rtl/poly/poly_sub.v | sed -n '140,164p'`
+- `grep -n "warning\\|FIRST_FAIL\\|pass_count\\|FAIL\\|PASS" sim/logs/poly_sub.log | sed -n '1,80p'`
+
+Verified:
+
+- Added a self-checking full-polynomial testbench for `poly_sub`.
+- The testbench loads full A and B polynomials, pulses `start`, waits for
+  `done`, reads all 256 R coefficients, and compares each result against
+  `(a[i] - b[i]) mod KYBER_Q`.
+- Test patterns cover all-zero operands, equal operands, full wraparound
+  `0 - (KYBER_Q - 1)`, and nontrivial arithmetic sequences.
+- `./sim/scripts/run_poly_sub.sh`: FAIL, `pass_count=0 fail_count=1024`.
+- `rtl/poly/poly_sub.v` was not modified.
+
+RTL issue for user to fix:
+
+- `rtl/poly/poly_sub.v` lines 147-148 declare `sub_result0` and `sub_result1`.
+- Lines 153 and 159 connect the `mod_sub` outputs to undeclared
+  `add_result0` and `add_result1`.
+- Icarus Verilog creates `add_result0/add_result1` as implicit 1-bit wires,
+  while `sub_result0/sub_result1` remain undriven.
+- The result buffer writes `sub_result0/sub_result1`, so every checked output is
+  high-Z.
+
+Remains to do:
+
+- User should connect the two `mod_sub` output ports to `sub_result0` and
+  `sub_result1`.
+- Rerun `./sim/scripts/run_poly_sub.sh`.
+- If the focused test passes, add `poly_sub` to any future unified regression
+  script.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Fix the `mod_sub` output wiring in `rtl/poly/poly_sub.v`.
+3. Rerun `./sim/scripts/run_poly_sub.sh`.
+4. If clean, add `poly_sub` to the future unified regression script.
+
+### 2026-07-12 reduction.v Rewrite Verification
+
+Requested:
+
+- User rewrote `rtl/arithmetic/reduction.v`.
+- Verify the rewritten reduction RTL.
+- Do not modify the user's RTL.
+
+Files changed:
+
+- Updated `tb/unit/tb_reduction.v` to match the rewritten unsigned/canonical
+  reducer contract.
+- Updated `reports/simulation/reduction_mod_mul_report.md`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `tail -n 120 TODO.md`
+- `ls rtl/arithmetic`
+- `sed -n '1,260p' rtl/arithmetic/reduction.v`
+- `sed -n '1,240p' tb/unit/tb_reduction.v`
+- `sed -n '1,120p' sim/scripts/run_reduction.sh`
+- `git status --short --untracked-files=all`
+- `./sim/scripts/run_reduction.sh`
+- `./sim/scripts/run_mod_mul.sh`
+- `sed -n '1,140p' rtl/arithmetic/mod_mul.v`
+- `sed -n '1,160p' reports/simulation/reduction_mod_mul_report.md`
+- `tail -n 80 sim/logs/reduction.log`
+- `tail -n 60 sim/logs/mod_mul.log`
+- `apply_patch`
+- `nl -ba tb/unit/tb_reduction.v | sed -n '118,150p'`
+- `./sim/scripts/run_reduction.sh`
+
+Verified:
+
+- `rtl/arithmetic/reduction.v` was not modified by the verifier.
+- `tb_reduction.v` was updated because the rewritten RTL now documents an
+  unsigned/canonical output contract instead of the old signed C-style
+  representative contract.
+- `./sim/scripts/run_reduction.sh`: PASS, `pass_count=618 fail_count=0`.
+- The final focused reduction run is warning-clean.
+
+Dependent check:
+
+- `./sim/scripts/run_mod_mul.sh` is blocked at elaboration:
+  `rtl/arithmetic/mod_mul.v:44: error: Cannot override localparam Q in
+  tb_mod_mul.dut.u_montgomery_reduce`.
+- Root cause: `mod_mul.v` still instantiates `montgomery_reduce #(.Q(Q))`, but
+  the rewritten `montgomery_reduce` now defines `Q` as a `localparam`, not an
+  overrideable parameter.
+
+Remains to do:
+
+- User should update `rtl/arithmetic/mod_mul.v` for the new `montgomery_reduce`
+  interface and unsigned/canonical output behavior.
+- After that, rerun `./sim/scripts/run_mod_mul.sh`.
+- Because `mod_mul` feeds higher-level NTT and basemul blocks, rerun dependent
+  tests after the mod-mul wrapper is fixed.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. Fix `rtl/arithmetic/mod_mul.v` line 44 to match the new
+   `montgomery_reduce` interface.
+3. Rerun `./sim/scripts/run_mod_mul.sh`.
+4. If `mod_mul` passes, rerun dependent arithmetic/NTT/basemul regressions.
+
+### 2026-07-12 Unsigned mod_mul Repair And Verification
+
+Requested:
+
+- Fix `rtl/arithmetic/mod_mul.v` for the rewritten unsigned/canonical
+  Montgomery reducer.
+- Do not use signed arithmetic for `mod_mul`.
+- Verify the repaired module and its direct dependents.
+
+Files changed:
+
+- Updated `rtl/arithmetic/mod_mul.v`.
+- Updated `tb/unit/tb_mod_mul.v` to use an unsigned REDC oracle.
+- Updated `reports/simulation/reduction_mod_mul_report.md`.
+- Updated `TODO.md` with this handoff entry.
+
+Commands run:
+
+- `rg -n "signed|\$signed|>>>" rtl/arithmetic/mod_mul.v tb/unit/tb_mod_mul.v || true`
+- `./sim/scripts/run_mod_mul.sh`
+- `./sim/scripts/run_reduction.sh`
+- `./sim/scripts/run_basemul_unit.sh`
+- `./sim/scripts/run_poly_basemul_montgomery.sh`
+- `./sim/scripts/run_ntt_core.sh`
+- `./sim/scripts/run_intt_core.sh`
+- `./sim/scripts/run_ntt_intt_roundtrip.sh`
+- `git diff --check`
+
+Verified:
+
+- `mod_mul.v` uses only unsigned declarations and operations.
+- `tb_mod_mul.v` uses only unsigned declarations and operations for its REDC
+  oracle.
+- `run_mod_mul.sh`: PASS, `pass_count=1010 fail_count=0`.
+- `run_reduction.sh`: PASS, `pass_count=618 fail_count=0`.
+- `run_basemul_unit.sh`: PASS, `pass_count=514 fail_count=0`.
+- `run_poly_basemul_montgomery.sh`: PASS,
+  `pass_count=768 fail_count=0`.
+- `run_ntt_core.sh`: PASS, `pass_count=512 fail_count=0`.
+- `run_intt_core.sh`: PASS, `pass_count=768 fail_count=0`.
+- `run_ntt_intt_roundtrip.sh`: PASS, `pass_count=1024 fail_count=0`.
+
+Remains to do:
+
+- `rtl/arithmetic/reduction.v` still has two internal `wire signed`
+  declarations despite its unsigned-only module contract. This file was not
+  changed during the focused `mod_mul.v` repair.
+- Rerun the polynomial-subtraction test after the user fixes its output wiring.
+- Consider pipelining `mod_mul` only after synthesis identifies this
+  combinational implementation as a timing limiter.
+
+## Next Session Start Here
+
+1. Read `TODO.md`.
+2. If enforcing unsigned-only arithmetic across the whole reducer chain,
+   replace the two remaining signed declarations in `reduction.v` and rerun
+   the complete arithmetic/NTT/basemul regression set.
+3. Otherwise continue with the pending `poly_sub` RTL wiring fix and rerun
+   `./sim/scripts/run_poly_sub.sh`.
