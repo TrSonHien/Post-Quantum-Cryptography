@@ -33,10 +33,11 @@ M2: Contract-compliant RTL foundations
 - M2.2.3 pipelined modular multiplier (mod_mul_pipe).
 - M2.2.4 pipelined Barrett reduction (barrett_reduce_pipe).
 - M2.2.5 pipelined forward butterfly (butterfly_pipe).
+- M2.2.6 pipelined inverse butterfly (intt_butterfly_pipe).
 
 ## In Progress
 
-- M2.2.6: Inverse butterfly pipeline (intt_butterfly_unit_pipe).
+- M2.2.7: Unified regression & handoff.
 
 ## Blocked By
 
@@ -48,7 +49,7 @@ None
 
 ## Next Target
 
-M2.2.6 inverse butterfly pipeline. Final CAVP/ACVP ML-KEM verification remains pending.
+M2.2.7 unified regression & handoff. Final CAVP/ACVP ML-KEM verification remains pending.
 
 ## Current Focus
 

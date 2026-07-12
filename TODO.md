@@ -24,10 +24,11 @@ M2: Contract-compliant RTL foundations
 - [x] M2.2.3 pipelined modular multiplier (mod_mul_pipe)
 - [x] M2.2.4 pipelined Barrett reduction (barrett_reduce_pipe)
 - [x] M2.2.5 pipelined forward butterfly (butterfly_pipe)
+- [x] M2.2.6 pipelined inverse butterfly (intt_butterfly_pipe)
 
 ## In Progress
 
-- [ ] M2.2.6: Inverse butterfly pipeline (intt_butterfly_unit_pipe)
+- [ ] M2.2.7: Unified regression & handoff
 
 ## Blocked By
 
@@ -35,7 +36,7 @@ M2: Contract-compliant RTL foundations
 
 ## Next Target
 
-Implement and verify M2.2.6 inverse butterfly pipeline. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+Implement and verify M2.2.7 unified regression & handoff. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -72,6 +73,42 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M2.2.6 Inverse Butterfly Implementation
+
+Requested:
+
+- Implement M2.2.6: Inverse NTT butterfly pipeline (`intt_butterfly_pipe`).
+
+Files changed:
+
+- Added [intt_butterfly_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/rtl/ntt/intt_butterfly_pipe.v).
+- Added [tb_intt_butterfly_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/tb/unit/tb_intt_butterfly_pipe.v).
+- Added run script [run_intt_butterfly_pipe.sh](file:///home/hien/Projects/Post_Quantum_Cryptography/sim/scripts/run_intt_butterfly_pipe.sh).
+- Added [m2_2_6_inverse_butterfly_report.md](file:///home/hien/Projects/Post_Quantum_Cryptography/reports/simulation/m2_2_6_inverse_butterfly_report.md).
+- Updated [TODO.md](file:///home/hien/Projects/Post_Quantum_Cryptography/TODO.md) and [milestone_status.md](file:///home/hien/Projects/Post_Quantum_Cryptography/docs/00_project_spec/milestone_status.md).
+
+Commands run:
+
+- `chmod +x sim/scripts/run_intt_butterfly_pipe.sh`
+- `./sim/scripts/run_intt_butterfly_pipe.sh`
+- `./sim/scripts/run_m2_1_primitives.sh && ./sim/scripts/run_mod_add_pipe.sh && ./sim/scripts/run_mod_sub_pipe.sh && ./sim/scripts/run_montgomery_reduce_pipe.sh && ./sim/scripts/run_mod_mul_pipe.sh && ./sim/scripts/run_barrett_reduce_pipe.sh && ./sim/scripts/run_butterfly_pipe.sh && ./sim/scripts/run_butterfly_unit.sh && ./sim/scripts/run_ntt_core.sh && ./sim/scripts/run_intt_core.sh && ./sim/scripts/run_ntt_intt_roundtrip.sh && ./sim/scripts/run_zetas_rom.sh`
+
+Verified:
+
+- `tb_intt_butterfly_pipe`: `pass_count=2007 fail_count=0`
+- All legacy and adjacent regressions pass successfully.
+
+Remains to do:
+
+- Implement M2.2.7: Unified regression & handoff.
+
+Next Session Start Here:
+
+- Start M2.2.7.
+
+
+
 
 ### 2026-07-13 M2.2.5 Forward Butterfly Implementation
 
