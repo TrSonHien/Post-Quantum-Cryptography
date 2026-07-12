@@ -73,8 +73,8 @@ module montgomery_reduce (
     localparam [15:0] MONT_Q_DASH = 16'd3327;
 
     // m = low_16_bits(a * MONT_Q_DASH)
-    wire signed [47:0] a_qdash_full;
-    wire signed [15:0] m;
+    wire [47:0] a_qdash_full;
+    wire [15:0] m;
     
     // Operands are explicitly zero-extanded to preserve the full product
     assign a_qdash_full = {16'b0, a} * {{32{1'b0}}, MONT_Q_DASH};
