@@ -23,3 +23,10 @@ Required before correctness claims:
 
 This baseline proves deterministic internal consistency and catches exact data
 divergence. It is not final NIST CAVP/ACVP ML-KEM validation.
+
+## M1 architecture-contract verification
+
+`m1_architecture_verification_plan.md` defines vector-to-interface translation,
+protocol/memory/domain assertions, exhaustive bank-schedule checks, reset
+tests, and completion-ordering gates for future RTL. Existing asynchronous
+memory RTL remains a legacy baseline and is not M1-contract evidence.

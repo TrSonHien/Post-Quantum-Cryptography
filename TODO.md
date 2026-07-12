@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M0: Standards, algorithm tracking, KAT, and independent golden models
+M1: Interface, representation, timing, and memory architecture freeze v0.1
 
 ## Completed
 
@@ -17,10 +17,11 @@ M0: Standards, algorithm tracking, KAT, and independent golden models
 - [x] M0.4a independent Python foundation layer
 - [x] M0.4b complete deterministic internal Python ML-KEM-768 golden model
 - [x] M0.5 comparison tools, vector export infrastructure, and M0 closure
+- [x] M1 v0.1 documentation-only architecture freeze
 
 ## In Progress
 
-- None. Do not start M1 without explicit approval.
+- None. Do not start M2 without explicit approval.
 
 ## Blocked By
 
@@ -28,8 +29,9 @@ M0: Standards, algorithm tracking, KAT, and independent golden models
 
 ## Next Target
 
-Await explicit approval before M1 architecture work. Final NIST CAVP/ACVP
-ML-KEM vector import and verification remain pending external validation work.
+Await explicit approval before M2. Existing RTL is a verified legacy baseline,
+not automatically compliant with the M1 contracts. Final NIST CAVP/ACVP
+ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -2795,3 +2797,63 @@ Remains to do:
 2. Treat `mlkem-vector-v1` as the shared Python/future-RTL vector contract.
 3. Do not claim CAVP/ACVP validation; authoritative final vectors are absent.
 4. Await explicit approval before beginning M1 architecture work.
+
+### 2026-07-13 M1 Architecture Freeze v0.1 Documentation
+
+Requested:
+
+- Freeze approved interface, representation/domain, reset/control, synchronous
+  memory, pipeline metadata, and one-butterfly NTT/INTT architecture contracts.
+- Prove the two-source/two-destination-bank schedule conflict-free, map Python
+  vectors to future RTL, define assertions, and rerun the stale `poly_sub` test.
+- Do not modify RTL, TB, sim scripts, reference models, or start M2.
+
+Files changed:
+
+- `TODO.md`
+- `docs/00_project_spec/m1_plan.md`
+- `docs/00_project_spec/milestone_status.md`
+- `docs/03_architecture/README.md`
+- `docs/03_architecture/interface_contract.md`
+- `docs/03_architecture/representation_domain_contract.md`
+- `docs/03_architecture/reset_control_contract.md`
+- `docs/03_architecture/pipeline_contract.md`
+- `docs/03_architecture/memory_architecture.md`
+- `docs/03_architecture/ntt_architecture.md`
+- `docs/03_architecture/top_architecture.md`
+- `docs/04_verification/verification_plan.md`
+- `docs/04_verification/regression_plan.md`
+- `docs/04_verification/m1_architecture_verification_plan.md`
+- `reports/simulation/poly_sub_report.md`
+- `reports/m1_architecture_freeze_v0_1.md`
+
+Commands run:
+
+- Repository startup/status and documentation/RTL audit commands required by
+  `AGENTS.md`.
+- `bash sim/scripts/run_poly_sub.sh`
+- `git diff --check`
+- restricted Git status/diff checks for RTL, TB, sim scripts, reference models,
+  and the read-only `PQC_main` worktree.
+
+Verified:
+
+- `poly_sub` passed `pass_count=1024 fail_count=0`; its stale report is resolved.
+- The bank proof covers all seven NTT and seven INTT stages using
+  `bank=i[p] xor i[r]`, `addr=remove_bit(i,r)` transitions.
+- M1 documentation records cycle/bandwidth tables, vector mapping, protocol and
+  collision assertions, and completion-after-final-write semantics.
+- No RTL, TB, sim script, reference-model, or `PQC_main` file was modified.
+
+Remains to do:
+
+- Do not start M2 until explicitly approved.
+- Implement and exhaustively verify the frozen contracts in later milestones.
+- Final NIST CAVP/ACVP vector validation remains pending.
+
+## Next Session Start Here
+
+1. Read `AGENTS.md`, `TODO.md`, `docs/00_project_spec/m1_plan.md`, and
+   `reports/m1_architecture_freeze_v0_1.md`.
+2. Treat M1 contracts as governing future RTL; existing RTL remains baseline-only.
+3. Await explicit M2 approval; do not modify RTL beforehand.

@@ -44,7 +44,7 @@ for all 256 coefficients.
 
 ## Current result
 
-FAIL.
+PASS.
 
 Command run:
 
@@ -52,34 +52,20 @@ Command run:
 ./sim/scripts/run_poly_sub.sh
 ```
 
-Latest result:
+Latest result (2026-07-13):
 
 ```text
-rtl/poly/poly_sub.v:153: warning: implicit definition of wire 'add_result0'.
-rtl/poly/poly_sub.v:159: warning: implicit definition of wire 'add_result1'.
-rtl/poly/poly_sub.v:150: warning: Port 3 (c) of module mod_sub expects 12 bit(s), given 1.
-rtl/poly/poly_sub.v:156: warning: Port 3 (c) of module mod_sub expects 12 bit(s), given 1.
-FIRST_FAIL tb_poly_sub: pattern=0 index=0 expected=0 actual=z
-INFO tb_poly_sub: pass_count=0 fail_count=1024
-FAIL tb_poly_sub
+INFO tb_poly_sub: running pattern=0
+INFO tb_poly_sub: running pattern=1
+INFO tb_poly_sub: running pattern=2
+INFO tb_poly_sub: running pattern=3
+INFO tb_poly_sub: pass_count=1024 fail_count=0
+PASS tb_poly_sub
 ```
 
-## RTL issue to fix
+## Resolved report discrepancy
 
-`rtl/poly/poly_sub.v` declares the intended subtract result wires:
-
-```verilog
-wire [DATA_WIDTH-1:0] sub_result0;
-wire [DATA_WIDTH-1:0] sub_result1;
-```
-
-but the two `mod_sub` instances drive undeclared `add_result0` and
-`add_result1` instead:
-
-```verilog
-.c(add_result0)
-.c(add_result1)
-```
-
-Because `sub_result0` and `sub_result1` are never driven, the R buffer writes
-high-Z data and all coefficient checks fail.
+The previous FAIL text described stale undeclared `add_result*` wiring. Current
+RTL connects the two `mod_sub` outputs to declared `sub_result0` and
+`sub_result1`; the live rerun resolves the conflict with the aggregate smoke
+report. No RTL or testbench change was made during M1.

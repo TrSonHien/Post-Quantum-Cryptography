@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M0: Standards, algorithm tracking, KAT, and independent golden models
+M1: Interface, representation, timing, and memory architecture freeze v0.1
 
 ## Completed
 
@@ -19,10 +19,16 @@ M0: Standards, algorithm tracking, KAT, and independent golden models
 - M0.4b complete deterministic internal Python ML-KEM-768 golden model.
 - M0.5 comparison tools, vector export infrastructure, and final M0 report.
 - M0 milestone closed with final NIST CAVP/ACVP verification explicitly pending.
+- M1 v0.1 documentation freeze: interface, representation/domain, reset/control,
+  pipeline metadata, synchronous memory, and NTT/INTT banking contracts.
+- Conflict-free two-source/two-destination bank schedule proof and complete
+  forward/inverse stage tables.
+- Python-vector-to-RTL mapping and architecture assertion/verification plan.
+- Stale `poly_sub` report reconciled against a live 1024/0 PASS regression.
 
 ## In Progress
 
-- None. Do not start M1 without explicit approval.
+- None. Do not start M2 without explicit approval.
 
 ## Blocked By
 
@@ -34,9 +40,9 @@ None
 
 ## Next Target
 
-Await explicit approval and architecture decisions before M1. Final CAVP/ACVP
-ML-KEM KAT verification remains pending and must be added when authoritative
-vectors are obtained.
+Await explicit approval before M2. M1 freezes documentation contracts only;
+existing RTL is a legacy baseline and is not automatically contract-compliant.
+Final CAVP/ACVP ML-KEM verification remains pending.
 
 ## Current Focus
 
@@ -70,3 +76,10 @@ Before continuing, read:
 10. reports/m0_4b_python_mlkem_model.md
 11. reports/m0_5_comparison_tools.md
 12. reports/m0_completion_report.md
+13. docs/00_project_spec/m1_plan.md
+14. docs/03_architecture/interface_contract.md
+15. docs/03_architecture/representation_domain_contract.md
+16. docs/03_architecture/reset_control_contract.md
+17. docs/03_architecture/pipeline_contract.md
+18. docs/04_verification/m1_architecture_verification_plan.md
+19. reports/m1_architecture_freeze_v0_1.md
