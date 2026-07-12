@@ -158,7 +158,7 @@ module tb_montgomery_reduce_pipe;
         in_valid = 1;
         for (i = 0; i < 1000; i = i + 1) begin
             // Generate values strictly less than q*R = 218169344
-            a = $random(seed) % 32'd218169344;
+            a = ($random(seed) & 32'h7FFFFFFF) % 32'd218169344;
             @(posedge clk); #1;
         end
         in_valid = 0;

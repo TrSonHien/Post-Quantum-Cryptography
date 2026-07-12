@@ -30,10 +30,11 @@ M2: Contract-compliant RTL foundations
   and backpressure unit verification.
 - M2.2.1 pipelined modular addition and subtraction (mod_add_pipe, mod_sub_pipe).
 - M2.2.2 pipelined Montgomery reduction (montgomery_reduce_pipe).
+- M2.2.3 pipelined modular multiplier (mod_mul_pipe).
 
 ## In Progress
 
-- M2.2.3: Pipelined modular multiplier (mod_mul_pipe).
+- M2.2.4: Pipelined Barrett reduction (barrett_reduce_pipe).
 
 ## Blocked By
 
@@ -45,7 +46,7 @@ None
 
 ## Next Target
 
-M2.2.3 pipelined modular multiplier. Final CAVP/ACVP ML-KEM verification remains pending.
+M2.2.4 pipelined Barrett reduction. Final CAVP/ACVP ML-KEM verification remains pending.
 
 ## Current Focus
 
