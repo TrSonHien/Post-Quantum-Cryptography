@@ -15,7 +15,7 @@ M0 covers:
 - future C reference harness planning;
 - future KAT parsing and vector provenance planning;
 - future independent Python golden-model planning;
-- future comparison-tool planning;
+- deterministic comparison tooling and shared vector export;
 - final M0 report and readiness gate for M1.
 
 M0 does not include:
@@ -25,7 +25,6 @@ M0 does not include:
 - Python model implementation;
 - KAT parser implementation;
 - C harness implementation;
-- comparison-script implementation;
 - synthesis, place-and-route, or timing claims.
 
 ## Approved source policy
@@ -103,13 +102,52 @@ Gate:
 - model is derived from FIPS 203 tracking, not copied blindly from Kyber C;
 - low-level functions have self-checks and documented source references.
 
+M0.4a foundation result:
+
+- implemented ML-KEM-768 parameters, modular arithmetic, codec/compression, NTT/INTT, NTT-domain multiplication, sampling, and SHA3/SHAKE wrappers under `ref_model/python_model/`;
+- recorded canonical unsigned coefficient representation, FIPS NTT-domain convention, and no-Montgomery/no-lazy-range policy in `reports/m0_4a_python_foundations.md`;
+- validated with Python compile checks, deterministic self-tests, and unit tests;
+- did not implement K-PKE, full ML-KEM, comparison tooling, RTL, testbench, or simulation collateral;
+- did not run legacy C/Python equivalence checks because the relevant C mappings remain `legacy-candidate` and unresolved.
+
+M0.4b model result:
+
+- implemented FIPS 203 matrix generation/transposition, K-PKE, and
+  deterministic internal ML-KEM algorithms under `ref_model/python_model/`;
+- implemented implicit rejection with `J(z || c)` and ciphertext re-encryption
+  comparison;
+- added input-check helpers for encapsulation keys, decapsulation keys, and
+  ciphertexts;
+- validated deterministic K-PKE roundtrip, successful encapsulation/decapsulation
+  agreement, and modified-ciphertext fallback selection;
+- did not claim final KAT/CAVP verification because final NIST CAVP/ACVP
+  ML-KEM vectors are still missing locally;
+- did not start M0.5 comparison tooling.
+
 ### M0.5 Comparison tools and final M0 report
 
 Gate:
 
-- comparison schema exists for C/Python/KAT/module vectors;
-- C/Python equivalence is checked only for algorithms whose FIPS/Kyber differences are resolved;
-- final M0 report identifies trusted sources, legacy sources, missing authoritative vectors, unresolved differences, and readiness for M1.
+- `mlkem-vector-v1` is the shared strict JSON schema for Python, future RTL
+  testbenches, and comparison scripts;
+- deterministic vectors cover arithmetic, codec, NTT/INTT, `MultiplyNTTs`,
+  sampling, K-PKE, and internal ML-KEM operations;
+- strict loading rejects malformed documents and comparison reports the first
+  mismatching path and value;
+- a curated smoke set is tracked while regenerated/bulk vectors are ignored;
+- final M0 report identifies trusted sources, legacy sources, missing
+  authoritative vectors, unresolved differences, and readiness for M1.
+
+M0.5 result:
+
+- implemented export, strict reload, and exact comparison tools under
+  `ref_model/compare/`;
+- generated `ref_model/compare/vectors/mlkem768_smoke.json` reproducibly from
+  the independent Python model;
+- verified byte-for-byte semantic regeneration through strict document
+  comparison and unit tests;
+- did not claim CAVP/ACVP validation; authoritative final ML-KEM vectors remain
+  pending external material.
 
 ## M0 completion criteria
 
@@ -118,6 +156,10 @@ M0 is complete only when:
 - FIPS 203 is the documented normative authority for ML-KEM-768;
 - final NIST CAVP/ACVP ML-KEM vectors are either present or explicitly listed as missing external validation material;
 - local Kyber 2020 vectors remain labeled legacy unless proven otherwise;
-- an independent Python ML-KEM-768 model exists and is cross-checked against approved vectors or reviewed C candidates;
+- an independent Python ML-KEM-768 model exists with deterministic property,
+  roundtrip, rejection, export/reload, and regeneration checks;
 - comparison tooling can produce reproducible PASS/FAIL reports;
 - no RTL changes were made during M0 unless a later user instruction explicitly expands scope.
+
+These criteria are complete. Final NIST CAVP/ACVP vector verification is a
+mandatory pending external-validation task and is not implied by M0 closure.

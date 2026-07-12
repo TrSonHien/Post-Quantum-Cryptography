@@ -15,10 +15,14 @@ M0: Standards, algorithm tracking, KAT, and independent golden models
 - M0.1 source, standards, and provenance audit.
 - M0.2 detailed FIPS 203 algorithm tracking.
 - M0.3 legacy Kyber768 C/KAT harness.
+- M0.4a independent Python foundation layer for ML-KEM-768 low-level algorithms.
+- M0.4b complete deterministic internal Python ML-KEM-768 golden model.
+- M0.5 comparison tools, vector export infrastructure, and final M0 report.
+- M0 milestone closed with final NIST CAVP/ACVP verification explicitly pending.
 
 ## In Progress
 
-- M0.4 independent Python ML-KEM-768 golden model is the next planned gate, but it has not started.
+- None. Do not start M1 without explicit approval.
 
 ## Blocked By
 
@@ -30,10 +34,9 @@ None
 
 ## Next Target
 
-Start M0.4 independent Python ML-KEM-768 golden model only after explicit
-approval. M0.3 completed the legacy Kyber768 C/KAT harness only; it did not
-implement Python models, comparison tools, RTL, testbenches, or simulation
-artifacts.
+Await explicit approval and architecture decisions before M1. Final CAVP/ACVP
+ML-KEM KAT verification remains pending and must be added when authoritative
+vectors are obtained.
 
 ## Current Focus
 
@@ -63,3 +66,7 @@ Before continuing, read:
 6. reports/m0_source_audit.md
 7. reports/m0_3_c_kat_harness.md
 8. ref_model/kat/kyber768_legacy_provenance.md
+9. reports/m0_4a_python_foundations.md
+10. reports/m0_4b_python_mlkem_model.md
+11. reports/m0_5_comparison_tools.md
+12. reports/m0_completion_report.md

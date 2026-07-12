@@ -14,11 +14,13 @@ M0: Standards, algorithm tracking, KAT, and independent golden models
 - [x] M0.1 source, standards, and provenance audit
 - [x] M0.2 detailed FIPS 203 algorithm tracking
 - [x] M0.3 legacy Kyber768 C/KAT harness
+- [x] M0.4a independent Python foundation layer
+- [x] M0.4b complete deterministic internal Python ML-KEM-768 golden model
+- [x] M0.5 comparison tools, vector export infrastructure, and M0 closure
 
 ## In Progress
 
-- [ ] M0.4 independent Python ML-KEM-768 golden model
-- [ ] M0.5 comparison tools and final M0 report
+- None. Do not start M1 without explicit approval.
 
 ## Blocked By
 
@@ -26,9 +28,8 @@ M0: Standards, algorithm tracking, KAT, and independent golden models
 
 ## Next Target
 
-Start M0.4 independent Python ML-KEM-768 golden model only after explicit
-approval. M0.3 did not implement Python models, comparison tools, RTL,
-testbenches, simulation collateral, or final FIPS 203 validation vectors.
+Await explicit approval before M1 architecture work. Final NIST CAVP/ACVP
+ML-KEM vector import and verification remain pending external validation work.
 
 ## Current Focus
 
@@ -2570,3 +2571,227 @@ Remains to do:
 3. Do not treat legacy Kyber 2020 KATs as FIPS 203 ML-KEM validation vectors.
 4. If approved, start M0.4 independent Python ML-KEM-768 golden model from
    FIPS 203 tracking, not from blind C translation.
+
+### 2026-07-12 M0.4a Python Golden Model Foundations
+
+Requested:
+
+- Implement M0.4a only: independent Python foundations for ML-KEM-768.
+- Implement parameters, modular arithmetic helpers, codec/compression, NTT,
+  inverse NTT, `MultiplyNTTs`, `SampleNTT`, `SamplePolyCBD`, and hashlib-based
+  SHA3/SHAKE wrappers.
+- Add deterministic self-tests and unit tests.
+- Cross-check against legacy C only where equivalence is already documented as
+  approved.
+- Do not implement K-PKE, full ML-KEM, M0.5, RTL, TB, sim, imported C changes,
+  or `PQC_main` changes.
+
+Files changed:
+
+- `TODO.md`
+- `docs/00_project_spec/m0_plan.md`
+- `docs/00_project_spec/milestone_status.md`
+- `ref_model/python_model/__init__.py`
+- `ref_model/python_model/params.py`
+- `ref_model/python_model/mod_arith.py`
+- `ref_model/python_model/symmetric.py`
+- `ref_model/python_model/codec.py`
+- `ref_model/python_model/ntt.py`
+- `ref_model/python_model/sampling.py`
+- `ref_model/python_model/selftest.py`
+- `ref_model/python_model/test_foundations.py`
+- `reports/m0_4a_python_foundations.md`
+
+Commands run:
+
+- `pwd`
+- `git branch --show-current`
+- `git status --short`
+- `git worktree list`
+- `git log --oneline --decorate -5`
+- `sed -n ... AGENTS.md TODO.md docs/00_project_spec/m0_plan.md docs/00_project_spec/milestone_status.md docs/00_project_spec/fips203_algorithm_tracking.md`
+- `find ref_model/python_model ...`
+- `pdftotext -layout -f 27 -l 36 references/standards/NIST.FIPS.203.pdf -`
+- `python3 -m py_compile ref_model/python_model/*.py`
+- `python3 -m ref_model.python_model.selftest`
+- `python3 -m unittest discover -s ref_model/python_model -p 'test*.py'`
+- `git diff --check`
+- `git status --short`
+- `git diff --stat`
+- `git status --short -- rtl tb sim ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001 ref_model/compare reports/simulation`
+- `git -C /home/hien/Projects/PQC_main status --short`
+- `apply_patch`
+
+Verified:
+
+- Python compile check passed.
+- Deterministic selftests passed.
+- Unit tests passed: 8 tests.
+- `git diff --check` passed.
+- No RTL, TB, sim, imported C source, comparison-tool, reports/simulation, or
+  `PQC_main` changes were reported.
+- No legacy C/Python differential result was claimed because the relevant local
+  C mappings remain documented as `legacy-candidate` and unresolved.
+
+Remains to do:
+
+- K-PKE and full ML-KEM remain unimplemented.
+- Final NIST CAVP/ACVP ML-KEM vectors remain missing locally.
+- M0.5 comparison tooling has not started.
+
+## Next Session Start Here
+
+1. Read `AGENTS.md`, `TODO.md`, and `reports/m0_4a_python_foundations.md`.
+2. Treat `ref_model/python_model/` as FIPS-derived Python foundations only.
+3. Do not claim FIPS validation until final CAVP/ACVP vectors are imported and
+   passed.
+4. If approved, continue M0.4 with K-PKE/full ML-KEM Python modeling; do not
+   start M0.5 yet.
+
+### 2026-07-12 M0.4b Complete Python ML-KEM-768 Golden Model
+
+Requested:
+
+- Implement M0.4b only: complete independent Python ML-KEM-768 golden model.
+- Implement FIPS 203 matrix generation/transposition, PRF/XOF/CBD orchestration,
+  K-PKE keygen/encrypt/decrypt, deterministic ML-KEM internal algorithms, and
+  implicit rejection.
+- Keep deterministic APIs accepting explicit `d`, `z`, `m`, and randomness.
+- Follow FIPS byte layouts/input checks and avoid legacy `kem.c` behavior where
+  it differs from FIPS 203.
+- Add unit tests and deterministic roundtrip tests, including modified
+  ciphertext fallback selection.
+- Do not modify RTL, TB, sim, imported C source, or `PQC_main`.
+- Do not claim KAT verification because final CAVP vectors are not present.
+- Do not start M0.5.
+
+Files changed:
+
+- `TODO.md`
+- `docs/00_project_spec/m0_plan.md`
+- `docs/00_project_spec/milestone_status.md`
+- `ref_model/python_model/params.py`
+- `ref_model/python_model/kpke.py`
+- `ref_model/python_model/mlkem.py`
+- `ref_model/python_model/selftest.py`
+- `ref_model/python_model/test_foundations.py`
+- `reports/m0_4b_python_mlkem_model.md`
+
+Commands run:
+
+- `pwd`
+- `git branch --show-current`
+- `git status --short`
+- `git worktree list`
+- `git log --oneline --decorate -5`
+- `sed -n ... AGENTS.md TODO.md docs/00_project_spec/m0_plan.md docs/00_project_spec/milestone_status.md reports/m0_4a_python_foundations.md`
+- `find ref_model/python_model -maxdepth 2 -type f`
+- `sed -n ... ref_model/python_model/*.py`
+- `python3 -m py_compile ref_model/python_model/*.py`
+- `python3 -m ref_model.python_model.selftest`
+- `python3 -m unittest discover -s ref_model/python_model -p 'test*.py'`
+- `git diff --check`
+- `git status --short`
+- `git diff --stat`
+- `git status --short -- rtl tb sim ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001 ref_model/compare reports/simulation`
+- `git -C /home/hien/Projects/PQC_main status --short`
+- `apply_patch`
+
+Verified:
+
+- Python compile check passed.
+- Deterministic Python selftest passed.
+- Unit tests passed: 13 tests.
+- Successful encapsulation/decapsulation agreement is tested.
+- Modified ciphertext fallback selection to `J(z || c)` is tested.
+- `git diff --check` passed.
+- No RTL, TB, sim, imported C source, comparison-tool, reports/simulation, or
+  `PQC_main` changes were reported.
+- No final KAT/CAVP verification is claimed.
+
+Remains to do:
+
+- M0.5 comparison tooling has not started.
+- Final NIST CAVP/ACVP ML-KEM vectors remain missing locally.
+
+## Next Session Start Here
+
+1. Read `AGENTS.md`, `TODO.md`, and `reports/m0_4b_python_mlkem_model.md`.
+2. Treat `ref_model/python_model/` as the current independent Python internal
+   ML-KEM-768 model, not final CAVP/KAT-validated evidence.
+3. Do not modify RTL until M1 architecture decisions are explicitly reopened.
+4. If approved, start M0.5 comparison tooling and final M0 report.
+
+### 2026-07-13 M0.5 Comparison Tools and M0 Closure
+
+Requested:
+
+- Implement M0.5 only: one deterministic shared vector schema, reproducible
+  ML-KEM-768 exports, strict first-mismatch comparison, tests, reports, and M0
+  closure without modifying RTL, TB, sim, imported C, or `PQC_main`.
+- Keep bulk vectors ignored, track only a curated smoke set, and retain final
+  NIST CAVP/ACVP verification as explicitly pending.
+
+Files changed:
+
+- `.gitignore`
+- `TODO.md`
+- `docs/00_project_spec/m0_plan.md`
+- `docs/00_project_spec/milestone_status.md`
+- `docs/04_verification/verification_plan.md`
+- `docs/04_verification/test_vector_plan.md`
+- `docs/04_verification/regression_plan.md`
+- `ref_model/README.md`
+- `ref_model/compare/__init__.py`
+- `ref_model/compare/vector_schema.py`
+- `ref_model/compare/generate_vectors.py`
+- `ref_model/compare/compare_vectors.py`
+- `ref_model/compare/test_compare_tools.py`
+- `ref_model/compare/vectors/mlkem768_smoke.json`
+- `reports/m0_5_comparison_tools.md`
+- `reports/m0_completion_report.md`
+
+Commands run:
+
+- `pwd`
+- `git branch --show-current`
+- `git status --short`
+- `git worktree list`
+- `git log --oneline --decorate -5`
+- `sed -n ... AGENTS.md TODO.md` and M0/model/verification documents
+- `find ref_model ...` and `find reports ...`
+- `python3 -m py_compile ref_model/python_model/*.py ref_model/compare/*.py`
+- `python3 -m unittest discover -s ref_model -p 'test*.py'`
+- `python3 -m ref_model.python_model.selftest`
+- `python3 -m ref_model.compare.generate_vectors --output ref_model/compare/generated/mlkem768_smoke.json`
+- `python3 -m ref_model.compare.compare_vectors ref_model/compare/vectors/mlkem768_smoke.json ref_model/compare/generated/mlkem768_smoke.json`
+- `git diff --check`
+- restricted `git status`/`git diff` checks for prohibited project paths
+- `git -C /home/hien/Projects/PQC_main status --short`
+- `git diff --stat`
+
+Verified:
+
+- Python compilation passed.
+- All 18 discovered Python model/comparison tests passed.
+- Deterministic Python model self-test passed.
+- Regenerated smoke vectors matched the curated set exactly.
+- Schema tests cover export/reload, malformed document rejection, duplicate or
+  extra structural data rejection, reproducibility, and exact mismatch paths.
+- Restricted project paths and the read-only `PQC_main` baseline showed no
+  changes; `git diff --check` passed.
+- M0.1 through M0.5 are complete without an RTL validation claim.
+
+Remains to do:
+
+- Obtain authoritative final NIST CAVP/ACVP ML-KEM vectors, record provenance
+  and hashes, and validate the Python model; this is still pending.
+- Do not start M1 or modify RTL until explicitly approved and architecture
+  decisions are locked.
+
+## Next Session Start Here
+
+1. Read `AGENTS.md`, `TODO.md`, and `reports/m0_completion_report.md`.
+2. Treat `mlkem-vector-v1` as the shared Python/future-RTL vector contract.
+3. Do not claim CAVP/ACVP validation; authoritative final vectors are absent.
+4. Await explicit approval before beginning M1 architecture work.

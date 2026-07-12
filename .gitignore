@@ -25,6 +25,7 @@ Thumbs.db
 # Python/C reference-model scratch artifacts
 # ----------------------------------------------------------------------
 ref_model/c_ref/build/
+ref_model/compare/generated/
 __pycache__/
 *.py[cod]
 .pytest_cache/
