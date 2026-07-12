@@ -19,10 +19,11 @@ M2: Contract-compliant RTL foundations
 - [x] M0.5 comparison tools, vector export infrastructure, and M0 closure
 - [x] M1 v0.1 documentation-only architecture freeze
 - [x] M2.1 synchronous memory and pipeline-control primitives
+- [x] M2.2.1 pipelined modular addition and subtraction (mod_add_pipe, mod_sub_pipe)
 
 ## In Progress
 
-- None. Do not start M2.2 without explicit approval.
+- [ ] M2.2.2: Pipelined Montgomery reduction (montgomery_reduce_pipe)
 
 ## Blocked By
 
@@ -30,9 +31,7 @@ M2: Contract-compliant RTL foundations
 
 ## Next Target
 
-Await explicit approval before M2.2. M2.1 adds reusable synchronous storage and
-pipeline-control primitives only; arithmetic and NTT control remain unstarted.
-Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+Implement and verify M2.2.2 pipelined Montgomery reduction. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -69,6 +68,70 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M2.2.1 Implementation
+
+Requested:
+
+- Implement M2.2.1: Pipelined modular add (`mod_add_pipe`) and subtract (`mod_sub_pipe`).
+
+Files changed:
+
+- Added [mod_add_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/rtl/arithmetic/mod_add_pipe.v) and [mod_sub_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/rtl/arithmetic/mod_sub_pipe.v).
+- Added [tb_mod_add_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/tb/unit/tb_mod_add_pipe.v) and [tb_mod_sub_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/tb/unit/tb_mod_sub_pipe.v).
+- Added run scripts [run_mod_add_pipe.sh](file:///home/hien/Projects/Post_Quantum_Cryptography/sim/scripts/run_mod_add_pipe.sh) and [run_mod_sub_pipe.sh](file:///home/hien/Projects/Post_Quantum_Cryptography/sim/scripts/run_mod_sub_pipe.sh).
+- Added [m2_2_1_primitives_report.md](file:///home/hien/Projects/Post_Quantum_Cryptography/reports/simulation/m2_2_1_primitives_report.md).
+- Updated [TODO.md](file:///home/hien/Projects/Post_Quantum_Cryptography/TODO.md) and [milestone_status.md](file:///home/hien/Projects/Post_Quantum_Cryptography/docs/00_project_spec/milestone_status.md).
+
+Commands run:
+
+- `chmod +x sim/scripts/run_mod_add_pipe.sh sim/scripts/run_mod_sub_pipe.sh`
+- `./sim/scripts/run_mod_add_pipe.sh`
+- `./sim/scripts/run_mod_sub_pipe.sh`
+- `./sim/scripts/run_m2_1_primitives.sh && ./sim/scripts/run_mod_add.sh && ./sim/scripts/run_mod_sub.sh && ./sim/scripts/run_reduction.sh && ./sim/scripts/run_mod_mul.sh`
+
+Verified:
+
+- `tb_mod_add_pipe`: `pass_count=149236 fail_count=0`
+- `tb_mod_sub_pipe`: `pass_count=149236 fail_count=0`
+- Legacy and adjacent regressions pass successfully.
+
+Remains to do:
+
+- Implement M2.2.2: Pipelined Montgomery reduction (`montgomery_reduce_pipe`).
+
+Next Session Start Here:
+
+- Start M2.2.2 design and implementation.
+
+
+### 2026-07-13 Context Reconstruction and M2.2 Audit/Plan
+
+Requested:
+
+- Context reconstruction from repository and M2.2 audit/plan proposal.
+
+Files changed:
+
+- Added [m2_2_audit_and_plan.md](file:///home/hien/.gemini/antigravity-cli/brain/7c5a6c69-9b6a-48af-a650-9a0ea35c75b4/m2_2_audit_and_plan.md) artifact.
+
+Commands run:
+
+- `pwd && git branch --show-current && git status --short && git log --oneline --decorate -5 && git worktree list`
+
+Verified:
+
+- Git branch is `test`, workspace clean.
+- M2.1 primitives report and testbench PASS results.
+
+Remains to do:
+
+- Await approval of the proposed M2.2 plan.
+
+Next Session Start Here:
+
+- Implement the M2.2 arithmetic blocks once the plan is approved.
+
 
 ### 2026-07-04 Repository Reorganization
 

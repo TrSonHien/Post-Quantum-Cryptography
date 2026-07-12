@@ -28,10 +28,11 @@ M2: Contract-compliant RTL foundations
 - M2.1 synchronous memory and pipeline-control primitives.
 - M2.1 exhaustive bank mapping/ping-pong, collision, reset, latency, metadata,
   and backpressure unit verification.
+- M2.2.1 pipelined modular addition and subtraction (mod_add_pipe, mod_sub_pipe).
 
 ## In Progress
 
-- None. Do not start M2.2 without explicit approval.
+- M2.2.2: Pipelined Montgomery reduction (montgomery_reduce_pipe).
 
 ## Blocked By
 
@@ -43,9 +44,7 @@ None
 
 ## Next Target
 
-Await explicit approval before M2.2. M2.1 provides reusable storage/control
-primitives only; no arithmetic or NTT controller has started. Final CAVP/ACVP
-ML-KEM verification remains pending.
+M2.2.2 pipelined Montgomery reduction. Final CAVP/ACVP ML-KEM verification remains pending.
 
 ## Current Focus
 
