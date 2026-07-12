@@ -20,10 +20,11 @@ M2: Contract-compliant RTL foundations
 - [x] M1 v0.1 documentation-only architecture freeze
 - [x] M2.1 synchronous memory and pipeline-control primitives
 - [x] M2.2.1 pipelined modular addition and subtraction (mod_add_pipe, mod_sub_pipe)
+- [x] M2.2.2 pipelined Montgomery reduction (montgomery_reduce_pipe)
 
 ## In Progress
 
-- [ ] M2.2.2: Pipelined Montgomery reduction (montgomery_reduce_pipe)
+- [ ] M2.2.3: Pipelined modular multiplier (mod_mul_pipe)
 
 ## Blocked By
 
@@ -31,7 +32,7 @@ M2: Contract-compliant RTL foundations
 
 ## Next Target
 
-Implement and verify M2.2.2 pipelined Montgomery reduction. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+Implement and verify M2.2.3 pipelined modular multiplier. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -68,6 +69,42 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M2.2.2 Implementation
+
+Requested:
+
+- Implement M2.2.2: Pipelined Montgomery reduction (`montgomery_reduce_pipe`).
+
+Files changed:
+
+- Added [montgomery_reduce_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/rtl/arithmetic/montgomery_reduce_pipe.v).
+- Added [tb_montgomery_reduce_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/tb/unit/tb_montgomery_reduce_pipe.v).
+- Added run script [run_montgomery_reduce_pipe.sh](file:///home/hien/Projects/Post_Quantum_Cryptography/sim/scripts/run_montgomery_reduce_pipe.sh).
+- Added [m2_2_2_montgomery_report.md](file:///home/hien/Projects/Post_Quantum_Cryptography/reports/simulation/m2_2_2_montgomery_report.md).
+- Updated [TODO.md](file:///home/hien/Projects/Post_Quantum_Cryptography/TODO.md) and [milestone_status.md](file:///home/hien/Projects/Post_Quantum_Cryptography/docs/00_project_spec/milestone_status.md).
+
+Commands run:
+
+- `chmod +x sim/scripts/run_montgomery_reduce_pipe.sh`
+- `./sim/scripts/run_montgomery_reduce_pipe.sh`
+- `./sim/scripts/run_m2_1_primitives.sh && ./sim/scripts/run_mod_add_pipe.sh && ./sim/scripts/run_mod_sub_pipe.sh && ./sim/scripts/run_reduction.sh && ./sim/scripts/run_mod_mul.sh`
+
+Verified:
+
+- `tb_montgomery_reduce_pipe`: `pass_count=1010 fail_count=0`
+- All legacy and adjacent regressions pass successfully.
+
+Remains to do:
+
+- Implement M2.2.3: Pipelined modular multiplier (`mod_mul_pipe`).
+
+Next Session Start Here:
+
+- Start M2.2.3 design and implementation.
+
+
+
 
 ### 2026-07-13 M2.2.1 Implementation
 

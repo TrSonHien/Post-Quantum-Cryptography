@@ -29,10 +29,11 @@ M2: Contract-compliant RTL foundations
 - M2.1 exhaustive bank mapping/ping-pong, collision, reset, latency, metadata,
   and backpressure unit verification.
 - M2.2.1 pipelined modular addition and subtraction (mod_add_pipe, mod_sub_pipe).
+- M2.2.2 pipelined Montgomery reduction (montgomery_reduce_pipe).
 
 ## In Progress
 
-- M2.2.2: Pipelined Montgomery reduction (montgomery_reduce_pipe).
+- M2.2.3: Pipelined modular multiplier (mod_mul_pipe).
 
 ## Blocked By
 
@@ -44,7 +45,7 @@ None
 
 ## Next Target
 
-M2.2.2 pipelined Montgomery reduction. Final CAVP/ACVP ML-KEM verification remains pending.
+M2.2.3 pipelined modular multiplier. Final CAVP/ACVP ML-KEM verification remains pending.
 
 ## Current Focus
 
