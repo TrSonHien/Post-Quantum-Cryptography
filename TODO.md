@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M1: Algorithm and Verification Foundation
+M0: Standards, algorithm tracking, KAT, and independent golden models
 
 ## Completed
 
@@ -10,18 +10,15 @@ M1: Algorithm and Verification Foundation
 - [x] Roadmap file exists
 - [x] Repository structure reorganized for ML-KEM-768 RTL and verification work
 - [x] Current active phase excludes Genus, Innovus, PnR, STA, GDSII, and Physical Design
+- [x] Root `AGENTS.md` symlink exists for project instructions
 
 ## In Progress
 
-- [ ] Collect mandatory ML-KEM documents
-- [ ] Create reading notes for FIPS 203
-- [ ] Prepare reference C/Python model workspace
-- [ ] Prepare Known Answer Test vector workspace
-- [ ] Prepare RTL output comparison workspace
-- [ ] Prepare first arithmetic RTL unit verification plan
-- [ ] Validate pipelined basemul as the main basemul architecture
-- [ ] Update the poly-level plan to use pipelined basemul
-- [ ] Later pipeline `mod_mul` / Montgomery reduction if synthesis shows it is the critical path
+- [ ] M0.1 source, standards, and provenance audit
+- [ ] M0.2 FIPS 203 algorithm tracking
+- [ ] M0.3 C/KAT harness
+- [ ] M0.4 independent Python ML-KEM-768 golden model
+- [ ] M0.5 comparison tools and final M0 report
 
 ## Blocked By
 
@@ -29,12 +26,13 @@ M1: Algorithm and Verification Foundation
 
 ## Next Target
 
-Collect mandatory documents, start reading FIPS 203, and define the first reference-model-to-RTL comparison path.
+Complete M0.1, then continue to M0.2 FIPS 203 algorithm tracking.
 
 ## Current Focus
 
 ```text
-standard reading -> reference model -> test vectors -> arithmetic RTL -> unit verification
+standards and provenance -> FIPS algorithm tracking -> KAT provenance ->
+independent golden models -> comparison tools -> architecture freeze -> RTL
 ```
 
 ## Project Priority
@@ -2347,3 +2345,91 @@ Remains to do:
    the complete arithmetic/NTT/basemul regression set.
 3. Otherwise continue with the pending `poly_sub` RTL wiring fix and rerun
    `./sim/scripts/run_poly_sub.sh`.
+
+### 2026-07-12 M0.1 Source Standards And Provenance Audit
+
+Requested:
+
+- Proceed with M0.1 only: source, standards, and provenance audit.
+- Make M0 the official first milestone, replacing the old `M1: Algorithm and
+  Verification Foundation` wording.
+- Keep the local Kyber 2020 C implementation and KATs labeled as legacy Kyber
+  regression material, not final FIPS 203 validation evidence.
+- Create SHA-256 hashes for local standards.
+- Create the canonical FIPS 203 algorithm tracking file at
+  `docs/00_project_spec/fips203_algorithm_tracking.md`.
+- Do not modify RTL, testbenches, simulation scripts, imported Kyber C source,
+  Python model, comparison tools, or KAT workspace.
+
+Files changed:
+
+- `TODO.md`
+- `docs/00_project_spec/m0_plan.md`
+- `docs/00_project_spec/roadmap.md`
+- `docs/00_project_spec/milestone_status.md`
+- `docs/00_project_spec/project_spec.md`
+- `docs/00_project_spec/fips203_algorithm_tracking.md`
+- `docs/01_standard/source_provenance.md`
+- `reports/m0_source_audit.md`
+- `references/SHA256SUMS`
+
+Commands run:
+
+- `pwd`
+- `git branch --show-current`
+- `git status --short`
+- `git worktree list`
+- `sed -n '1,520p' AGENTS.md`
+- `find docs/00_project_spec docs/01_standard reports references -maxdepth 2 -type f | sort`
+- `sed -n ... TODO.md docs/00_project_spec/roadmap.md docs/00_project_spec/milestone_status.md docs/00_project_spec/project_spec.md`
+- `git log --oneline --decorate -5`
+- `command -v pdftotext`
+- `command -v pdfinfo`
+- `pdfinfo references/standards/*.pdf`
+- `find ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001 -maxdepth 3 -type f | sort`
+- `find ref_model/c_ref/NIST-PQ-Submission-Kyber-20201001/KAT -type f -printf '%p %s bytes\n' | sort`
+- `pdftotext -layout references/standards/NIST.FIPS.203.pdf - | rg ...`
+- `pdftotext -layout references/standards/nist.fips.202.pdf - | rg ...`
+- `pdftotext -layout references/standards/kyber-specification-round3-20210804.pdf - | rg ...`
+- Per-page `pdftotext` extraction for FIPS 203 algorithm/page anchors.
+- `sha256sum references/standards/NIST.FIPS.203.pdf references/standards/nist.fips.202.pdf references/standards/nist.sp.800-185.pdf references/standards/kyber-specification-round3-20210804.pdf`
+- `apply_patch`
+
+Verified:
+
+- M0 is now documented as the first roadmap milestone in the active milestone
+  documents.
+- `docs/00_project_spec/m0_plan.md` defines M0.1 through M0.5 gates.
+- `docs/01_standard/source_provenance.md` classifies local standards, the Kyber
+  Round-3 specification, the Kyber 2020 C package, and local Kyber KATs.
+- `docs/00_project_spec/fips203_algorithm_tracking.md` contains the initial
+  required tracking rows for FIPS 203 conversion/compression, sampling,
+  NTT/INTT, K-PKE, ML-KEM internal algorithms, and hash/XOF dependencies.
+- `references/SHA256SUMS` records SHA-256 hashes for all local standard PDFs.
+- No RTL, testbench, simulation script, imported Kyber C source, Python model,
+  comparison tool, or KAT workspace file was intentionally modified.
+
+Remains to do:
+
+- Run final M0.1 validation commands:
+  `git diff --check`, `git status --short`, and
+  `sha256sum -c references/SHA256SUMS`.
+- Continue with M0.2 FIPS 203 algorithm tracking after M0.1 is accepted.
+- Obtain or import final NIST CAVP/ACVP ML-KEM vectors in a later M0 task.
+
+## Next Session Start Here
+
+1. Read `AGENTS.md`.
+2. Confirm branch `test` and cleanly separate the existing staged `AGENTS.md`
+   symlink from M0.1 documentation changes.
+3. Review:
+   - `docs/00_project_spec/m0_plan.md`
+   - `docs/00_project_spec/fips203_algorithm_tracking.md`
+   - `docs/01_standard/source_provenance.md`
+   - `reports/m0_source_audit.md`
+   - `references/SHA256SUMS`
+4. Run:
+   - `git diff --check`
+   - `sha256sum -c references/SHA256SUMS`
+5. If M0.1 is accepted, continue to M0.2 and refine FIPS 203 algorithm
+   tracking without modifying RTL.

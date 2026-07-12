@@ -1,8 +1,9 @@
-# Current Phase Roadmap
+# Current Project Roadmap
 
-This file tracks the active algorithm and verification foundation phase.
+This file tracks the active ML-KEM-768 project milestones.
 
-Long-term physical implementation work is intentionally excluded from the current active workspace.
+M0 officially replaces the older `M1: Algorithm and Verification Foundation`
+wording as the first project milestone.
 
 ## Optimization Direction
 
@@ -27,25 +28,33 @@ interface assumptions.
 ## Current Flow
 
 ```text
-standard reading -> reference model -> test vectors -> arithmetic RTL -> unit verification
+standards and provenance -> FIPS algorithm tracking -> KAT provenance ->
+independent golden models -> comparison tools -> architecture freeze -> RTL
 ```
 
 ## Active Milestones
 
-- M1: Algorithm and Verification Foundation
-- M2: Modular Arithmetic RTL and Unit Tests
-- M3: High-frequency NTT / INTT RTL and Block Tests
-- M4: Keccak / SHAKE RTL and Block Tests
-- M5: Sampler, Codec, and Packing Verification
-- M6: KeyGen / Encaps / Decaps Integration Simulation
+- M0: Standards, algorithm tracking, KAT, and independent golden models
+- M1: Interface, representation, timing, and memory architecture freeze v0.1
+- M2: Memory primitives and pipelined arithmetic variants
+- M3: Fmax-oriented NTT/INTT with banked synchronous memory
+- M4: Polynomial and Polyvec engines
+- M5: Keccak-f1600, SHA3, and SHAKE engines
+- M6: Codec and Sampler engines
+- M7: K-PKE KeyGen, Encrypt, and Decrypt
+- M8: ML-KEM KeyGen, Encaps, Decaps, and top-level wrapper
+- M9: End-to-end KAT and independent differential verification
 
-## Next Architecture Tasks
+## Current M0 Tasks
 
-- Validate pipelined `basemul_unit` as the main basemul architecture.
-- Update poly-level planning so pointwise multiplication can feed pipelined
-  basemul every cycle where possible.
-- Pipeline `mod_mul` / Montgomery reduction later if synthesis or timing review
-  shows it is the critical path.
+- M0.1: Source, standards, and provenance audit.
+- M0.2: FIPS 203 algorithm tracking.
+- M0.3: C/KAT harness planning and implementation.
+- M0.4: Independent Python ML-KEM-768 golden model.
+- M0.5: Comparison tools and final M0 report.
+
+Do not start M1 architecture freeze or new RTL architecture until M0 gates are
+complete or the user explicitly changes scope.
 
 ## Explicitly Excluded For Now
 

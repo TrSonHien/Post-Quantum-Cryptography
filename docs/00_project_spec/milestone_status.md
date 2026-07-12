@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M1: Algorithm and Verification Foundation
+M0: Standards, algorithm tracking, KAT, and independent golden models
 
 ## Completed
 
@@ -11,14 +11,15 @@ M1: Algorithm and Verification Foundation
 - Active repository structure is focused on algorithm study, reference models, KATs, RTL, testbenches, and simulation.
 - Original PDFs and standards are kept under `references/`.
 - `docs/` is reserved for project-written notes, architecture documents, and verification plans.
+- Root `AGENTS.md` discovers the project instruction file through the local symlink.
 
 ## In Progress
 
-- Collect mandatory ML-KEM documents.
-- Create reading notes for FIPS 203.
-- Prepare reference C/Python model workspace.
-- Prepare KAT and output comparison workspace.
-- Prepare first arithmetic RTL unit verification plan.
+- M0.1 source, standards, and provenance audit.
+- FIPS 203 algorithm tracking for ML-KEM-768.
+- Source classification for local standards, Kyber Round-3 material, and the Kyber 2020 C/KAT package.
+- SHA-256 manifest for local standards.
+- M0.1 audit report.
 
 ## Blocked By
 
@@ -30,12 +31,13 @@ None
 
 ## Next Target
 
-Collect mandatory documents and start reading FIPS 203.
+Complete M0.1, then continue to M0.2 FIPS 203 algorithm tracking.
 
 ## Current Focus
 
 ```text
-standard reading -> reference model -> test vectors -> arithmetic RTL -> unit verification
+standards and provenance -> FIPS algorithm tracking -> KAT provenance ->
+independent golden models -> comparison tools -> architecture freeze -> RTL
 ```
 
 ## Explicitly Excluded From Current Phase
@@ -52,6 +54,8 @@ standard reading -> reference model -> test vectors -> arithmetic RTL -> unit ve
 Before continuing, read:
 
 1. TODO.md
-2. docs/00_project_spec/milestone_status.md
-3. README.md
-4. docs/04_verification/verification_plan.md
+2. AGENTS.md
+3. docs/00_project_spec/m0_plan.md
+4. docs/00_project_spec/fips203_algorithm_tracking.md
+5. docs/01_standard/source_provenance.md
+6. reports/m0_source_audit.md

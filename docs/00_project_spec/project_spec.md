@@ -2,19 +2,24 @@
 
 ## Project
 
-ML-KEM-768 / Kyber-768 high-frequency ASIC-oriented RTL and Verification Workspace.
+ML-KEM-768 high-frequency ASIC-oriented RTL and Verification Workspace.
 
 ## Scope
 
-The active repository scope is the algorithm and verification foundation for ML-KEM-768:
+The active repository scope starts at M0: standards, algorithm tracking, KAT
+provenance, and independent golden models for ML-KEM-768.
+
+M0 scope includes:
 
 - Standard reading and project notes
 - C/Python reference model setup
 - Known Answer Test vector organization
-- Arithmetic RTL workspace
-- Unit, block, and system testbench workspace
-- Simulation scripts, logs, waveforms, outputs, and comparison flow
-- Architecture and verification documentation
+- Source provenance and SHA-256 manifests
+- FIPS 203 algorithm tracking
+- Independent model and comparison-flow planning
+
+Existing RTL, unit tests, simulation scripts, and reports remain present for
+inventory, but new RTL architecture work is not part of M0.
 
 ## Architecture Priority
 
@@ -50,12 +55,18 @@ pipeline stages, explicit valid/data alignment, and timing closure in mind.
 
 ## Current Status
 
-The repository is in M1: Algorithm and Verification Foundation. RTL is being
-reviewed and verified incrementally; a passing unit or block simulation does not
-yet imply full ML-KEM correctness.
+The repository is in M0: Standards, algorithm tracking, KAT, and independent
+golden models. M0 officially replaces the older `M1: Algorithm and Verification
+Foundation` wording as the first milestone.
+
+Existing RTL has local simulation evidence, but a passing unit or block
+simulation does not imply FIPS 203 ML-KEM correctness until M0 produces trusted
+KAT/golden-model comparison evidence.
 
 ## Non-Claims
 
 - No cryptographic correctness is claimed until test-vector comparison exists.
 - No synthesizability is claimed until RTL review exists.
 - No ASIC or physical-design readiness is claimed in the current phase.
+- Local Kyber 2020 KATs are legacy Kyber regression vectors, not final FIPS 203
+  ML-KEM validation vectors.
