@@ -40,18 +40,18 @@ The address is computed by removing bit $r$: $addr = \text{remove\_bit}(i, r)$, 
 Because the read and write operands $(u, v)$ for any butterfly differ only at bit $pair\_bit$, the mapping guarantees $u\_bank \ne v\_bank$. Thus, all stages are bijections (mapping 256 logical indices to 2 banks of 128 locations) and are conflict-free.
 
 ### 2.1 Forward NTT Layout Transitions
-*   **Initial Input Layout**: Canonical Standard Order ($p=7, r=7, xor=0$).
-*   **Final Output Layout**: Bit-Reversed Order ($p=1, r=7, xor=1$).
+*   **Initial Input Layout**: Canonical Standard Order (`b=i7, a=rm7`).
+*   **Final Output Layout**: Bit-reversed NTT order (`b=i1, a=rm1`).
 
-| Stage | Source Layout (p, r, xor) | Destination Layout (p, r, xor) | Conflict/Bijection Result |
+| Stage | Source Layout | Destination Layout | Conflict/Bijection Result |
 | :---: | :---: | :---: | :---: |
-| **1** | $p=7, r=7, xor=0$ | $p=6, r=7, xor=1$ | Bijection, Conflict-Free |
-| **2** | $p=6, r=7, xor=1$ | $p=5, r=7, xor=1$ | Bijection, Conflict-Free |
-| **3** | $p=5, r=7, xor=1$ | $p=4, r=7, xor=1$ | Bijection, Conflict-Free |
-| **4** | $p=4, r=7, xor=1$ | $p=3, r=7, xor=1$ | Bijection, Conflict-Free |
-| **5** | $p=3, r=7, xor=1$ | $p=2, r=7, xor=1$ | Bijection, Conflict-Free |
-| **6** | $p=2, r=7, xor=1$ | $p=1, r=7, xor=1$ | Bijection, Conflict-Free |
-| **7** | $p=1, r=7, xor=1$ | $p=1, r=7, xor=1$ | Bijection, Conflict-Free |
+| **1** | `b=i7, a=rm7` | `b=i7^i6, a=rm6` | Bijection, Conflict-Free |
+| **2** | `b=i7^i6, a=rm6` | `b=i6^i5, a=rm5` | Bijection, Conflict-Free |
+| **3** | `b=i6^i5, a=rm5` | `b=i5^i4, a=rm4` | Bijection, Conflict-Free |
+| **4** | `b=i5^i4, a=rm4` | `b=i4^i3, a=rm3` | Bijection, Conflict-Free |
+| **5** | `b=i4^i3, a=rm3` | `b=i3^i2, a=rm2` | Bijection, Conflict-Free |
+| **6** | `b=i3^i2, a=rm2` | `b=i2^i1, a=rm1` | Bijection, Conflict-Free |
+| **7** | `b=i2^i1, a=rm1` | `b=i1, a=rm1` | Bijection, Conflict-Free |
 
 ### 2.2 Inverse NTT Layout Transitions
 *   **Initial Input Layout**: Bit-Reversed Order ($p=1, r=7, xor=1$).
@@ -75,18 +75,19 @@ Accounting for nonblocking assignments in both sequential RAM and pipelined butt
 
 | Clock Edge | State / Action | Description |
 | :---: | :--- | :--- |
-| **$M$** | Read request accepted | Controller updates logical registers. RAM read initiated (`src_rd_en = 1`). |
-| **$M+1$** | RAM read complete / outputs visible | RAM internal registers update. Outputs `rd_valid`/`rd_data` visible. |
-| **$M+2$** | Butterfly input sampled / Stage 1 registered | Butterfly inputs sampled and registered into Stage 1 (mod_mul_pipe multiplier). |
-| **$M+3$** | Butterfly Stage 2 registered | `mod_mul_pipe` Stage 1 product registered / Stage 2 registered. $u$ delayed. |
-| **$M+4$** | Butterfly Stage 3 registered | Montgomery reduction Stage 1 registered. |
-| **$M+5$** | Butterfly Stage 4 registered | Montgomery reduction Stage 2 registered. |
-| **$M+6$** | Butterfly Stage 5 registered | Montgomery reduction Stage 3 registered ($t$ available). |
-| **$M+7$** | Butterfly Stage 5 complete / Output visible | Parallel add/sub complete. Output visible. RAM write port samples it. |
-| **$M+8$** | RAM write committed | Data written to RAM memory array. Write occupies exactly **1 clock cycle** (Edge $M+7 \rightarrow M+8$). |
-| **$M+9$** | Role Swap / Done | Safe state transition. Role swap or done assertion occurs on this edge. |
+| **$M$** | Read request accepted | RAM read request sampled. |
+| **$M+1$** | RAM read complete / butterfly input sampled | Outputs `rd_valid`/`rd_data` are visible and sampled by `butterfly_pipe`. |
+| **$M+2$** | Butterfly pipeline stage | `mod_mul_pipe` product path advances. |
+| **$M+3$** | Butterfly pipeline stage | Montgomery reduction path advances. |
+| **$M+4$** | Butterfly pipeline stage | Montgomery reduction path advances. |
+| **$M+5$** | Butterfly pipeline stage | Add/sub input alignment advances. |
+| **$M+6$** | Butterfly output visible | `out_valid/out0/out1` and delayed write metadata are visible for the RAM write port. |
+| **$M+7$** | RAM write committed / drain detected | Data is written to RAM memory array on this edge. |
+| **$M+9$** | Safe role swap / stage advance | The core swaps roles and advances the scheduler only after the final write is committed and pending counters are zero. |
 
-*Note: The synchronous destination write occupies exactly **1 clock cycle** (from Edge $M+7$ to Edge $M+8$) to commit data to the RAM memory array.*
+*Note: The synchronous destination write commits on the edge that samples
+`dst_wr_en` and write data. M3.2 measured issue-to-write-commit latency as 7
+cycles.*
 
 ---
 

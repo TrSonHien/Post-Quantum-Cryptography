@@ -133,6 +133,12 @@ module tb_ntt_scheduler_pipe;
                     $display("ERROR: bank collision src_u_bank=%b src_v_bank=%b at stage=%0d bfly=%0d",
                              src_u_bank, src_v_bank, current_stage, current_bfly);
                 end
+                if (dst_u_bank === dst_v_bank) begin
+                    fail_count = fail_count + 1;
+                    $display("ERROR: bank collision dst_u_bank=%b dst_v_bank=%b at stage=%0d bfly=%0d u=%0d v=%0d",
+                             dst_u_bank, dst_v_bank, current_stage, current_bfly,
+                             src_u_idx, src_v_idx);
+                end
 
                 // Zeta address tracking:
                 expected_zeta = (1 << current_stage) + (current_bfly / group_size);

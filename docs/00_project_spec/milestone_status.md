@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M2: Contract-compliant RTL foundations
+M3: Banked Fmax-oriented NTT/INTT engine
 
 ## Completed
 
@@ -38,11 +38,12 @@ M2: Contract-compliant RTL foundations
 - M2.3a pipelined arithmetic synthesis infrastructure preparation (reproducible scripts, wrappers, and constraints completed).
 - M3.0 Fmax-oriented NTT/INTT audit and implementation plan (completed).
 - M3.1 Fmax-oriented forward NTT scheduler (completed).
+- M3.2 banked pipelined forward NTT core candidate v0 (completed).
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M3.2: Banked NTT forward core integration (planning).
+- M3.3: Next NTT/INTT milestone planning.
 
 ## Blocked By
 
@@ -54,7 +55,7 @@ None
 
 ## Next Target
 
-M2.3b server ASIC synthesis comparison & M3.2 banked NTT forward core. Final CAVP/ACVP ML-KEM verification remains pending.
+M2.3b server ASIC synthesis comparison & next M3 NTT/INTT milestone. Final CAVP/ACVP ML-KEM verification remains pending.
 
 ## Current Focus
 

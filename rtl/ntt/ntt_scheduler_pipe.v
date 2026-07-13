@@ -15,13 +15,13 @@
 //   - Awaits stage_advance from core to transition state
 //
 // Layout transitions:
-//   Stage 0: (7,7,0) -> (6,7,1)
-//   Stage 1: (6,7,1) -> (5,7,1)
-//   Stage 2: (5,7,1) -> (4,7,1)
-//   Stage 3: (4,7,1) -> (3,7,1)
-//   Stage 4: (3,7,1) -> (2,7,1)
-//   Stage 5: (2,7,1) -> (1,7,1)
-//   Stage 6: (1,7,1) -> (1,7,1)
+//   Stage 0: b=i7        a=rm7 -> b=i7^i6 a=rm6
+//   Stage 1: b=i7^i6     a=rm6 -> b=i6^i5 a=rm5
+//   Stage 2: b=i6^i5     a=rm5 -> b=i5^i4 a=rm4
+//   Stage 3: b=i5^i4     a=rm4 -> b=i4^i3 a=rm3
+//   Stage 4: b=i4^i3     a=rm3 -> b=i3^i2 a=rm2
+//   Stage 5: b=i3^i2     a=rm2 -> b=i2^i1 a=rm1
+//   Stage 6: b=i2^i1     a=rm1 -> b=i1    a=rm1
 // -----------------------------------------------------------------------------
 module ntt_scheduler_pipe (
     input  wire        clk,
@@ -80,23 +80,33 @@ module ntt_scheduler_pipe (
 
     // Mapping SDC layout transition parameters
     wire [2:0] src_p = (stage == 3'd0) ? 3'd7 :
+                       (stage == 3'd1) ? 3'd7 :
+                       (stage == 3'd2) ? 3'd6 :
+                       (stage == 3'd3) ? 3'd5 :
+                       (stage == 3'd4) ? 3'd4 :
+                       (stage == 3'd5) ? 3'd3 : 3'd2;
+
+    wire [2:0] src_r = (stage == 3'd0) ? 3'd7 :
+                       (stage == 3'd1) ? 3'd6 :
+                       (stage == 3'd2) ? 3'd5 :
+                       (stage == 3'd3) ? 3'd4 :
+                       (stage == 3'd4) ? 3'd3 :
+                       (stage == 3'd5) ? 3'd2 : 3'd1;
+    wire       src_xor = (stage != 3'd0);
+
+    wire [2:0] dst_p = (stage == 3'd0) ? 3'd7 :
                        (stage == 3'd1) ? 3'd6 :
                        (stage == 3'd2) ? 3'd5 :
                        (stage == 3'd3) ? 3'd4 :
                        (stage == 3'd4) ? 3'd3 :
                        (stage == 3'd5) ? 3'd2 : 3'd1;
 
-    wire [2:0] src_r = 3'd7;
-    wire       src_xor = (stage != 3'd0);
-
-    wire [2:0] dst_p = (stage == 3'd0) ? 3'd6 :
+    wire [2:0] dst_r = (stage == 3'd0) ? 3'd6 :
                        (stage == 3'd1) ? 3'd5 :
                        (stage == 3'd2) ? 3'd4 :
                        (stage == 3'd3) ? 3'd3 :
                        (stage == 3'd4) ? 3'd2 : 3'd1;
-
-    wire [2:0] dst_r = 3'd7;
-    wire       dst_xor = 1'b1;
+    wire       dst_xor = (stage != 3'd6);
 
     // Bank Mapping Instantiations
     ntt_bank_map u_src_map (

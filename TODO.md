@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M2: Contract-compliant RTL foundations
+M3: Banked Fmax-oriented NTT/INTT engine
 
 ## Completed
 
@@ -29,11 +29,12 @@ M2: Contract-compliant RTL foundations
 - [x] M2.3a pipelined arithmetic synthesis infrastructure preparation (reproducible scripts, wrappers, and constraints completed)
 - [x] M3.0 Fmax-oriented NTT/INTT audit and implementation plan (completed)
 - [x] M3.1 Fmax-oriented forward NTT scheduler (completed)
+- [x] M3.2 banked pipelined forward NTT core candidate v0 (completed)
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
-- [ ] M3.2: Banked NTT forward core integration (planning)
+- [ ] M3.3: Next NTT/INTT milestone planning
 
 ## Blocked By
 
@@ -41,7 +42,7 @@ M2: Contract-compliant RTL foundations
 
 ## Next Target
 
-M2.3b server ASIC synthesis comparison & M3.2 banked NTT forward core. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+M2.3b server ASIC synthesis comparison & next M3 NTT/INTT milestone. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -78,6 +79,69 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M3.2 Banked Pipelined Forward NTT Core
+
+Requested:
+
+- Recover the incomplete Antigravity M3.2 attempt, diagnose the timeout/deadlock, implement and verify a banked pipelined forward NTT core, preserve M0-M3.1 regressions, document the handoff, and commit only after required tests pass.
+
+Files changed:
+
+- Added [ntt_core_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/rtl/ntt/ntt_core_pipe.v).
+- Added [tb_ntt_core_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/tb/block/tb_ntt_core_pipe.v).
+- Added [run_ntt_core_pipe.sh](file:///home/hien/Projects/Post_Quantum_Cryptography/sim/scripts/run_ntt_core_pipe.sh).
+- Added [gen_ntt_core_pipe_vectors.py](file:///home/hien/Projects/Post_Quantum_Cryptography/tb/tools/gen_ntt_core_pipe_vectors.py).
+- Added [m3_2_ntt_core_report.md](file:///home/hien/Projects/Post_Quantum_Cryptography/reports/simulation/m3_2_ntt_core_report.md).
+- Updated [ntt_scheduler_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/rtl/ntt/ntt_scheduler_pipe.v) to correct forward transition layout metadata.
+- Updated [tb_ntt_scheduler_pipe.v](file:///home/hien/Projects/Post_Quantum_Cryptography/tb/unit/tb_ntt_scheduler_pipe.v) to check destination-bank collisions.
+- Updated [m3_plan.md](file:///home/hien/Projects/Post_Quantum_Cryptography/docs/00_project_spec/m3_plan.md), [milestone_status.md](file:///home/hien/Projects/Post_Quantum_Cryptography/docs/00_project_spec/milestone_status.md), and [TODO.md](file:///home/hien/Projects/Post_Quantum_Cryptography/TODO.md).
+
+Commands run:
+
+- `pwd`
+- `git branch --show-current`
+- `git status --short`
+- `git log --oneline -8`
+- `git stash list`
+- `git worktree list`
+- `git stash show --include-untracked --stat stash@{0}`
+- `git stash show --include-untracked -p stash@{0}`
+- `pkill -f tb_ntt_core_pipe.vvp || true`
+- `pkill -f run_ntt_core_pipe.sh || true`
+- `timeout 30s ./sim/scripts/run_ntt_core_pipe.sh; echo "exit_status=$?"` on recovered WIP
+- `./sim/scripts/run_ntt_core_pipe.sh`
+- `./sim/scripts/run_ntt_scheduler_pipe.sh`
+- `timeout 60s ./sim/scripts/run_m2_2_regression.sh`
+- `timeout 60s ./sim/scripts/run_ntt_core.sh && timeout 60s ./sim/scripts/run_intt_core.sh && timeout 60s ./sim/scripts/run_ntt_intt_roundtrip.sh && timeout 60s ./sim/scripts/run_poly_add.sh && timeout 60s ./sim/scripts/run_poly_sub.sh && timeout 60s ./sim/scripts/run_basemul_unit.sh && timeout 60s ./sim/scripts/run_poly_basemul_addr_gen.sh && timeout 60s ./sim/scripts/run_poly_basemul_montgomery.sh`
+- `timeout 30s ./sim/scripts/run_ntt_scheduler_pipe.sh && timeout 30s ./sim/scripts/run_ntt_core_pipe.sh`
+- `timeout 30s python3 -m ref_model.python_model.selftest`
+- `timeout 30s python3 -m pytest ref_model/python_model/test_foundations.py ref_model/compare/test_compare_tools.py` (blocked: pytest not installed)
+- `timeout 30s python3 -m ref_model.python_model.test_foundations && timeout 30s python3 -m ref_model.compare.test_compare_tools && timeout 30s python3 -m ref_model.compare.generate_vectors --output /tmp/mlkem768_smoke_check.json && timeout 30s python3 -m ref_model.compare.compare_vectors ref_model/compare/vectors/mlkem768_smoke.json /tmp/mlkem768_smoke_check.json`
+
+Verified:
+
+- Recovered M3.2 stash was preserved and classified as unsafe/partially reusable; it contained only three untracked M3.2 files.
+- Reproduced previous WIP timeout: `exit_status=124`.
+- Root cause identified: stale constant-`r=7` transition metadata caused destination-bank collision at stage 1, group 0, butterfly 0; previous WIP also swapped roles without pending-traffic drain.
+- `tb_ntt_core_pipe` passed 28 Python-model differential polynomials, 7168 coefficient comparisons, control/error checks, reset/restart checks, and exact structural counts.
+- Measured start-to-done transform cycles: 955.
+- Measured issue-to-write-commit latency: 7 cycles.
+- Counts per transform: 896 reads, 896 RAM responses, 896 butterfly inputs, 896 butterfly outputs, 896 committed writes, 7 stage drains, 7 stage swaps, 7 stage advances.
+- M2.1/M2.2 regression passed.
+- M3.1 scheduler regression passed with new destination-bank collision check.
+- Legacy NTT/INTT/roundtrip/poly/basemul adjacency regressions passed.
+- Python selftests, unittest checks, and smoke-vector regeneration/compare passed.
+
+Remains to do:
+
+- Run M2.3b server ASIC synthesis comparison.
+- Plan the next M3 NTT/INTT milestone.
+- Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+
+Next Session Start Here:
+
+- Review the M3.2 report, then decide whether to proceed to the next NTT/INTT milestone or run M2.3b server synthesis.
 
 ### 2026-07-13 M2.3 ASIC Synthesis Comparison
 
