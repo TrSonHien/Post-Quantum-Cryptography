@@ -39,11 +39,13 @@ M3: Banked Fmax-oriented NTT/INTT engine
 - M3.0 Fmax-oriented NTT/INTT audit and implementation plan (completed).
 - M3.1 Fmax-oriented forward NTT scheduler (completed).
 - M3.2 banked pipelined forward NTT core candidate v0 (completed).
+- M3.3 banked pipelined inverse NTT scheduler and seven-stage core (completed).
+- M3.4 two-lane final inverse scaling pass (completed).
+- M3.5 independent NTT/INTT differential and roundtrip verification (completed).
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M3.3: Next NTT/INTT milestone planning.
 
 ## Blocked By
 
@@ -55,7 +57,7 @@ None
 
 ## Next Target
 
-M2.3b server ASIC synthesis comparison & next M3 NTT/INTT milestone. Final CAVP/ACVP ML-KEM verification remains pending.
+M2.3b server ASIC synthesis comparison and M4 polynomial/polyvec engine planning. Final CAVP/ACVP ML-KEM verification remains pending.
 
 ## Current Focus
 

@@ -30,11 +30,13 @@ M3: Banked Fmax-oriented NTT/INTT engine
 - [x] M3.0 Fmax-oriented NTT/INTT audit and implementation plan (completed)
 - [x] M3.1 Fmax-oriented forward NTT scheduler (completed)
 - [x] M3.2 banked pipelined forward NTT core candidate v0 (completed)
+- [x] M3.3 banked pipelined inverse NTT scheduler and core (completed)
+- [x] M3.4 two-lane final inverse scaling pass (completed)
+- [x] M3.5 independent NTT/INTT differential and roundtrip verification (completed)
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
-- [ ] M3.3: Next NTT/INTT milestone planning
 
 ## Blocked By
 
@@ -42,7 +44,7 @@ M3: Banked Fmax-oriented NTT/INTT engine
 
 ## Next Target
 
-M2.3b server ASIC synthesis comparison & next M3 NTT/INTT milestone. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+M2.3b server ASIC synthesis comparison and M4 polynomial/polyvec engine planning. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
@@ -79,6 +81,50 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M3.3-M3.5 Pipelined Inverse NTT Closure
+
+Requested:
+
+- Derive inverse bank layouts from committed M3.2, implement the seven-stage inverse scheduler/core and two-lane final scaler, add independent inverse and pipelined roundtrip differential verification, preserve regressions, document, and commit only after all gates pass.
+
+Files changed:
+
+- Added inverse scheduler/core/scaler RTL, two unit TBs, two block TBs, four bounded runners, deterministic layout/vector tools, and M3.3/M3.4/M3.5 reports.
+- Updated `docs/00_project_spec/m3_plan.md`, `docs/00_project_spec/milestone_status.md`, and `TODO.md`.
+
+Commands run:
+
+- `python3 tb/tools/check_ntt_layouts.py`
+- `timeout 30s ./sim/scripts/run_intt_scheduler_pipe.sh`
+- `timeout 30s ./sim/scripts/run_intt_scaler_pipe.sh`
+- `timeout 45s ./sim/scripts/run_intt_core_pipe.sh`
+- `timeout 45s ./sim/scripts/run_ntt_intt_pipe_roundtrip.sh`
+- `timeout 30s ./sim/scripts/run_ntt_scheduler_pipe.sh`
+- `timeout 30s ./sim/scripts/run_ntt_core_pipe.sh`
+- `timeout 90s ./sim/scripts/run_m2_2_regression.sh`
+- Legacy NTT, INTT, roundtrip, poly add/sub, basemul, basemul address, and poly basemul runners under 60-second timeouts.
+- Python selftest, foundation unittest, comparator unittest, and duplicate deterministic vector generation/`cmp` checks.
+
+Verified:
+
+- Layout proof: eight bijective layouts and 896 conflict-free requests in each direction.
+- Inverse scheduler/core: 896 reads/responses/inputs/outputs/writes and seven drains/swaps/advances.
+- Scaler: two lanes, four-cycle multiplier latency, six-cycle issue-to-write latency, 128 requests, 256 inputs/outputs, 128 writes, operand 512.
+- Measured cycles: inverse stages 954; scale first/final issue 955/1082; final write 1088; final swap 1089; public done 1090.
+- Standalone inverse: 31 polynomials and 7936 coefficient comparisons PASS.
+- Roundtrip: 30 polynomials, 7680 forward and 7680 final coefficient comparisons PASS.
+- Reset/control, M2/M3, legacy adjacency, Python model/comparator, deterministic reproduction, and `git diff --check` PASS.
+
+Remains to do:
+
+- Run M2.3b server ASIC synthesis comparison.
+- Plan M4 polynomial/polyvec engines.
+- Final NIST CAVP/ACVP ML-KEM verification remains pending.
+
+Next Session Start Here:
+
+- Review the three M3.3-M3.5 reports, then choose M2.3b server synthesis or M4 planning.
 
 ### 2026-07-13 M3.2 Banked Pipelined Forward NTT Core
 

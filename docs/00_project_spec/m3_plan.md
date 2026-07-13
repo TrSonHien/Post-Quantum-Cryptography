@@ -54,18 +54,18 @@ Because the read and write operands $(u, v)$ for any butterfly differ only at bi
 | **7** | `b=i2^i1, a=rm1` | `b=i1, a=rm1` | Bijection, Conflict-Free |
 
 ### 2.2 Inverse NTT Layout Transitions
-*   **Initial Input Layout**: Bit-Reversed Order ($p=1, r=7, xor=1$).
+*   **Initial Input Layout**: Forward-output order ($p=1, r=1, xor=0$).
 *   **Final Output Layout**: Canonical Standard Order ($p=7, r=7, xor=0$).
 
 | Stage | Source Layout (p, r, xor) | Destination Layout (p, r, xor) | Conflict/Bijection Result |
 | :---: | :---: | :---: | :---: |
-| **1** | $p=1, r=7, xor=1$ | $p=2, r=7, xor=1$ | Bijection, Conflict-Free |
-| **2** | $p=2, r=7, xor=1$ | $p=3, r=7, xor=1$ | Bijection, Conflict-Free |
-| **3** | $p=3, r=7, xor=1$ | $p=4, r=7, xor=1$ | Bijection, Conflict-Free |
-| **4** | $p=4, r=7, xor=1$ | $p=5, r=7, xor=1$ | Bijection, Conflict-Free |
-| **5** | $p=5, r=7, xor=1$ | $p=6, r=7, xor=1$ | Bijection, Conflict-Free |
-| **6** | $p=6, r=7, xor=1$ | $p=7, r=7, xor=0$ | Bijection, Conflict-Free |
-| **7** | $p=7, r=7, xor=0$ | $p=7, r=7, xor=0$ | Bijection, Conflict-Free |
+| **1** | $p=1, r=1, xor=0$ | $p=2, r=1, xor=1$ | Bijection, Conflict-Free |
+| **2** | $p=2, r=1, xor=1$ | $p=3, r=2, xor=1$ | Bijection, Conflict-Free |
+| **3** | $p=3, r=2, xor=1$ | $p=4, r=3, xor=1$ | Bijection, Conflict-Free |
+| **4** | $p=4, r=3, xor=1$ | $p=5, r=4, xor=1$ | Bijection, Conflict-Free |
+| **5** | $p=5, r=4, xor=1$ | $p=6, r=5, xor=1$ | Bijection, Conflict-Free |
+| **6** | $p=6, r=5, xor=1$ | $p=7, r=6, xor=1$ | Bijection, Conflict-Free |
+| **7** | $p=7, r=6, xor=1$ | $p=7, r=7, xor=0$ | Bijection, Conflict-Free |
 
 ---
 
@@ -98,11 +98,11 @@ The final scaling by $128^{-1} \pmod q$ is performed using two parallel `mod_mul
 *   **Legacy Operand**: **1441** ($3303 \cdot R^2 \pmod q$) is used only for legacy `tomont` representation.
 *   **Scaling Timeline** (final request launched at Edge $K$):
     *   **Edge $K$**: Final read request launched.
-    *   **Edge $K+1$**: RAM outputs visible.
-    *   **Edge $K+2$**: Scaler inputs sampled (Stage 1).
-    *   **Edge $K+6$**: Scaler output visible (4-cycle latency). RAM write port samples it.
-    *   **Edge $K+7$**: RAM write committed.
-    *   **Edge $K+8$**: State transition to idle / assert `done`.
+    *   **Edge $K+1$**: RAM outputs are visible and scaler inputs are sampled.
+    *   **Edge $K+5$**: Scaler output becomes visible after four multiplier cycles.
+    *   **Edge $K+6$**: Destination RAM write is committed.
+    *   **Edge $K+7$**: Final scaler role swap is committed.
+    *   **Edge $K+8$**: Public `done` is asserted for one cycle.
 
 ---
 
