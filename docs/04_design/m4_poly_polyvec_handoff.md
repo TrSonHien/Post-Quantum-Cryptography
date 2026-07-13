@@ -1,5 +1,9 @@
 # M4 Polynomial/Polyvec Handoff
 
+The normative M4.0 domain, workspace, and controller boundary is now frozen in
+`poly_polyvec_engine_contract.md`. This file remains the M3-to-M4 integration
+summary.
+
 ## Scope
 
 This is the integration contract for future M4 control and adapters. It does

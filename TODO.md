@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M3 complete: Banked pipelined NTT/INTT engine; M4 entry-ready
+M4.0 complete; M4.1 polynomial workspace and canonical arithmetic in progress
 
 ## Completed
 
@@ -34,10 +34,13 @@ M3 complete: Banked pipelined NTT/INTT engine; M4 entry-ready
 - [x] M3.4 two-lane final inverse scaling pass (completed)
 - [x] M3.5 independent NTT/INTT differential and roundtrip verification (completed)
 - [x] M3.6 unified regression, architecture closure, interface freeze, and M4 handoff
+- [x] M4.0 polynomial/polyvec architecture audit and contract freeze
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
+- [ ] M4.1: Polynomial workspace and canonical arithmetic controllers
+- [ ] M4.2: Polynomial forward/inverse NTT adapters
 
 ## Blocked By
 
