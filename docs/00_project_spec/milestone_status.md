@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0-M4.2 complete; M4.3 pointwise/basemul orchestration pending
+M4.0-M4.3 complete; M4.4 polyvec workspace and elementwise orchestration pending
 
 ## Completed
 
@@ -50,11 +50,15 @@ M4.0-M4.2 complete; M4.3 pointwise/basemul orchestration pending
   and 32-bit reduction controllers (completed).
 - M4.2 polynomial forward/inverse NTT adapters, independent differential, and
   adapter roundtrip verification (completed).
+- M4.3 exact ordinary modular multiplication, BaseCaseMultiply, and polynomial
+  MultiplyNTTs with frozen Montgomery-factor proof (completed).
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M4.3 polynomial basemul orchestration and polyvec pointwise accumulation.
+- M4.4 polyvec workspace and serialized elementwise orchestration.
+- M4.5 polyvec MultiplyNTTs accumulation.
+- M4.6 unified M4 closure and M5 handoff.
 
 ## Blocked By
 
@@ -66,7 +70,7 @@ None
 
 ## Next Target
 
-M4.3 pointwise/basemul orchestration and polyvec accumulation. M2.3b server ASIC
+M4.4 polyvec workspace and elementwise orchestration. M2.3b server ASIC
 synthesis and final CAVP/ACVP ML-KEM verification remain pending.
 
 ## Current Focus

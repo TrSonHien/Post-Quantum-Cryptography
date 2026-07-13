@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0-M4.2 complete; M4.3 pointwise/basemul orchestration pending
+M4.0-M4.3 complete; M4.4 polyvec workspace and elementwise orchestration pending
 
 ## Completed
 
@@ -37,11 +37,14 @@ M4.0-M4.2 complete; M4.3 pointwise/basemul orchestration pending
 - [x] M4.0 polynomial/polyvec architecture audit and contract freeze
 - [x] M4.1 polynomial workspace and canonical arithmetic controllers
 - [x] M4.2 polynomial forward/inverse NTT adapters and roundtrip verification
+- [x] M4.3 exact BaseCaseMultiply and polynomial MultiplyNTTs engine
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
-- [ ] M4.3: Polynomial basemul orchestration and polyvec pointwise accumulation
+- [ ] M4.4: ML-KEM-768 polyvec workspace and elementwise orchestration
+- [ ] M4.5: Polyvec MultiplyNTTs accumulation
+- [ ] M4.6: Unified M4 regression, architecture freeze, and M5 handoff
 
 ## Blocked By
 
@@ -49,7 +52,7 @@ M4.0-M4.2 complete; M4.3 pointwise/basemul orchestration pending
 
 ## Next Target
 
-M4.3 pointwise/basemul orchestration and polyvec accumulation, with M2.3b
+M4.4 polyvec workspace and elementwise orchestration, with M2.3b
 server ASIC synthesis still pending. Final NIST CAVP/ACVP ML-KEM vector
 verification remains pending.
 
@@ -88,6 +91,24 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M4.3 Exact MultiplyNTTs
+
+Requested: audit Montgomery factors and implement exact BaseCaseMultiply and
+polynomial MultiplyNTTs without changing legacy or M2/M3 semantics.
+
+Changed: added an ordinary Barrett-based multiplier, an II=1 BaseCaseMultiply
+pipeline, synchronous/domain-aware polynomial controller, deterministic vector
+tooling, bounded temporary-directory runners, contracts, audit, and reports.
+
+Verified: exact multiply 100000 checks at latency 4/II=1; BaseCaseMultiply
+50000 checks at latency 9/II=1; polynomial MultiplyNTTs 32 vectors and 8192
+comparisons at 142 cycles with exactly 128 requests/writes. Previous unified
+M4.0-M4.2 regression remains 19/19 PASS. Montgomery-factor proof is frozen.
+
+Remains: M4.4-M4.6, M2.3b server synthesis, and final CAVP/ACVP verification.
+Next Session Start Here: implement the K=3 workspace and serialized elementwise
+controllers using the frozen polynomial interfaces; do not duplicate M3 cores.
 
 ### 2026-07-13 M4.0-M4.2 Polynomial Architecture, Arithmetic, and NTT Adapters
 

@@ -2,10 +2,11 @@
 
 ## Scope and constants
 
-This contract freezes M4.0 through M4.2. One polynomial has `N=256`
+This contract freezes M4.0 through M4.3. One polynomial has `N=256`
 coefficients, each externally encoded as an unsigned 12-bit canonical residue
 in `[0,3328]` for `q=3329`. One ML-KEM-768 polyvec has `K=3` polynomials and
-768 coefficients. Pointwise multiplication and accumulation remain M4.3 work.
+768 coefficients. Exact polynomial MultiplyNTTs is frozen; K=3 orchestration
+and accumulation remain M4.4/M4.5 work.
 
 ## Domains
 
@@ -85,7 +86,9 @@ declared range, invalid polyvec index, and result overwrite are errors.
   preserves it. Its input width is 32 bits and output is canonical 12-bit.
 - Forward NTT requires complete `NORMAL` input and publishes complete `NTT`.
 - Inverse NTT requires complete `NTT` input and publishes complete `NORMAL`.
-- `INVALID` and `POINTWISE` are rejected by M4.1/M4.2 operations.
+- Exact MultiplyNTTs requires two complete `NTT` operands and publishes `NTT`.
+- `POINTWISE` is internal-reserved and does not escape the M4.3 boundary.
+- `INVALID` and `POINTWISE` are rejected by public M4.1-M4.3 operations.
 
 ## M3 adapter contract
 
