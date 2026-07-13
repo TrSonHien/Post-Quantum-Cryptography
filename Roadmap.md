@@ -437,6 +437,11 @@ shared_secret_buffer.v
 
 ## Phase 5 — Keccak / SHAKE Core
 
+**Status (2026-07-13): complete through M5.6.** The iterative permutation,
+byte-stream sponge, SHA3-256/512, SHAKE128/256, ML-KEM H/G/J/PRF/XOF,
+independent differential tests, unified regression, and M6 handoff are frozen.
+No synthesis/area/Fmax claim is included.
+
 **Estimated time:** 2–3 months
 
 ### Goal

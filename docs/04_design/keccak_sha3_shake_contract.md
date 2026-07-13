@@ -99,7 +99,25 @@ and ready/valid stalls affect cycle count.
 
 ## Timing and limitations
 
-All cycle counts are measured simulation edge counts and are added at M5.6.
+Measured no-stall rising-edge counts are:
+
+| Operation | First output | Final accepted output |
+|---|---:|---:|
+| SHA3-256, 0 input / 32 output | 35 | 70 |
+| SHA3-256, 136 input / 32 output | 231 | 266 |
+| SHA3-512, 0 input / 64 output | 35 | 110 |
+| SHA3-512, 72 input / 64 output | 151 | 226 |
+| SHAKE128, 0 input / 168 output | 35 | 240 |
+| SHAKE128, 0 input / 169 output | 35 | 267 |
+| SHAKE256, 33 input / 32 output | 77 | 112 |
+| PRF eta2 | 78 | 233 |
+| PRF eta3 | 78 | 338 |
+
+XOF init-to-active is 73 cycles. Continuing 3-, 168-, and 171-byte requests
+measure 4/4, 5/236, and 5/240 cycles to first/final output. The combinational
+round has no registered latency; accepted permutation start to done is exactly
+24 intervals. Counts are simulation edges, not nanoseconds or throughput.
+
 The architecture structurally contains one permutation core per context, one
 combinational round datapath, a 1600-bit state register in the core, a 1600-bit
 sponge context register, and registered output staging. These are RTL facts,

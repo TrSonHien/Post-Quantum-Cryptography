@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4 complete; M5 Keccak-f1600, SHA3, and SHAKE architecture is next
+M5 complete; M6 codec and sampler architecture is next (not started)
 
 ## Completed
 
@@ -58,11 +58,12 @@ M4 complete; M5 Keccak-f1600, SHA3, and SHAKE architecture is next
   (completed).
 - M4.6 unified 33-program regression, architecture freeze, and M5 handoff
   (completed).
+- M5.0-M5.6 Keccak-f[1600], sponge, SHA3, SHAKE, H/G/J/PRF/XOF, unified
+  regression, architecture freeze, and M6 handoff (completed).
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M5 Keccak-f1600, SHA3, and SHAKE engines.
 
 ## Blocked By
 
@@ -74,8 +75,8 @@ None
 
 ## Next Target
 
-M5 Keccak/SHA3/SHAKE architecture audit. M2.3b server ASIC
-synthesis and final CAVP/ACVP ML-KEM verification remain pending.
+M6 codec/sampler architecture audit. M2.3b server ASIC synthesis and final
+CAVP/ACVP ML-KEM verification remain pending. M6 functional RTL is not started.
 
 ## Current Focus
 

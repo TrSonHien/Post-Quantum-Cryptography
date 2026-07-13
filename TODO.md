@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4 complete; M5 Keccak-f1600, SHA3, and SHAKE architecture is next
+M5 complete; M6 codec and sampler architecture is next (not started)
 
 ## Completed
 
@@ -47,11 +47,11 @@ M4 complete; M5 Keccak-f1600, SHA3, and SHAKE architecture is next
 - [x] M5.3 SHA3-256 and SHA3-512 stream wrappers
 - [x] M5.4 SHAKE128 and SHAKE256 one-shot/incremental engines
 - [x] M5.5 ML-KEM H/G/J/PRF/XOF wrappers
+- [x] M5.6 unified regression, architecture freeze, and M6 handoff
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
-- [ ] M5: Keccak-f1600, SHA3, and SHAKE engines
 
 ## Blocked By
 
@@ -59,8 +59,8 @@ M4 complete; M5 Keccak-f1600, SHA3, and SHAKE architecture is next
 
 ## Next Target
 
-M5 Keccak-f1600/SHA3/SHAKE architecture audit, with M2.3b
-server ASIC synthesis still pending. Final NIST CAVP/ACVP ML-KEM vector
+M6 codec/sampler architecture audit, with M2.3b server ASIC synthesis still
+pending. M6 functional RTL is not started. Final NIST CAVP/ACVP ML-KEM vector
 verification remains pending.
 
 ## Current Focus
@@ -98,6 +98,35 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M5.6 Unified Closure and M6 Handoff
+
+Requested: close M5 with deterministic unified regression, cycle accounting,
+architecture/status synchronization, and a frozen sampler/codec handoff.
+
+Changed: added the 21-program fail-fast M5 runner, cycle-accounting TB/runner,
+M5 completion and regression reports, M6 handoff, and synchronized contract,
+roadmap, milestone, FIPS tracking, standard, and architecture documentation.
+No pre-M5 RTL, reference semantics, standards, synthesis/PD, sampler, codec,
+K-PKE, or frozen-baseline file was modified.
+
+Commands run: focused M5 runners; two-directory regeneration of all three
+generators; cycle accounting; full M5 unified regression including complete M4
+and M3 plus M2/Python/schema adjacency; final status/artifact/process/frozen-
+worktree audits; `git diff --check`.
+
+Verified: final unified PASS is 21/21 programs, 1,802,376 declared checks,
+76,370 digest bytes, and 2,204 permutation states. M4 remains 33/33 and 996,965;
+M3 remains 22/22 and 361,656. Mapping, padding/suffixes, differential modes,
+continuing squeeze, H/G/J/PRF/XOF, reset/backpressure, and reproducibility pass.
+
+Remains: M6 sampler/codec (not started), M2.3b server synthesis, focused M5
+synthesis, and final ML-KEM CAVP/ACVP verification. No synthesis/area/Fmax,
+sampler, codec, K-PKE, or KEM completion claim exists.
+
+Next Session Start Here: read `reports/m5_completion_report.md` and
+`docs/04_design/m5_to_sampler_codec_handoff.md`, run `run_m5_regression.sh`,
+then audit/freeze one coherent M6 sampler or codec contract before RTL.
 
 ### 2026-07-13 M5.5 ML-KEM Hash Wrappers
 

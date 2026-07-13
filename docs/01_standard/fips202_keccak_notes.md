@@ -10,3 +10,9 @@ For byte-aligned messages, SHA3 uses delimited suffix `0x06` and SHAKE uses
 rate byte. Exact multiples of the rate require a new empty padding block.
 SHA3-256/SHA3-512 rates are 136/72 bytes; SHAKE128/SHAKE256 rates are 168/136.
 See `docs/04_design/keccak_sha3_shake_contract.md` for the RTL contract.
+
+M5.6 verification cross-checks a pure-Python FIPS-equation implementation
+against `hashlib`, then compares RTL over 2,072 round states, 132 permutations,
+320 one-shot and incremental mode vectors, and all required rate boundaries.
+This proves the implemented FIPS 202 primitive/mode semantics; it is not an
+end-to-end ML-KEM CAVP/ACVP claim.
