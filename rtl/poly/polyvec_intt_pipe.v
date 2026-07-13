@@ -1,0 +1,2 @@
+`timescale 1ns/1ps
+module polyvec_intt_pipe(input wire clk,rst_n,load_begin,load_operand,input wire[1:0]load_poly_idx,load_domain,input wire load_we,input wire[7:0]load_idx,input wire[11:0]load_coeff,output wire load_ready,input wire start,output wire busy,done,error,input wire result_req,input wire[1:0]result_poly_idx,input wire[7:0]result_idx,output wire result_valid,output wire[11:0]result_coeff,output wire[1:0]result_domain,output wire result_complete,input wire result_release);polyvec_elementwise_pipe #(.OP(4))u(.*);endmodule

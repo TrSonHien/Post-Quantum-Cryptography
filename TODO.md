@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0-M4.3 complete; M4.4 polyvec workspace and elementwise orchestration pending
+M4.0-M4.4 complete; M4.5 polyvec MultiplyNTTs accumulation pending
 
 ## Completed
 
@@ -38,11 +38,11 @@ M4.0-M4.3 complete; M4.4 polyvec workspace and elementwise orchestration pending
 - [x] M4.1 polynomial workspace and canonical arithmetic controllers
 - [x] M4.2 polynomial forward/inverse NTT adapters and roundtrip verification
 - [x] M4.3 exact BaseCaseMultiply and polynomial MultiplyNTTs engine
+- [x] M4.4 ML-KEM-768 polyvec workspace and serialized elementwise controllers
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
-- [ ] M4.4: ML-KEM-768 polyvec workspace and elementwise orchestration
 - [ ] M4.5: Polyvec MultiplyNTTs accumulation
 - [ ] M4.6: Unified M4 regression, architecture freeze, and M5 handoff
 
@@ -52,7 +52,7 @@ M4.0-M4.3 complete; M4.4 polyvec workspace and elementwise orchestration pending
 
 ## Next Target
 
-M4.4 polyvec workspace and elementwise orchestration, with M2.3b
+M4.5 polyvec MultiplyNTTs accumulation, with M2.3b
 server ASIC synthesis still pending. Final NIST CAVP/ACVP ML-KEM vector
 verification remains pending.
 
@@ -91,6 +91,16 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M4.4 K=3 Polyvec Workspace and Elementwise Engines
+
+Added the three-polynomial synchronous workspace, one-child serialized
+add/sub/reduce/NTT/INTT controller and wrappers, Python vectors, bounded
+temporary runners, unit/block tests, and reports. Verified all 768 workspace
+locations. Each operation passed 16 polyvecs and 12288 comparisons; cycles are
+2731/2731/1963/5980/6385. The 16-vector transform roundtrip passed 12288
+independent forward and 12288 final comparisons. Reset cancellation, restart,
+domain, completeness, and overwrite controls pass. M4.5-M4.6 remain.
 
 ### 2026-07-13 M4.3 Exact MultiplyNTTs
 

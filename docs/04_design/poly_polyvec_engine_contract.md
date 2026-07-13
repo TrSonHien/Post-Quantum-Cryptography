@@ -2,11 +2,11 @@
 
 ## Scope and constants
 
-This contract freezes M4.0 through M4.3. One polynomial has `N=256`
+This contract freezes M4.0 through M4.4. One polynomial has `N=256`
 coefficients, each externally encoded as an unsigned 12-bit canonical residue
 in `[0,3328]` for `q=3329`. One ML-KEM-768 polyvec has `K=3` polynomials and
 768 coefficients. Exact polynomial MultiplyNTTs is frozen; K=3 orchestration
-and accumulation remain M4.4/M4.5 work.
+accumulation remains M4.5 work.
 
 ## Domains
 
@@ -97,6 +97,18 @@ start only after the final preload is accepted, wait for M3 `done`, issue 256
 logical result reads, and synchronously store every response before publish.
 They do not expose or reconstruct physical M3 banks. The inverse adapter does
 not rescale: `intt_core_pipe` already returns canonical normal-domain results.
+
+## K=3 polyvec contract
+
+`polyvec_workspace` contains three independent polynomial workspaces and
+rejects index 3. A vector is complete only when all 768 logical coefficients
+are valid; public operations require all three domains to match. The baseline
+uses one shared polynomial child and processes elements 0, 1, then 2. Vector
+busy remains high through all transfers, child operations, and final publish.
+
+Add/sub preserve a common NORMAL or NTT domain; reduce preserves the vector
+domain; NTT maps all NORMAL elements to NTT; INTT maps all NTT elements to
+NORMAL. No caller accesses child or M3 physical storage.
 
 ## Limitations
 
