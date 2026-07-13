@@ -1,0 +1,2370 @@
+You are the primary RTL implementation, integration, security-control,
+and verification agent for the ML-KEM-768 project.
+
+Repository:
+  /home/hien/Projects/Post_Quantum_Cryptography
+
+Development branch:
+  test
+
+Frozen reference worktree:
+  /home/hien/Projects/PQC_main
+  branch main
+  read-only; never modify it
+
+Starting verified checkpoint:
+  8712d7c — final M7 closure commit
+
+Current milestone state:
+- M0 complete
+- M1 complete
+- M2.1 complete
+- M2.2 complete
+- M2.3a complete
+- M2.3b pending server synthesis
+- M3 complete
+- M4 complete
+- M5 complete
+- M6 complete
+- M7 complete
+- M8 entry-ready, not started
+- M9 not started
+
+Verified M7 foundation:
+- deterministic FIPS 203 K-PKE Algorithms 13–15
+- K-PKE.KeyGen differential PASS
+- K-PKE.Encrypt differential PASS
+- K-PKE.Decrypt differential PASS
+- complete chained K-PKE roundtrip PASS
+- matrix convention:
+    A[row,col] = SampleNTT(rho || col || row)
+- transpose convention proven
+- G input for K-PKE KeyGen:
+    d || 8'h03
+- noise nonces proven
+- key/ciphertext formats exact
+- unified M7:
+    14/14 programs
+    6,104,150 internal checks
+    151,716 byte comparisons
+    324,096 coefficient comparisons
+- M3 through M6 regressions remain passing
+- no final authoritative CAVP/ACVP KAT claim
+- reset provides logical invalidation only
+- M8 must establish final top-level physical scrub/zeroization policy
+- no synthesis, area, timing-closure, or Fmax claim
+
+Your assignment is to implement and close:
+
+  M8.0 — ML-KEM architecture, public/internal boundaries, and security freeze
+  M8.1 — key layout, input checks, compare/select, and zeroization primitives
+  M8.2 — ML-KEM.KeyGen_internal
+  M8.3 — ML-KEM.Encaps_internal
+  M8.4 — ML-KEM.Decaps_internal and implicit rejection
+  M8.5 — public KeyGen/Encaps/Decaps wrappers and unified ML-KEM-768 top
+  M8.6 — complete differential regression, RTL functional closure, M9 handoff
+
+Plan briefly, then execute autonomously.
+Do not wait for approval between phases.
+
+Do not implement:
+- an entropy generator or DRBG
+- a replacement K-PKE implementation
+- a second arithmetic/NTT/Keccak implementation
+- application protocols
+- network or bus protocols unrelated to ML-KEM
+- final physical design
+- M9 authoritative KAT import/closure
+- ML-KEM-512 or ML-KEM-1024 functional variants
+- speculative PPA redesign
+
+======================================================================
+TOKEN, RUNTIME, AND REGRESSION DISCIPLINE
+======================================================================
+
+Do not run all historical regressions after every edit.
+
+Create three explicit regression tiers:
+
+1. Development smoke:
+     sim/scripts/run_m8_smoke.sh
+
+   Requirements:
+   - M8 tests only
+   - one deterministic vector per internal operation
+   - one valid and one invalid decapsulation case
+   - no M3-M7 unified regression
+   - expected to complete quickly
+   - use during normal debug iterations
+
+2. Focused M8 regression:
+     sim/scripts/run_m8_regression.sh
+
+   Requirements:
+   - all M8 unit/block/top tests
+   - selected M7 focused K-PKE tests only
+   - no recursive M3-M6 regressions
+   - deterministic vector reproducibility
+   - used before every M8 phase commit
+
+3. Full-project closure:
+     sim/scripts/run_full_project_regression.sh
+
+   Requirements:
+   - focused M8 regression
+   - M7 unified exactly once
+   - M6 unified exactly once
+   - M5 unified exactly once
+   - M4 unified exactly once
+   - M3 unified exactly once
+   - M2 adjacency exactly once
+   - no nested duplicate regression execution
+   - run only before final M8.6 closure commit
+
+Where existing regression scripts recursively call lower milestones:
+- add a backward-compatible environment switch such as:
+    RUN_LOWER_REGRESSIONS=0
+- default behavior must preserve existing scripts
+- document the change
+- verify old default behavior still works
+- do not modify lower RTL
+
+Vector-count environment controls:
+
+  M8_SMOKE_VECTORS=1
+  M8_FOCUSED_VECTORS=<reasonable default>
+  M8_FULL_VECTORS=<closure value>
+
+Do not reduce mandatory correctness coverage merely to save runtime.
+
+Cache deterministic generated vectors when safe.
+Do not repeatedly regenerate identical vectors during one run.
+
+Every simulation:
+- hard wall-clock timeout
+- cycle watchdog
+- no unbounded wait
+- first-failure diagnostics
+- no background process leak
+
+======================================================================
+GLOBAL PRIORITIES
+======================================================================
+
+1. Exact FIPS 203 Algorithms 16–21 behavior
+2. Exact key/ciphertext/shared-secret byte layout
+3. Correct public versus internal-function boundaries
+4. Correct input checking
+5. Constant-work ciphertext comparison and shared-secret selection
+6. Implicit-rejection confidentiality
+7. Physical destruction of intermediate secret data
+8. Deterministic control and ownership
+9. Backpressure correctness
+10. Reuse of verified M5-M7 engines
+11. Timing-friendly registered control
+12. Throughput
+13. Area
+
+Never:
+- expose deterministic internal APIs as the normal application API
+- skip public Encaps/Decaps input checks
+- return or expose the implicit-reject flag
+- early-exit ciphertext comparison
+- branch output timing on mismatch position
+- select the fallback secret using a data-dependent short path
+- use reset as a false claim of physical secret erasure
+- replace J with SHA3-256
+- hash z || H(c) instead of z || c
+- derive G from the wrong byte order
+- claim final CAVP/ACVP validation
+- claim synthesis timing or Fmax
+
+M2.3b remains pending.
+
+======================================================================
+NORMATIVE ML-KEM-768 PARAMETERS AND SIZES
+======================================================================
+
+Parameters:
+
+  n    = 256
+  q    = 3329
+  k    = 3
+  eta1 = 2
+  eta2 = 2
+  du   = 10
+  dv   = 4
+
+Sizes:
+
+  d                    = 32 bytes
+  z                    = 32 bytes
+  m                    = 32 bytes
+  r                    = 32 bytes
+  shared secret K      = 32 bytes
+
+  ekPKE                = 1184 bytes
+  dkPKE                = 1152 bytes
+  ciphertext c         = 1088 bytes
+
+  ML-KEM ek            = 1184 bytes
+  ML-KEM dk            = 2400 bytes
+
+ML-KEM decapsulation-key layout, using half-open byte ranges:
+
+  dkPKE:
+    dk[0 : 1152]
+
+  embedded ekPKE:
+    dk[1152 : 2336]
+
+  stored H(ekPKE):
+    dk[2336 : 2368]
+
+  implicit-rejection z:
+    dk[2368 : 2400]
+
+Verify every boundary mechanically.
+Do not rely only on prose constants.
+
+======================================================================
+NORMATIVE INTERNAL ALGORITHMS
+======================================================================
+
+--------------------------------------------------
+Algorithm 16: ML-KEM.KeyGen_internal(d,z)
+--------------------------------------------------
+
+Input:
+- d: exactly 32 bytes
+- z: exactly 32 bytes
+
+Operation:
+
+  (ekPKE, dkPKE) = K-PKE.KeyGen(d)
+
+  ek = ekPKE
+
+  dk =
+      dkPKE
+    || ek
+    || H(ek)
+    || z
+
+Outputs:
+- ek: 1184 bytes
+- dk: 2400 bytes
+
+--------------------------------------------------
+Algorithm 17: ML-KEM.Encaps_internal(ek,m)
+--------------------------------------------------
+
+Inputs:
+- ek: exactly 1184 bytes
+- m: exactly 32 bytes
+
+Operation:
+
+  h = H(ek)
+
+  g_input = m || h
+
+  (K,r) = G(g_input)
+
+  c = K-PKE.Encrypt(ek,m,r)
+
+Outputs:
+- K: first 32 bytes of G output
+- c: 1088 bytes
+
+The second 32 bytes of G output are r.
+
+Do not swap K and r.
+
+--------------------------------------------------
+Algorithm 18: ML-KEM.Decaps_internal(dk,c)
+--------------------------------------------------
+
+Inputs:
+- dk: exactly 2400 bytes
+- c: exactly 1088 bytes
+
+Parse:
+
+  dkPKE = dk[0:1152]
+  ekPKE = dk[1152:2336]
+  h     = dk[2336:2368]
+  z     = dk[2368:2400]
+
+Operation:
+
+  m_prime = K-PKE.Decrypt(dkPKE,c)
+
+  (K_prime,r_prime) = G(m_prime || h)
+
+  K_bar = J(z || c)
+
+  c_prime = K-PKE.Encrypt(ekPKE,m_prime,r_prime)
+
+  mismatch = full_compare(c,c_prime)
+
+  K =
+    K_prime when mismatch == 0
+    K_bar   when mismatch != 0
+
+Output:
+- K: exactly 32 bytes
+
+Requirements:
+
+- G and J are both executed for every decapsulation
+- re-encryption is always executed
+- all 1088 ciphertext bytes are compared
+- no early exit
+- mismatch location does not alter comparison loop length
+- K selection uses a full-width mask
+- implicit-reject flag is secret internal data
+- implicit-reject flag is destroyed before termination
+- no application-visible valid/invalid ciphertext indicator
+
+======================================================================
+NORMATIVE PUBLIC ALGORITHMS
+======================================================================
+
+--------------------------------------------------
+Algorithm 19: ML-KEM.KeyGen
+--------------------------------------------------
+
+Public KeyGen uses fresh randomness:
+
+  d <- 32 random bytes
+  z <- 32 random bytes
+
+Then:
+
+  ML-KEM.KeyGen_internal(d,z)
+
+M8 does not implement an approved RBG.
+
+The public RTL wrapper must use an external entropy/RBG stream interface.
+
+It must:
+- request exactly 64 fresh bytes
+- split first 32 bytes as d
+- split next 32 bytes as z
+- detect external entropy failure
+- return error and no key outputs on entropy failure
+- never reuse retained entropy automatically
+
+--------------------------------------------------
+Algorithm 20: ML-KEM.Encaps
+--------------------------------------------------
+
+Before operation, public Encaps must verify ek:
+
+1. type/length check:
+     exactly 1184 bytes
+
+2. modulus check:
+     test =
+       ByteEncode12(
+         ByteDecode12(ek[0:1152])
+       )
+
+     require:
+       test == ek[0:1152]
+
+Equivalent noncanonical-segment detection may be used only after proving it is
+bit-exactly equivalent to the required re-encode check.
+
+After the checked ek is accepted:
+
+  m <- 32 fresh random bytes
+
+  ML-KEM.Encaps_internal(ek,m)
+
+Public wrapper:
+- requests exactly 32 fresh bytes
+- handles entropy failure
+- does not invoke Encaps_internal on a failed key check
+- does not treat rho bytes as encoded coefficients
+
+--------------------------------------------------
+Algorithm 21: ML-KEM.Decaps
+--------------------------------------------------
+
+Public Decaps input checks:
+
+1. ciphertext type/length:
+     c is exactly 1088 bytes
+
+2. decapsulation-key type/length:
+     dk is exactly 2400 bytes
+
+3. hash check:
+     test = H(dk[1152:2336])
+
+     require:
+       test == dk[2336:2368]
+
+Do not add an encapsulation-key modulus check to the normal public Decaps path
+unless the final standard explicitly requires it.
+
+Do not confuse optional key-pair validation with required Decaps input checks.
+
+If checks pass:
+
+  K = ML-KEM.Decaps_internal(dk,c)
+
+If checks fail:
+- report public input-check failure
+- do not invoke Decaps_internal
+- do not output a shared secret as though the operation succeeded
+
+======================================================================
+PHASE A — REPOSITORY AND SOURCE AUDIT
+======================================================================
+
+Read first:
+
+- AGENTS.md
+- TODO.md
+- Roadmap.md
+- docs/00_project_spec/milestone_status.md
+- docs/00_project_spec/fips203_algorithm_tracking.md
+- docs/01_standard/fips203_notes.md
+- docs/04_design/m7_to_mlkem_handoff.md
+- docs/04_design/kpke_engine_contract.md
+- docs/04_design/keccak_sha3_shake_contract.md
+- docs/04_design/codec_sampler_contract.md
+- reports/m7_completion_report.md
+- reports/m6_completion_report.md
+- all M7 K-PKE RTL/TBs/runners
+- all M5 H/G/J wrappers
+- M6 ByteEncode12/ByteDecode12 and key-format codecs
+- independent Python ML-KEM model
+- mlkem-vector-v1 infrastructure
+- FIPS 203 Algorithms 16 through 21
+- FIPS 203 input-checking requirements
+- FIPS 203 destruction-of-intermediate-values requirements
+- legacy Kyber C only as a secondary historical reference
+
+Run:
+
+  pwd
+  git branch --show-current
+  git status --short
+  git log --oneline -20
+  git stash list
+  git worktree list
+  pgrep -af 'vvp|iverilog|run_.*m8|run_.*mlkem|run_.*kpke' || true
+
+Confirm:
+
+- repository path is correct
+- branch is test
+- commit 8712d7c is present
+- working tree is clean
+- no stale stash
+- no stale process
+- frozen PQC_main remains unchanged
+- no tracked simulation binary, wave, cache, log, or temporary vector
+
+If unexpected modifications exist:
+- inspect all files
+- do not overwrite unrelated work
+- stop and report exact unexplained paths
+
+======================================================================
+PHASE B — M8.0 INTEGRATION AND SECURITY AUDIT
+======================================================================
+
+Audit all reusable M5-M7 services.
+
+For every reused service document:
+
+- exact interface
+- accepted input length
+- output length
+- stream ordering
+- backpressure behavior
+- reset behavior
+- error behavior
+- internal payload storage
+- whether payload is physically scrubbed
+- whether an explicit zeroize port exists
+- operation latency/range
+- ownership contract
+
+Audit at minimum:
+
+M5:
+- mlkem_h
+- mlkem_g
+- mlkem_j
+
+M6:
+- ByteDecode12
+- ByteEncode12
+- encapsulation-key codec/check support
+- fixed byte buffers where available
+
+M7:
+- kpke_keygen
+- kpke_encrypt
+- kpke_decrypt
+- mode-local buffers
+- secret polynomial workspaces
+- key/ciphertext byte buffers
+- result streaming interfaces
+
+Explicitly identify:
+
+- duplicated resources if all three M7 controllers are instantiated
+- output order differences
+- child-module state that survives reset physically
+- child workspaces that contain secret or ephemeral data
+- child modules requiring a new zeroize interface
+- public/internal API confusion
+- any early-exit comparator
+- any byte-order ambiguity
+- any output produced before the full algorithm is complete
+- any stale error/done behavior
+
+Create:
+
+  reports/m8_0_mlkem_audit.md
+
+Do not modify M5-M7 functional semantics merely for stylistic consistency.
+
+======================================================================
+PHASE C — M8.0 ARCHITECTURE CONTRACT
+======================================================================
+
+Create:
+
+  docs/04_design/mlkem768_engine_contract.md
+
+Freeze these boundaries.
+
+--------------------------------------------------
+Internal deterministic functions
+--------------------------------------------------
+
+Modules:
+
+  mlkem_keygen_internal
+  mlkem_encaps_internal
+  mlkem_decaps_internal
+
+These interfaces are:
+- available for test/integration only
+- not the normal application interface
+- explicitly deterministic
+- driven by d,z,m supplied by the test environment or public wrappers
+
+--------------------------------------------------
+Public functions
+--------------------------------------------------
+
+Modules:
+
+  mlkem_keygen
+  mlkem_encaps
+  mlkem_decaps
+
+These implement:
+- external entropy requests for KeyGen/Encaps
+- mandatory public input checking
+- error behavior
+- automatic secret-state destruction before operation termination
+
+--------------------------------------------------
+Unified top
+--------------------------------------------------
+
+Preferred top:
+
+  rtl/mlkem/mlkem768_top.v
+
+Command modes:
+
+  MLKEM_MODE_KEYGEN
+  MLKEM_MODE_ENCAPS
+  MLKEM_MODE_DECAPS
+  MLKEM_MODE_ZEROIZE
+
+Control:
+
+- clk
+- synchronous active-low rst_n
+- cmd_valid
+- cmd_ready
+- cmd_mode
+- busy
+- done
+- error
+
+Application input record stream:
+
+- in_valid
+- in_ready
+- in_data [31:0]
+- in_keep [3:0]
+- in_last
+- in_kind
+
+Input record kinds:
+
+  MLKEM_IN_EK
+  MLKEM_IN_DK
+  MLKEM_IN_CIPHERTEXT
+
+External entropy/RBG interface:
+
+- rng_req_valid
+- rng_req_ready
+- rng_req_len_bytes
+- rng_data_valid
+- rng_data_ready
+- rng_data [31:0]
+- rng_keep [3:0]
+- rng_last
+- rng_fail
+
+Output stream:
+
+- out_valid
+- out_ready
+- out_data [31:0]
+- out_keep [3:0]
+- out_last
+- out_kind
+
+Output record kinds:
+
+  MLKEM_OUT_EK
+  MLKEM_OUT_DK
+  MLKEM_OUT_SHARED_SECRET
+  MLKEM_OUT_CIPHERTEXT
+
+Freeze output record order:
+
+KeyGen:
+  1. EK record, 1184 bytes
+  2. DK record, 2400 bytes
+
+Encaps:
+  1. SHARED_SECRET record, 32 bytes
+  2. CIPHERTEXT record, 1088 bytes
+
+Decaps:
+  1. SHARED_SECRET record, 32 bytes
+
+Each record has its own out_last.
+
+done:
+- pulses only after final output record has been accepted
+- and mandatory scrub/destruction has completed
+
+busy:
+- remains asserted through output stalls and scrub
+
+Output data/kind/keep/last:
+- remain stable while out_valid=1 and out_ready=0
+
+No physical internal polynomial-bank interface is public.
+
+======================================================================
+PHASE D — M8.1 FIXED-SIZE BYTE STORAGE
+======================================================================
+
+Audit reusable byte storage first.
+
+Create reusable storage only if no verified equivalent exists.
+
+Potential module:
+
+  rtl/mlkem/mlkem_byte_buffer.v
+
+Requirements:
+
+- synchronous read
+- deterministic indexed write
+- fixed configured capacity
+- byte or 32-bit stream load
+- exact completeness tracking
+- no payload reset requirement
+- explicit valid/completeness metadata
+- explicit scrub mode
+- scrub every address with zero
+- scrub-complete indication
+- out-of-range protection
+- external access blocked while internally owned
+- reset invalidates metadata but does not claim physical erasure
+
+Required capacities may include:
+
+- 32 bytes
+- 64 bytes
+- 1088 bytes
+- 1184 bytes
+- 1152 bytes
+- 1120 bytes
+- 2400 bytes
+
+Avoid instantiating many oversized generic buffers where smaller storage or
+streaming is sufficient.
+
+Create focused TBs for:
+- load
+- read
+- completeness
+- random access
+- reset invalidation
+- physical scrub
+- scrub interrupted by reset
+- reload after scrub
+- output backpressure adapters
+
+======================================================================
+PHASE E — M8.1 KEY ASSEMBLY AND PARSING
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_dk_assemble.v
+  rtl/mlkem/mlkem_dk_parse.v
+
+Assembly input:
+
+- dkPKE: 1152 bytes
+- ek: 1184 bytes
+- h: 32 bytes
+- z: 32 bytes
+
+Assembly output:
+- dk: exactly 2400 bytes
+
+Parsing output ranges:
+
+- dkPKE: 0..1151
+- ek: 1152..2335
+- h: 2336..2367
+- z: 2368..2399
+
+Verify:
+- every byte position
+- every boundary
+- no off-by-one
+- no byte reversal
+- random backpressure
+- reset
+- physical scrub of internal temporary storage
+
+Create:
+
+  tb/unit/tb_mlkem_dk_layout.v
+  sim/scripts/run_mlkem_dk_layout.sh
+  reports/simulation/m8_1_dk_layout_report.md
+
+Minimum:
+- walking byte position across all 2400 positions
+- structured component markers
+- deterministic random components
+- exact assembly/parse roundtrip
+
+======================================================================
+PHASE F — M8.1 ENCAPSULATION-KEY CHECK
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_ek_check.v
+
+Input:
+- exactly 1184 bytes
+
+Checks:
+
+1. type/stream length
+2. modulus/re-encoding check for first 1152 bytes
+
+Preferred implementation:
+- reuse verified ByteDecode12 noncanonical detection
+- prove that:
+    noncanonical_seen == 0
+  is equivalent to:
+    ByteEncode12(ByteDecode12(segment)) == segment
+
+The final 32 rho bytes:
+- are length-checked
+- are not modulus-checked
+
+Requirements:
+- scan all encoded polynomial bytes
+- no early exit on first noncanonical coefficient
+- accumulate invalid status
+- output checked_key_valid only after complete scan
+- do not alter key bytes
+- stable status until accepted/reset
+- scrub temporary decoded data
+
+Verification:
+
+- valid M7 keys
+- raw coefficients 0 and q-1
+- inject raw12:
+    q
+    q+1
+    4095
+- inject noncanonical segment at:
+    first coefficient
+    middle coefficient
+    final encoded coefficient
+- multiple noncanonical segments
+- rho mutations remain legal
+- malformed length/keep/last
+- check runtime independent of invalid-segment position
+
+Create:
+- TB
+- runner
+- report
+
+======================================================================
+PHASE G — M8.1 DECAPSULATION INPUT CHECK
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_decaps_input_check.v
+
+Inputs:
+- dk candidate
+- ciphertext candidate
+
+Checks:
+
+1. ciphertext length exactly 1088 bytes
+2. dk length exactly 2400 bytes
+3. compute:
+     test = H(dk[1152:2336])
+4. compare test with:
+     dk[2336:2368]
+
+Requirements:
+- reuse verified M5 H
+- compare all 32 hash bytes
+- no early exit
+- no implicit-rejection behavior here
+- input-check failure is a public protocol error
+- do not invoke Decaps_internal after failure
+- do not add a normal-path dkPKE modulus check
+- expose only public pass/fail status
+- scrub hash temporary state after completion
+
+Verification:
+
+- valid M8-generated dk
+- mutate embedded ek
+- mutate stored hash
+- mutate z: hash check must still pass
+- mutate dkPKE: hash check must still pass
+- malformed dk length
+- malformed ciphertext length
+- mismatch in first/middle/final hash byte
+- fixed scan/runtime for mismatch positions
+
+Create:
+- TB
+- runner
+- report
+
+======================================================================
+PHASE H — M8.1 CONSTANT-WORK COMPARE AND SELECT
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_ct_compare_select.v
+
+Inputs:
+- c: 1088 bytes
+- c_prime: 1088 bytes
+- K_prime: 32 bytes
+- K_bar: 32 bytes
+
+Operation:
+
+  mismatch_acc = OR over all:
+      c[i] XOR c_prime[i]
+
+Derive one full-byte mask:
+
+  reject_mask =
+    8'h00 when all bytes equal
+    8'hff when any byte differs
+
+For each shared-secret byte:
+
+  K_out[i] =
+      (K_prime[i] & ~reject_mask)
+    | (K_bar[i]   &  reject_mask)
+
+Requirements:
+
+- compare exactly all 1088 bytes
+- no early exit
+- no branch that shortens operation
+- exact same comparison iteration count for:
+    equal
+    first-byte mismatch
+    middle mismatch
+    final-byte mismatch
+    many mismatches
+- K selection processes all 32 bytes
+- implicit-reject flag/mask is never a public output
+- test-only visibility may use simulation hierarchy or assertions
+- destroy mismatch accumulator and reject mask before done
+- no stale flag after reset
+
+Create:
+
+  tb/unit/tb_mlkem_ct_compare_select.v
+  sim/scripts/run_mlkem_ct_compare_select.sh
+  reports/simulation/m8_1_ct_compare_select_report.md
+
+Verification:
+
+- equal ciphertexts
+- one-bit mutation at every selected byte position
+- first/middle/final byte
+- all bytes changed
+- random mismatch patterns
+- exact K_prime selection
+- exact K_bar selection
+- constant comparison cycle count
+- reset during compare
+- reset during selection
+- restart after reset
+
+======================================================================
+PHASE I — M8.1 ZEROIZATION AND DESTRUCTION POLICY
+======================================================================
+
+Create:
+
+  docs/04_design/mlkem_zeroization_policy.md
+
+FIPS-facing distinction:
+
+- reset/logical invalidation
+- physical payload overwrite
+- operation completion
+
+Requirements:
+
+1. Reset:
+   - immediately cancels control traffic
+   - clears valids/ownership/completeness
+   - does not claim physical payload erasure
+
+2. Explicit zeroize:
+   - physically overwrites all reachable secret/ephemeral buffers
+   - scans every memory address
+   - clears secret scalar registers
+   - clears implicit-rejection flag/mask
+   - returns zeroize_done only after all writes commit
+
+3. Automatic destruction:
+   - public KeyGen/Encaps/Decaps automatically scrub intermediate secret data
+     before pulsing operation done
+   - designated outputs may be streamed before scrub completes
+   - busy remains high through scrub
+   - no new command accepted during scrub
+
+Data requiring destruction includes, as applicable:
+
+KeyGen:
+- external entropy copies d,z unless an explicit seed-retention mode exists
+- sigma
+- s/e and transformed secret/error workspaces
+- temporary hash states
+- internal copies of dkPKE not needed for designated output
+
+Encaps:
+- entropy-derived m
+- derived r
+- H(ek) temporary
+- K/r G output staging after designated outputs are secured
+- y/y_hat/e1/e2
+- all secret/ephemeral K-PKE workspaces
+
+Decaps:
+- parsed dk copies
+- z internal copy
+- m_prime
+- K_prime
+- r_prime
+- K_bar after selected result is transferred
+- c_prime
+- mismatch accumulator/mask
+- secret K-PKE workspaces
+
+M5 permutation state used for secret computations must be reinitialized or
+scrubbed according to its verified interface.
+
+If M7 child modules lack physical scrub support:
+- add minimal zeroize interfaces
+- preserve their functional operation interfaces
+- add independent zeroize TBs
+- rerun full M7 focused regression
+- document interface extension
+- do not claim completion while unreachable secret payload remains
+
+Public matrix A data derived only from rho is nonsecret and need not be scrubbed,
+but scrubbing it is allowed.
+
+Create:
+
+  rtl/mlkem/mlkem_zeroize_controller.v
+
+or equivalent distributed verified scrub control.
+
+Verification:
+
+- write nonzero patterns to every secret buffer
+- request zeroize
+- verify every reachable location becomes zero
+- verify secret-valid metadata becomes invalid
+- zeroize from idle
+- zeroize after KeyGen
+- zeroize after Encaps
+- zeroize after Decaps
+- zeroize during active operation according to documented abort policy
+- reset during zeroize
+- restart and complete a clean operation
+- no done before scrub completion
+
+======================================================================
+PHASE J — M8.2 KEYGEN_INTERNAL
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_keygen_internal.v
+
+Inputs:
+
+- d: 32 bytes
+- z: 32 bytes
+
+Outputs:
+
+- ek: 1184 bytes
+- dk: 2400 bytes
+
+Architecture:
+
+1. Validate deterministic input completeness.
+2. Invoke verified M7 K-PKE.KeyGen(d).
+3. Capture ekPKE and dkPKE.
+4. Compute H(ekPKE) using verified M5 H.
+5. Output ek = ekPKE.
+6. Assemble:
+     dkPKE || ekPKE || H(ekPKE) || z
+7. Preserve exact output byte order.
+8. Scrub all nondesignated intermediate state before done.
+
+Do not:
+- hash dkPKE
+- hash ek plus z
+- store z before H inside the key layout
+- use G instead of H
+- regenerate K-PKE output
+- expose internal deterministic interface to public top without controlled use
+
+Operation counts:
+
+- K-PKE.KeyGen: exactly 1
+- H: exactly 1
+- H input bytes: exactly 1184
+- ek output bytes: exactly 1184
+- dk output bytes: exactly 2400
+
+Output behavior:
+- separate typed EK and DK records
+- stable under backpressure
+- one output record boundary each
+- done after both records and scrub
+
+Create:
+
+  tb/block/tb_mlkem_keygen_internal.v
+  sim/scripts/run_mlkem_keygen_internal.sh
+  reports/simulation/m8_2_keygen_internal_report.md
+
+Verification minimum:
+
+- zero d/z
+- all-ff d/z
+- sequential values
+- d==z
+- independent d/z
+- at least 12 deterministic random pairs
+
+Compare against independent Python:
+
+- ekPKE
+- dkPKE
+- H(ek)
+- all 1184 ek bytes
+- all 2400 dk bytes
+- every parsed dk component
+
+Also verify:
+- reset during K-PKE
+- reset during H
+- reset during assembly
+- reset during output
+- output backpressure
+- restart
+- automatic scrub
+
+======================================================================
+PHASE K — M8.3 ENCAPS_INTERNAL
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_encaps_internal.v
+
+Inputs:
+
+- ek: 1184 bytes
+- m: 32 bytes
+
+Outputs:
+
+- K: 32 bytes
+- c: 1088 bytes
+
+No public input checking inside this internal function.
+
+Architecture:
+
+1. Compute:
+     h = H(ek)
+
+2. Build exactly:
+     g_input = m || h
+   total 64 bytes.
+
+3. Compute:
+     G(g_input)
+   output 64 bytes.
+
+4. Split:
+     K = G_output[0:32]
+     r = G_output[32:64]
+
+5. Invoke:
+     K-PKE.Encrypt(ek,m,r)
+
+6. Output:
+     K record
+     ciphertext record
+
+7. Scrub:
+     m
+     h
+     r
+     G temporary state
+     Encrypt ephemeral state
+   before done.
+
+Operation counts:
+
+- H: 1
+- H input: 1184 bytes
+- G: 1
+- G input: 64 bytes
+- K-PKE.Encrypt: 1
+- K output: 32 bytes
+- ciphertext output: 1088 bytes
+
+Create:
+
+  tb/block/tb_mlkem_encaps_internal.v
+  sim/scripts/run_mlkem_encaps_internal.sh
+  reports/simulation/m8_3_encaps_internal_report.md
+
+Verification minimum:
+
+- zero m
+- all-ff m
+- sequential m
+- walking-one selected/all bits
+- keys from independent Python KeyGen
+- at least 16 deterministic `(ek,m)` vectors
+
+Compare:
+
+- H(ek)
+- exact G input bytes
+- full G output
+- K
+- r
+- all 1088 ciphertext bytes
+
+Verify:
+- K/r split order
+- no byte reversal
+- output stalls
+- reset in H/G/K-PKE/output
+- clean restart
+- automatic scrub
+
+======================================================================
+PHASE L — M8.4 DECAPS_INTERNAL
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_decaps_internal.v
+
+Inputs:
+
+- dk: 2400 bytes
+- c: 1088 bytes
+
+Output:
+
+- K: 32 bytes
+
+No public input checks inside this internal function.
+
+Architecture:
+
+1. Parse exact dk ranges.
+2. Invoke:
+     m_prime = K-PKE.Decrypt(dkPKE,c)
+
+3. Build:
+     m_prime || h
+   exactly 64 bytes.
+
+4. Compute:
+     (K_prime,r_prime) = G(m_prime || h)
+
+5. Build:
+     z || c
+   exactly 1120 bytes.
+
+6. Compute:
+     K_bar = J(z || c)
+   J output exactly 32 bytes.
+
+7. Re-encrypt:
+     c_prime =
+       K-PKE.Encrypt(
+         ekPKE,
+         m_prime,
+         r_prime
+       )
+
+8. Compare every ciphertext byte.
+9. Select K with the constant-work mask.
+10. Destroy implicit-reject flag and all nondesignated intermediates.
+11. Emit only K.
+
+Functional baseline may compute J:
+- before
+- during
+- or after re-encryption
+
+but J must always execute and ownership must remain unambiguous.
+
+Operation counts:
+
+- K-PKE.Decrypt: 1
+- G: 1
+- G input: 64 bytes
+- J: 1
+- J input: 1120 bytes
+- K-PKE.Encrypt: 1
+- ciphertext comparisons: exactly 1088 bytes
+- secret selection: exactly 32 bytes
+
+Required valid-ciphertext behavior:
+
+  c == c_prime
+  K_out == K_prime
+
+Required modified-ciphertext behavior:
+
+  c != c_prime
+  K_out == J(z || c)
+
+Do not merely verify that fallback K differs from K_prime.
+Compare the exact expected fallback bytes.
+
+Create:
+
+  tb/block/tb_mlkem_decaps_internal.v
+  tb/block/tb_mlkem_implicit_rejection.v
+  sim/scripts/run_mlkem_decaps_internal.sh
+  sim/scripts/run_mlkem_implicit_rejection.sh
+  reports/simulation/m8_4_decaps_internal_report.md
+  reports/simulation/m8_4_implicit_rejection_report.md
+
+Verification:
+
+A. Valid cases:
+- at least 16 deterministic valid `(dk,c)` vectors
+- compare exact K
+
+B. Invalid/modified ciphertext cases:
+- mutation at first byte
+- mutation at middle byte
+- mutation at final byte
+- one-bit mutation
+- one-byte mutation
+- multiple-byte mutation
+- all-zero replacement
+- all-ff replacement
+- deterministic random malformed ciphertexts
+- at least 32 fallback cases
+
+C. Constant-work evidence:
+- same number of compared bytes
+- same compare-loop cycle count
+- same select-loop cycle count
+- no mismatch-position-dependent early completion
+- no application-visible rejection flag
+
+D. Intermediate checks:
+- m_prime
+- h
+- G input
+- K_prime
+- r_prime
+- J input
+- K_bar
+- c_prime
+- final selected K
+
+E. Control:
+- reset during decrypt
+- reset during G
+- reset during J
+- reset during re-encrypt
+- reset during compare
+- reset during select
+- reset during scrub
+- output backpressure
+- clean restart
+
+======================================================================
+PHASE M — M8.5 PUBLIC KEYGEN
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_keygen.v
+
+No deterministic d/z application input.
+
+Use external entropy interface.
+
+Flow:
+
+1. Request exactly 64 bytes.
+2. On entropy failure:
+   - abort
+   - set error
+   - emit no EK/DK
+   - scrub any partial entropy
+3. Split:
+   - bytes 0..31 -> d
+   - bytes 32..63 -> z
+4. Invoke KeyGen_internal.
+5. Emit EK then DK.
+6. Scrub entropy/intermediate state.
+7. Pulse done.
+
+Verify:
+
+- exact 64-byte request
+- partial input handling
+- rng_fail before data
+- rng_fail mid-stream
+- too few bytes
+- too many bytes
+- malformed keep/last
+- successful deterministic mock-RBG vectors
+- no automatic entropy reuse
+
+Public KeyGen may use deterministic mock entropy only in TB.
+
+======================================================================
+PHASE N — M8.5 PUBLIC ENCAPS
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_encaps.v
+
+Inputs:
+- candidate EK stream
+
+External entropy:
+- exactly 32 fresh bytes m after key check succeeds
+
+Flow:
+
+1. Load exactly 1184 EK bytes.
+2. Run required EK check.
+3. On check failure:
+   - error
+   - no RNG request
+   - no shared-secret/ciphertext output
+4. Request exactly 32 random bytes.
+5. On RNG failure:
+   - error
+   - no output
+6. Invoke Encaps_internal(checked_ek,m).
+7. Emit shared secret then ciphertext.
+8. Scrub temporary state.
+9. Pulse done.
+
+Verify:
+
+- valid keys
+- noncanonical first/middle/final coefficient segment
+- multiple invalid coefficients
+- wrong key length
+- rho-only mutations accepted by modulus check
+- RNG not requested before key check passes
+- RNG failure
+- output stalls
+- reset in every phase
+
+======================================================================
+PHASE O — M8.5 PUBLIC DECAPS
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem_decaps.v
+
+Inputs:
+- candidate DK stream
+- candidate ciphertext stream
+
+Flow:
+
+1. Load exact 2400-byte DK.
+2. Load exact 1088-byte ciphertext.
+3. Run required Decaps input check.
+4. On check failure:
+   - error
+   - do not invoke Decaps_internal
+   - no shared secret output
+5. Invoke Decaps_internal.
+6. Emit shared secret.
+7. Scrub temporary state.
+8. Pulse done.
+
+Verify:
+
+- valid DK/c
+- wrong DK length
+- wrong ciphertext length
+- embedded EK mutation
+- stored H mutation
+- z mutation still passes hash check
+- dkPKE mutation still passes hash check
+- correct behavior after successful check
+- no public invalid-ciphertext signal for cryptographically malformed but
+  correctly sized ciphertext
+- such ciphertext still enters Decaps_internal and uses implicit rejection
+
+Distinguish:
+
+- public input-check failure
+- internal implicit rejection
+
+They are not the same event.
+
+======================================================================
+PHASE P — M8.5 UNIFIED ML-KEM-768 TOP
+======================================================================
+
+Implement:
+
+  rtl/mlkem/mlkem768_top.v
+
+The top may instantiate the verified public wrappers.
+
+Correctness-first baseline options:
+
+A. Instantiate all three public controllers and arbitrate command access.
+B. Share selected byte buffers/hash interfaces through a verified service layer.
+C. Use a command microcontroller around shared M7/M5 subengines.
+
+Do not rewrite M7 just to force resource sharing.
+
+If all mode controllers are structurally duplicated:
+- document the area risk
+- do not claim area optimization
+- preserve correctness
+- leave consolidation for measured post-M9 optimization
+
+Top requirements:
+
+- one active mode at a time
+- exact command-to-input expectations
+- exact typed output records
+- no command accepted while busy
+- zeroize mode available
+- reset cancels operation and logically invalidates state
+- explicit zeroize physically scrubs reachable payload
+- automatic scrub before mode done
+- error identifies protocol/input/RNG/subengine failure category
+- implicit rejection does not set public error
+- implicit rejection does not change output record type
+- no internal deterministic test interface exposed on public top
+
+Create:
+
+  tb/system/tb_mlkem768_top.v
+  sim/scripts/run_mlkem768_top.sh
+  reports/simulation/m8_5_mlkem768_top_report.md
+
+======================================================================
+PHASE Q — PUBLIC API SECURITY AND CONTROL TESTS
+======================================================================
+
+Test:
+
+- command while busy
+- invalid command mode
+- malformed input kind
+- wrong record order
+- early last
+- missing last
+- extra input bytes
+- illegal keep
+- output backpressure
+- input pause/backpressure
+- RNG request backpressure
+- RNG output stalls
+- RNG failure
+- reset during input load
+- reset during input checking
+- reset during entropy collection
+- reset during K-PKE
+- reset during H/G/J
+- reset during compare/select
+- reset during output
+- reset during scrub
+- explicit zeroize while idle
+- explicit zeroize during active operation according to abort policy
+- clean restart
+- one-cycle done
+- no stale output-valid
+- no stale error
+- no stale checked-key metadata
+- no stale implicit-reject state
+- no new command before scrub completion
+
+Output must remain stable under stalls.
+
+======================================================================
+PHASE R — INDEPENDENT VECTOR TOOLING
+======================================================================
+
+Extend tools under:
+
+  tb/tools/
+
+Preferred generator:
+
+  tb/tools/gen_mlkem_vectors.py
+
+Reuse the independent FIPS-first Python model.
+
+Do not alter oracle semantics.
+
+Generate deterministic vectors for:
+
+KeyGen_internal:
+- d
+- z
+- expected ekPKE
+- expected dkPKE
+- expected H(ek)
+- expected ek
+- expected dk
+
+Encaps_internal:
+- ek
+- m
+- expected H(ek)
+- expected G input/output
+- expected K
+- expected r
+- expected c
+
+Decaps_internal:
+- dk
+- c
+- parsed fields
+- expected m_prime
+- expected G input/output
+- expected K_prime
+- expected r_prime
+- expected J input/output
+- expected c_prime
+- expected mismatch
+- expected final K
+
+Public checks:
+- valid EK
+- noncanonical EK
+- valid DK/c
+- DK hash mismatch
+- malformed length classifications
+
+Top-level:
+- deterministic mock-RBG byte streams
+- expected record kinds/order
+- expected outputs
+
+Vector metadata:
+
+- schema/version
+- operation
+- vector ID
+- ML-KEM-768 parameter set
+- deterministic source/seed
+- input/output byte lengths
+- byte order
+- key layout offsets
+- expected input-check result
+- expected implicit-rejection result for test metadata only
+- exact expected bytes
+
+The implicit-rejection expectation may exist in test vectors but must not
+become a public RTL output.
+
+Requirements:
+
+- lower-case hex
+- stable key ordering
+- stable vector ordering
+- no floats
+- byte-identical two-directory generation
+- small tracked smoke vectors
+- bulk vectors generated into ignored temporary directories
+
+Cross-check:
+- existing M0 internal vectors
+- independent Python selftests
+- current M7 K-PKE outputs
+- never use legacy Kyber KATs as final FIPS authority
+
+======================================================================
+PHASE S — END-TO-END ML-KEM DIFFERENTIAL VERIFICATION
+======================================================================
+
+Create:
+
+  tb/system/tb_mlkem_internal_chain.v
+  tb/system/tb_mlkem_public_chain.v
+
+Runners:
+
+  sim/scripts/run_mlkem_internal_chain.sh
+  sim/scripts/run_mlkem_public_chain.sh
+
+Internal deterministic chain:
+
+1. RTL KeyGen_internal(d,z)
+2. compare ek/dk against Python
+3. RTL Encaps_internal(ek,m)
+4. compare K/c against Python
+5. RTL Decaps_internal(dk,c)
+6. compare recovered K against original and Python
+
+Modified-ciphertext chain:
+
+1. generate valid RTL/Python key pair
+2. generate valid ciphertext
+3. mutate ciphertext
+4. run Decaps_internal
+5. compare output exactly against:
+     J(z || mutated_ciphertext)
+
+Public chain:
+
+1. mock RBG supplies d/z
+2. public KeyGen
+3. public EK check
+4. mock RBG supplies m
+5. public Encaps
+6. public Decaps
+7. compare both shared secrets
+
+Required internal-chain vectors:
+
+- zero d/z/m
+- all-ff
+- sequential
+- alternating patterns
+- walking-one selected bits
+- at least 12 complete deterministic chains
+
+Required invalid-ciphertext cases:
+- at least 32
+
+Required public-chain cases:
+- at least 8
+
+A passing RTL-only chain is insufficient.
+
+Every final and important intermediate must match Python.
+
+======================================================================
+PHASE T — CONSTANT-WORK AND SIDE-CHANNEL-STRUCTURAL CHECKS
+======================================================================
+
+This is not a complete side-channel certification.
+
+Perform structural checks:
+
+- all decapsulation ciphertext comparisons scan 1088 bytes
+- no combinational early mismatch output controls algorithm termination
+- both K_prime and K_bar are fully computed
+- re-encryption always executes
+- compare loop count is fixed
+- select loop count is fixed
+- output shared-secret length is always 32 bytes
+- public Decaps output record shape is identical for valid and invalid
+  correctly sized ciphertexts
+- implicit-rejection flag is not a port
+- implicit-rejection flag is cleared before done
+- mismatch position does not change compare/select cycles
+- no secret-dependent array index in compare/select
+- no secret-dependent output length
+- no secret-dependent error output for internal ciphertext mismatch
+
+SampleNTT naturally has data-dependent rejection cycles inside K-PKE.
+Do not falsely claim complete constant-cycle ML-KEM execution.
+
+Clearly distinguish:
+- constant-work compare/select
+- variable SampleNTT runtime
+- full side-channel resistance not yet established
+
+Create:
+
+  reports/security/m8_constant_work_review.md
+
+Use an existing security-report directory if repository conventions differ.
+
+======================================================================
+PHASE U — CYCLE AND OPERATION ACCOUNTING
+======================================================================
+
+Measure:
+
+KeyGen_internal:
+- K-PKE KeyGen range
+- H cycles
+- assembly cycles
+- output cycles
+- scrub cycles
+- total command-to-done min/max/average
+
+Encaps_internal:
+- H cycles
+- G cycles
+- K-PKE Encrypt range
+- output cycles
+- scrub cycles
+- total min/max/average
+
+Decaps_internal:
+- parse
+- K-PKE Decrypt
+- G
+- J
+- K-PKE Encrypt
+- 1088-byte compare
+- 32-byte select
+- output
+- scrub
+- total min/max/average
+
+Public KeyGen:
+- entropy collection
+- internal operation
+- output
+- scrub
+
+Public Encaps:
+- EK load
+- EK check
+- entropy collection
+- internal operation
+- output
+- scrub
+
+Public Decaps:
+- DK/c load
+- hash input check
+- internal operation
+- output
+- scrub
+
+Top:
+- command-to-first-output
+- command-to-final-output
+- command-to-done
+
+Cycles only.
+
+Do not calculate:
+- microseconds
+- throughput per second
+- achieved Fmax
+- synthesized area
+- timing closure
+
+Report structural resource facts only:
+- number of instantiated M7 controllers
+- number of hash wrappers
+- byte-buffer capacities
+- compare width/serialization
+- scrub architecture
+
+Do not call structural counts synthesized area.
+
+======================================================================
+PHASE V — REGRESSION IMPLEMENTATION
+======================================================================
+
+Create:
+
+  sim/scripts/run_m8_smoke.sh
+  sim/scripts/run_m8_regression.sh
+  sim/scripts/run_full_project_regression.sh
+
+M8 focused programs should include:
+
+1. DK layout
+2. EK check
+3. Decaps input check
+4. ciphertext compare/select
+5. zeroization
+6. KeyGen_internal
+7. Encaps_internal
+8. Decaps_internal
+9. implicit rejection
+10. public KeyGen
+11. public Encaps
+12. public Decaps
+13. unified top
+14. internal chain
+15. public chain
+16. deterministic vector reproducibility
+17. constant-work structural review/test
+
+Add tests if architecture creates additional foundational units.
+
+M8 regression requirements:
+
+- hard timeout per test
+- fail-fast
+- concise status
+- nonzero exit
+- temporary build directories
+- cleanup traps
+- DEBUG_WAVES=1 optional
+- no default waves
+- no stale process
+- program count
+- internal checks
+- byte comparisons
+- valid decapsulation count
+- fallback decapsulation count
+- scrub-location checks
+- machine-readable summary
+
+Print:
+
+  M8_REGRESSION_STATUS=PASS
+  TESTS_RUN=<n>
+  TESTS_PASSED=<n>
+  TESTS_FAILED=<n>
+  INTERNAL_CHECKS=<n>
+  BYTE_COMPARISONS=<n>
+  VALID_DECAPS_CASES=<n>
+  IMPLICIT_REJECTION_CASES=<n>
+  ZEROIZE_CHECKS=<n>
+
+Full-project regression:
+
+- M8 focused
+- M7 once
+- M6 once
+- M5 once
+- M4 once
+- M3 once
+- M2 adjacency once
+- Python model/schema/comparator once
+
+Do not recursively run lower milestones more than once.
+
+======================================================================
+PHASE W — DEBUGGING DISCIPLINE
+======================================================================
+
+At first failure print:
+
+- cycle
+- operation/mode
+- public or internal function
+- controller state
+- subengine owner
+- input record kind
+- output record kind
+- input byte offset
+- output byte offset
+- key-layout region
+- expected byte
+- observed byte
+- H/G/J state
+- K-PKE state
+- parsed dk offset
+- EK-check coefficient/raw12 index
+- stored hash byte
+- computed hash byte
+- m_prime byte
+- K_prime byte
+- r_prime byte
+- K_bar byte
+- c/c_prime byte index
+- mismatch accumulator
+- secret-select index
+- scrub buffer/address
+- scrub pending count
+- busy/done/error
+- valid/ready/keep/last
+- RNG state/failure
+
+Classify:
+
+- key layout
+- H input
+- G concatenation
+- G split
+- J input
+- public EK check
+- public DK hash check
+- K-PKE integration
+- implicit rejection
+- ciphertext comparison
+- shared-secret select
+- stream ordering
+- backpressure
+- zeroization
+- reset
+- RBG protocol
+- vector tooling
+- testbench
+
+Do not:
+
+- weaken checks
+- change Python expected output
+- expose the reject flag for convenience
+- early-exit compare
+- special-case mismatch positions
+- skip J in valid cases
+- skip re-encryption
+- treat malformed ciphertext as public check failure when its length is valid
+- confuse public input-check failure with implicit rejection
+- claim reset erased secret RAM
+- add unexplained delays
+- rerun hanging tests indefinitely
+
+======================================================================
+PHASE X — DOCUMENTATION AND M9 HANDOFF
+======================================================================
+
+Create:
+
+  docs/04_design/mlkem768_engine_contract.md
+  docs/04_design/mlkem_zeroization_policy.md
+  docs/04_design/m8_to_m9_handoff.md
+
+Create reports:
+
+  reports/m8_0_mlkem_audit.md
+  reports/simulation/m8_1_dk_layout_report.md
+  reports/simulation/m8_1_ek_check_report.md
+  reports/simulation/m8_1_decaps_input_check_report.md
+  reports/simulation/m8_1_ct_compare_select_report.md
+  reports/simulation/m8_1_zeroization_report.md
+  reports/simulation/m8_2_keygen_internal_report.md
+  reports/simulation/m8_3_encaps_internal_report.md
+  reports/simulation/m8_4_decaps_internal_report.md
+  reports/simulation/m8_4_implicit_rejection_report.md
+  reports/simulation/m8_5_public_api_report.md
+  reports/simulation/m8_5_mlkem768_top_report.md
+  reports/simulation/m8_6_unified_regression_report.md
+  reports/security/m8_constant_work_review.md
+  reports/m8_completion_report.md
+
+Update:
+
+- TODO.md
+- Roadmap.md where milestone status is maintained
+- docs/00_project_spec/milestone_status.md
+- docs/00_project_spec/fips203_algorithm_tracking.md
+- docs/01_standard/fips203_notes.md
+- verification plans/indexes
+- relevant README indexes
+
+M8 completion report must include:
+
+- M8.0 through M8.6 status
+- Algorithms 16 through 21 mapping
+- internal/public API distinction
+- key and ciphertext sizes
+- exact dk layout
+- public EK check
+- public Decaps input check
+- external-RBG boundary
+- KeyGen_internal architecture
+- Encaps_internal architecture
+- Decaps_internal architecture
+- implicit-rejection proof
+- constant-work compare/select evidence
+- zeroization coverage
+- unreachable secret-state limitations, if any
+- typed top-level stream contract
+- vector counts
+- byte comparisons
+- valid/fallback decapsulation counts
+- cycle ranges
+- regression results
+- M2.3b pending
+- no synthesis/Fmax claim
+- no final CAVP/ACVP claim
+- M9 entry criteria
+
+M8-to-M9 handoff must state:
+
+M8 provides:
+- full functional ML-KEM-768 RTL
+- deterministic internal functions
+- public entropy-fed functions
+- mandatory public input checking
+- implicit rejection
+- physical scrub policy
+- unified ML-KEM top
+
+M9 must perform:
+- authoritative final vector import when available
+- final NIST CAVP/ACVP provenance and hash manifest
+- expanded end-to-end KAT/differential validation
+- long-run randomized regression
+- mutation/fault-oriented negative testing
+- final interface freeze
+- lint and synthesis-readiness review
+- M2.3b server synthesis evidence
+- latency/area candidate review
+- final RTL release tag
+
+M9 may not assume:
+- legacy Kyber KATs are final FIPS vectors
+- passing RTL roundtrip is sufficient
+- logical reset equals zeroization
+- constant-work compare proves full side-channel resistance
+- pre-layout timing is post-route timing
+
+======================================================================
+PHASE Y — EXPECTED FILE SCOPE
+======================================================================
+
+Expected RTL may include:
+
+- rtl/mlkem/mlkem_byte_buffer.v
+- rtl/mlkem/mlkem_dk_assemble.v
+- rtl/mlkem/mlkem_dk_parse.v
+- rtl/mlkem/mlkem_ek_check.v
+- rtl/mlkem/mlkem_decaps_input_check.v
+- rtl/mlkem/mlkem_ct_compare_select.v
+- rtl/mlkem/mlkem_zeroize_controller.v
+- rtl/mlkem/mlkem_keygen_internal.v
+- rtl/mlkem/mlkem_encaps_internal.v
+- rtl/mlkem/mlkem_decaps_internal.v
+- rtl/mlkem/mlkem_keygen.v
+- rtl/mlkem/mlkem_encaps.v
+- rtl/mlkem/mlkem_decaps.v
+- rtl/mlkem/mlkem768_top.v
+
+Inspect repository structure and avoid unnecessary duplicate wrappers.
+
+Allowed modifications:
+
+- M8 RTL
+- test-only observability following repository convention
+- M7 zeroize interface extensions when required
+- regression script switches preventing nested duplicate runs
+- deterministic vector tooling
+- simulation filelists
+- documentation/status
+
+Do not modify:
+
+- independent Python/C mathematical semantics
+- FIPS/Kyber source references
+- frozen PQC_main
+- M2 arithmetic semantics
+- M3 NTT semantics
+- M4 polynomial/polyvec semantics
+- M5 hash semantics
+- M6 codec/sampler semantics
+- M7 K-PKE functional outputs
+- synthesis infrastructure
+- physical-design infrastructure
+
+An M5-M7 functional modification requires:
+
+- independently reproduced failure
+- minimal correction
+- documented root cause
+- all corresponding previous regressions PASS
+
+A zeroize interface extension is allowed when:
+- functional outputs are unchanged
+- previous mode operation remains compatible
+- zeroization is independently tested
+- lower milestone regression remains PASS
+
+======================================================================
+PHASE Z — COMMIT POLICY
+======================================================================
+
+Preferred commits:
+
+Commit 1:
+  m8.0: freeze ML-KEM architecture and security boundaries
+
+Commit 2:
+  m8.1: add key checks constant-work selection and zeroization
+
+Commit 3:
+  m8.2-m8.3: add internal ML-KEM key generation and encapsulation
+
+Commit 4:
+  m8.4: add internal ML-KEM decapsulation and implicit rejection
+
+Commit 5:
+  m8.5: add public ML-KEM APIs and unified ML-KEM-768 top
+
+Commit 6:
+  m8.6: close full functional ML-KEM RTL regression and M9 handoff
+
+Only commit after the corresponding focused regression passes.
+
+Do not amend or squash previous milestone commits.
+
+Before every commit:
+
+  git status --short
+  git diff --check
+  git diff --stat
+
+Review every file explicitly.
+
+Do not use git add -A before status review.
+
+Do not track:
+
+- VVP/VCD/FST
+- temporary logs
+- temporary vectors
+- Python caches
+- debug dumps
+- editor artifacts
+- generated entropy data
+
+If a mandatory test fails:
+
+- do not commit the phase
+- preserve reproducible debug state
+- report first failing vector/transaction
+- report exact root cause
+- do not advance if input checking, implicit rejection, or zeroization remains
+  incorrect
+
+======================================================================
+COMPLETION GATES
+======================================================================
+
+M8.0 complete only if:
+
+- internal/public boundaries are frozen
+- exact key layouts are frozen
+- public checks are frozen
+- external RBG interface is frozen
+- output record order is frozen
+- zeroization architecture is frozen
+- no unresolved architecture contradiction remains
+
+M8.1 complete only if:
+
+- all dk layout boundaries pass
+- EK modulus check passes
+- Decaps hash check passes
+- compare scans all 1088 bytes
+- select is mask-based
+- implicit-reject state is not public
+- physical scrub tests pass
+
+M8.2 complete only if:
+
+- KeyGen_internal matches Python
+- ek and dk match byte-for-byte
+- H input/output are exact
+- dk component parsing passes
+- reset/backpressure/scrub pass
+
+M8.3 complete only if:
+
+- Encaps_internal H and G inputs are exact
+- K/r split is exact
+- K-PKE ciphertext matches Python
+- final K/c match Python
+- reset/backpressure/scrub pass
+
+M8.4 complete only if:
+
+- valid Decaps matches Python
+- modified ciphertext produces exact J(z||c)
+- G and J always execute
+- re-encryption always executes
+- full ciphertext comparison passes
+- mismatch location does not shorten compare/select
+- reject flag is destroyed
+- no public rejection indicator exists
+- reset/backpressure/scrub pass
+
+M8.5 complete only if:
+
+- public KeyGen uses external entropy
+- public Encaps checks EK before RNG/internal operation
+- public Decaps checks lengths and stored hash
+- RNG failure paths pass
+- unified top record order passes
+- explicit zeroize mode passes
+- automatic scrub occurs before done
+
+M8.6 complete only if:
+
+- smoke regression passes
+- focused M8 regression passes
+- full-project regression passes
+- deterministic vectors regenerate identically
+- full internal chain matches Python
+- full public chain matches Python
+- all documentation matches RTL
+- no unexpected artifacts
+- no stale process
+- clean worktree
+- M9 handoff is frozen
+
+M8 overall completion statement must be:
+
+  “Full functional ML-KEM-768 RTL is implemented and independently
+   differential-tested.”
+
+Do not state:
+
+  “Final standards validation is complete.”
+
+Final authoritative KAT/CAVP/ACVP closure belongs to M9.
+
+======================================================================
+FINAL RESPONSE FORMAT
+======================================================================
+
+Final response under 55 lines.
+
+Include:
+
+- repository/branch/start commit
+- files created
+- files modified
+- M7 interface modifications, if any
+- architecture selected
+- internal/public API boundary
+- exact dk layout proof PASS/FAIL
+- EK modulus check vector/count result
+- Decaps input-check vector/count result
+- compare/select byte and cycle counts
+- zeroization buffers/addresses checked
+- KeyGen_internal vector count
+- KeyGen ek/dk byte comparisons
+- KeyGen cycle min/max/average
+- Encaps_internal vector count
+- Encaps K/c byte comparisons
+- Encaps cycle min/max/average
+- valid Decaps vector count
+- implicit-rejection vector count
+- Decaps byte comparisons
+- exact fallback K checks
+- Decaps cycle min/max/average
+- constant-work compare/select PASS/FAIL
+- reject-flag destruction PASS/FAIL
+- public KeyGen PASS/FAIL
+- public Encaps input checking PASS/FAIL
+- public Decaps input checking PASS/FAIL
+- RNG failure testing PASS/FAIL
+- unified top PASS/FAIL
+- internal chain vector count
+- public chain vector count
+- deterministic reproducibility PASS/FAIL
+- M8 smoke program count/runtime
+- focused M8 program count/internal checks/runtime
+- full-project regression result/runtime
+- M7 regression PASS/FAIL
+- M6 regression PASS/FAIL
+- M5 regression PASS/FAIL
+- M4 regression PASS/FAIL
+- M3 regression PASS/FAIL
+- unexpected files yes/no
+- stale processes yes/no
+- frozen PQC_main unchanged yes/no
+- git diff --check result
+- commit hashes or exact blocker
+- M8.0 status
+- M8.1 status
+- M8.2 status
+- M8.3 status
+- M8.4 status
+- M8.5 status
+- M8.6 status
+- M8 overall status
+- M9 readiness
+- M2.3b remains pending
+- zeroization completion or exact limitation
+- explicitly state no synthesis/area/Fmax claim
+- explicitly state no final authoritative CAVP/ACVP KAT claim
