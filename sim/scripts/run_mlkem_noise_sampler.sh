@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -euo pipefail
+R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.."&&pwd)";O="$(mktemp -d "${TMPDIR:-/tmp}/m6-noise.XXXXXX")";trap 'rm -rf "$O"' EXIT INT TERM;PYTHONPATH="$R" python3 "$R/tb/tools/gen_cbd_vectors.py" --output-dir "$O";iverilog -g2012 -Wall -s tb_mlkem_noise_sampler -o "$O/t.vvp" "$R/rtl/keccak/keccak_round.v" "$R/rtl/keccak/keccak_f1600_core.v" "$R/rtl/keccak/keccak_sponge_ctx.v" "$R/rtl/keccak/keccak_hash_stream.v" "$R/rtl/keccak/mlkem_prf.v" "$R/rtl/sampler/sample_poly_cbd_pipe.v" "$R/rtl/sampler/mlkem_noise_sampler.v" "$R/tb/block/tb_mlkem_noise_sampler.v";timeout 120s vvp "$O/t.vvp" +VECTOR_FILE="$O/noise.mem"|tee "$O/run.log";grep -q 'PASS tb_mlkem_noise_sampler' "$O/run.log"
