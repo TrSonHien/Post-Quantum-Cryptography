@@ -489,6 +489,12 @@ keccak_ctrl.v
 
 ## Phase 6 — Sampling, Compression, and Codec
 
+**Status (2026-07-13): complete through M6.6.** FIPS Algorithms 3--8,
+message/poly/polyvec and K-PKE format adapters, eta2/eta3 CBD, integrated PRF
+noise, continuing-XOF SampleNTT, deterministic vectors, unified regression, and
+the M7 handoff are frozen. M7 is not started. No synthesis/area/Fmax claim is
+included.
+
 **Estimated time:** 2–3 months
 
 ### Goal

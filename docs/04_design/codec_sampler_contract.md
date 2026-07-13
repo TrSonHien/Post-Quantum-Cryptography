@@ -91,6 +91,11 @@ once with exactly `seed||index0||index1`; every later squeeze continues it.
 The baseline uses registered single-lane coefficient arithmetic, bounded
 encode/decode/CBD reservoirs, one serialized polynomial codec per polyvec, and
 the existing M5 PRF/XOF engines. Latency and II are measured by focused M6
-tests and recorded at closure. The expected critical paths are constant
+tests. Bits/bytes have one registered cycle and II one; Compress/Decompress
+have two cycles and II one; CBD pair has one cycle and II one. Complete CBD is
+approximately 291/307 cycles for eta2/eta3 under the focused edge convention;
+integrated noise averages 385 across balanced eta2/eta3 vectors. SampleNTT uses
+148--169 groups and 1124--1256 cycles (integer averages 157 and 1172) over the
+64-vector closure set, and is intentionally variable-cycle. The expected critical paths are constant
 compression correction and reservoir shift/merge. Synthesis remains required;
 this contract makes no area, timing-closure, or Fmax claim. M2.3b is pending.

@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M5 complete; M6 codec and sampler architecture is next (not started)
+M6 complete; M7 K-PKE architecture is entry-ready, not started
 
 ## Completed
 
@@ -48,6 +48,13 @@ M5 complete; M6 codec and sampler architecture is next (not started)
 - [x] M5.4 SHAKE128 and SHAKE256 one-shot/incremental engines
 - [x] M5.5 ML-KEM H/G/J/PRF/XOF wrappers
 - [x] M5.6 unified regression, architecture freeze, and M6 handoff
+- [x] M6.0 codec/sampler audit and architecture contract freeze
+- [x] M6.1 bit/byte conversion, exact compression, ByteEncode, and ByteDecode
+- [x] M6.2 message, polynomial, polyvec, key, and ciphertext codec adapters
+- [x] M6.3 eta2/eta3 CBD and integrated PRF noise sampler
+- [x] M6.4 rejection parser and continuing-XOF SampleNTT
+- [x] M6.5 integrated codec/sampler verification and K-PKE handoff
+- [x] M6.6 unified regression and milestone closure
 
 ## In Progress
 
@@ -59,8 +66,8 @@ M5 complete; M6 codec and sampler architecture is next (not started)
 
 ## Next Target
 
-M6 codec/sampler architecture audit, with M2.3b server ASIC synthesis still
-pending. M6 functional RTL is not started. Final NIST CAVP/ACVP ML-KEM vector
+M7 K-PKE architecture audit, with M2.3b server ASIC synthesis still pending.
+M7 functional RTL is not started. Final NIST CAVP/ACVP ML-KEM vector
 verification remains pending.
 
 ## Current Focus
@@ -98,6 +105,39 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M6.0-M6.6 Codec and Sampler Closure
+
+Requested: implement and close FIPS 203 Algorithms 3--8, codec adapters,
+eta2/eta3 CBD and PRF noise, continuing-XOF SampleNTT, exact K-PKE formatting,
+unified regression, and the M7 handoff without implementing K-PKE control.
+
+Changed: added registered bits/bytes and exact reciprocal/correction arithmetic;
+bounded ByteEncode/Decode and CBD reservoirs; message/poly/polyvec and encoded
+format adapters; CBD, noise, rejection parser, integrated SampleNTT; three
+deterministic generators; focused TBs/runners/reports; unified regression;
+architecture/audit/completion/handoff documents; and synchronized status/FIPS
+tracking. No M2--M5 semantics, references, synthesis/PD, K-PKE, KEM, or frozen
+worktree file was modified.
+
+Commands run: all focused M6 runners; exhaustive d1/d4/d10 arithmetic; all four
+ByteEncode/Decode modes; polynomial/message/polyvec/format regressions;
+exhaustive CBD pair and complete eta2/eta3 tests; integrated PRF noise and
+SampleNTT; two-directory regeneration; full M6 unified regression including
+M5/M4/M3/M2/Python/schema preservation; compile, artifact, process, frozen-
+worktree, status, and `git diff --check` audits.
+
+Verified: unified PASS is 16/16 programs, 2,467,232 checks, 276,992 byte and
+376,576 coefficient comparisons. SampleNTT passes 64 polynomials with 148--169
+groups and no functional bound. M5 remains 21/21, M4 33/33, and M3 22/22.
+
+Remains: M7 K-PKE (not started), M2.3b server synthesis, focused M5/M6
+synthesis, and final CAVP/ACVP ML-KEM verification. No synthesis/area/Fmax or
+K-PKE/KEM completion claim exists.
+
+Next Session Start Here: read `reports/m6_completion_report.md` and
+`docs/04_design/m6_to_kpke_handoff.md`, run `run_m6_regression.sh`, then audit
+and freeze M7 K-PKE operation scheduling without changing M2--M6 contracts.
 
 ### 2026-07-13 M5.6 Unified Closure and M6 Handoff
 

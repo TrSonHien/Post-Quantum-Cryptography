@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M5 complete; M6 codec and sampler architecture is next (not started)
+M6 complete; M7 K-PKE architecture is entry-ready, not started
 
 ## Completed
 
@@ -60,6 +60,9 @@ M5 complete; M6 codec and sampler architecture is next (not started)
   (completed).
 - M5.0-M5.6 Keccak-f[1600], sponge, SHA3, SHAKE, H/G/J/PRF/XOF, unified
   regression, architecture freeze, and M6 handoff (completed).
+- M6.0-M6.6 FIPS codec/compression, message/poly/polyvec/K-PKE formats, CBD,
+  PRF noise, continuing-XOF SampleNTT, unified regression, and M7 handoff
+  (completed).
 
 ## In Progress
 
@@ -75,8 +78,8 @@ None
 
 ## Next Target
 
-M6 codec/sampler architecture audit. M2.3b server ASIC synthesis and final
-CAVP/ACVP ML-KEM verification remain pending. M6 functional RTL is not started.
+M7 K-PKE architecture audit and operation contract. M2.3b server ASIC synthesis
+and final CAVP/ACVP ML-KEM verification remain pending. M7 RTL is not started.
 
 ## Current Focus
 
