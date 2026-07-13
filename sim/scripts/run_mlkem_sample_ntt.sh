@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -euo pipefail
+R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.."&&pwd)";O="$(mktemp -d "${TMPDIR:-/tmp}/m6-samplentt.XXXXXX")";trap 'rm -rf "$O"' EXIT INT TERM;PYTHONPATH="$R" python3 "$R/tb/tools/gen_sample_ntt_vectors.py" --output-dir "$O";iverilog -g2012 -Wall -s tb_mlkem_sample_ntt -o "$O/t.vvp" "$R/rtl/keccak/keccak_round.v" "$R/rtl/keccak/keccak_f1600_core.v" "$R/rtl/keccak/keccak_sponge_ctx.v" "$R/rtl/keccak/mlkem_xof.v" "$R/rtl/sampler/sample_ntt_parser.v" "$R/rtl/sampler/mlkem_sample_ntt.v" "$R/tb/block/tb_mlkem_sample_ntt.v";timeout 180s vvp "$O/t.vvp" +VECTOR_FILE="$O/sample_ntt.mem"|tee "$O/run.log";grep -q 'PASS tb_mlkem_sample_ntt' "$O/run.log"
