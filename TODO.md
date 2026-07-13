@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0 complete; M4.1 polynomial workspace and canonical arithmetic in progress
+M4.0-M4.1 complete; M4.2 polynomial NTT adapters in progress
 
 ## Completed
 
@@ -35,11 +35,11 @@ M4.0 complete; M4.1 polynomial workspace and canonical arithmetic in progress
 - [x] M3.5 independent NTT/INTT differential and roundtrip verification (completed)
 - [x] M3.6 unified regression, architecture closure, interface freeze, and M4 handoff
 - [x] M4.0 polynomial/polyvec architecture audit and contract freeze
+- [x] M4.1 polynomial workspace and canonical arithmetic controllers
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
-- [ ] M4.1: Polynomial workspace and canonical arithmetic controllers
 - [ ] M4.2: Polynomial forward/inverse NTT adapters
 
 ## Blocked By

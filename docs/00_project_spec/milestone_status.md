@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0 complete: polynomial/polyvec architecture and domain contract frozen
+M4.0-M4.1 complete; polynomial NTT adapters in progress
 
 ## Completed
 
@@ -46,11 +46,12 @@ M4.0 complete: polynomial/polyvec architecture and domain contract frozen
   and M4 handoff (completed).
 - M4.0 polynomial/polyvec architecture audit, domain contract, workspace
   ownership, and external interface freeze (completed).
+- M4.1 synchronous polynomial workspace and two-lane canonical add, subtract,
+  and 32-bit reduction controllers (completed).
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M4.1 polynomial workspace and canonical arithmetic controllers.
 - M4.2 polynomial forward/inverse NTT adapters.
 
 ## Blocked By
