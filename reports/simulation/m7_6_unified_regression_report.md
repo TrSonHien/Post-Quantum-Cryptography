@@ -10,19 +10,22 @@ Result:
 
 ```text
 M7_REGRESSION_STATUS=PASS
-TESTS_RUN=13
-TESTS_PASSED=13
+TESTS_RUN=14
+TESTS_PASSED=14
 TESTS_FAILED=0
-INTERNAL_CHECKS=6102998
-BYTE_COMPARISONS=150564
+INTERNAL_CHECKS=6104150
+BYTE_COMPARISONS=151716
 COEFFICIENT_COMPARISONS=324096
-ELAPSED_SECONDS=1116
+ELAPSED_SECONDS=1091
 ```
 
-The 13 programs are matrix-row sampling, noise-vector sampling, standalone
+The 14 programs are matrix-row sampling, noise-vector sampling, standalone
 KeyGen, Encrypt, Decrypt, actual-RTL chained roundtrip, protocol/reset stress,
-deterministic vector regeneration, full M6, full M5, full M4, full M3, and the
-independent Python suite. Program count is separate from internal comparisons.
+primitive-boundary behavior, deterministic vector regeneration, full M6, full
+M5, full M4, full M3, and the independent Python suite. Program count is
+separate from internal comparisons. The primitive-boundary program proves
+informational noncanonical ek/dk evidence without abort and exact decryption of
+an independently generated arbitrary ciphertext.
 Every runner uses a temporary build directory, cleanup trap, TB watchdog, and
 hard timeout; no waveform is produced by default.
 

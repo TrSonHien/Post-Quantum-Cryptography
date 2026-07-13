@@ -122,23 +122,26 @@ roundtrip, reset/backpressure/error stress, unified preservation regression,
 and a frozen M8 handoff; do not implement M8 ML-KEM behavior.
 
 Changed: added `rtl/kpke/` matrix/noise helpers and standalone controllers;
-focused and chained TBs; deterministic `gen_kpke_vectors.py`; seven focused
-runners plus protocol and unified M7 runners; M7 audit/contract/simulation/
+focused and chained TBs; deterministic `gen_kpke_vectors.py`; focused runners
+plus protocol, primitive-boundary, and unified M7 runners; M7 audit/contract/simulation/
 completion reports; M8 handoff; and synchronized README, roadmap, milestone,
 FIPS, standard, and verification documents. M2--M6 semantics, references,
 synthesis/PD, frozen PQC_main, and M8 RTL were not modified.
 
 Commands run: startup path/branch/status/log/stash/worktree/process/artifact
-audit; focused matrix/noise/KeyGen/Encrypt/Decrypt/roundtrip/protocol runners;
+audit; focused matrix/noise/KeyGen/Encrypt/Decrypt/roundtrip/protocol/boundary
+runners;
 two-directory vector regeneration; `run_m7_regression.sh` with explicit full
 M6/M5/M4/M3 and Python preservation; compile, status, artifact, frozen-worktree,
 process, and `git diff --check` audits.
 
-Verified: M7 unified PASS is 13/13 programs, 6,102,998 checks, 150,564 byte and
+Verified: M7 unified PASS is 14/14 programs, 6,104,150 checks, 151,716 byte and
 324,096 coefficient comparisons. Standalone modes pass 20 vectors each;
 roundtrip passes 20 actual-RTL chains and 69,120 bytes. Matrix/transpose,
 nonces, domains, exact formats, reset/restart, malformed protocol,
-backpressure, and deterministic regeneration pass. M6/M5/M4/M3 remain passing.
+backpressure, walking-one messages, noncanonical primitive behavior, arbitrary
+ciphertext processing, and deterministic regeneration pass. M6/M5/M4/M3
+remain passing.
 
 Remains: M8 is not started; M2.3b server synthesis and final authoritative NIST
 CAVP/ACVP validation remain pending. Reset logically invalidates but does not

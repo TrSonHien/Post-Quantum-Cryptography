@@ -79,7 +79,13 @@ def main() -> int:
                 acc = [(a+b) % Q for a,b in zip(acc, product)]
             t_hat.append([(a+b) % Q for a,b in zip(acc, e_hat[row])])
         ek, dk = keygen(d)
-        m = messages[vector_id % len(messages)] if vector_id < 4 else hashlib.sha3_256(b"m"+d).digest()
+        if vector_id < 4:
+            m = messages[vector_id]
+        elif vector_id < 12:
+            bit = vector_id - 4
+            m = (1 << (bit * 31)).to_bytes(32, "little")
+        else:
+            m = hashlib.sha3_256(b"m"+d).digest()
         r = bytes(32) if vector_id == 0 else (bytes([0xff])*32 if vector_id == 1 else hashlib.sha3_256(b"r"+d).digest())
         c = encrypt(ek, m, r)
         cases.append({
@@ -146,6 +152,30 @@ def main() -> int:
             roundtrip_file.write(f'{packed_le(bytes.fromhex(case["d"]))} {packed_le(bytes.fromhex(case["m"]))} {packed_le(bytes.fromhex(case["r"]))}\n')
             for field in ("ek","dk","c"):
                 roundtrip_file.write(" ".join(f"{b:02x}" for b in bytes.fromhex(case[field]))+"\n")
+    # Primitive-boundary cases: ByteDecode12 evidence is informational for
+    # Algorithms 14/15, and arbitrary ciphertext bytes remain valid K-PKE input.
+    base = cases[4]
+    base_ek = bytearray.fromhex(base["ek"])
+    base_ek[0] = 0xff
+    base_ek[1] = (base_ek[1] & 0xf0) | 0x0f  # decoded coefficient 0 = 4095
+    base_dk = bytearray.fromhex(base["dk"])
+    base_dk[0] = 0xff
+    base_dk[1] = (base_dk[1] & 0xf0) | 0x0f  # decoded coefficient 0 = 4095
+    boundary_m = (1 << 127).to_bytes(32, "little")
+    boundary_r = bytes.fromhex(base["r"])
+    boundary_c = encrypt(bytes(base_ek), boundary_m, boundary_r)
+    valid_c = bytes.fromhex(base["c"])
+    arbitrary_c = hashlib.shake_256(b"m7-arbitrary-ciphertext").digest(1088)
+    with (out / "boundary.mem").open("w") as boundary_file:
+        boundary_file.write(" ".join(f"{b:02x}" for b in base_ek)+"\n")
+        boundary_file.write(f"{packed_le(boundary_m)} {packed_le(boundary_r)}\n")
+        boundary_file.write(" ".join(f"{b:02x}" for b in boundary_c)+"\n")
+        boundary_file.write(" ".join(f"{b:02x}" for b in base_dk)+"\n")
+        boundary_file.write(" ".join(f"{b:02x}" for b in valid_c)+"\n")
+        boundary_file.write(packed_le(decrypt(bytes(base_dk), valid_c))+"\n")
+        boundary_file.write(" ".join(f"{b:02x}" for b in bytes.fromhex(base["dk"]))+"\n")
+        boundary_file.write(" ".join(f"{b:02x}" for b in arbitrary_c)+"\n")
+        boundary_file.write(packed_le(decrypt(bytes.fromhex(base["dk"]), arbitrary_c))+"\n")
     document = {
         "schema": "m7-kpke-v1", "version": 1,
         "metadata": {

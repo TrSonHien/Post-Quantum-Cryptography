@@ -38,6 +38,7 @@ before claiming compliance with the M1 contracts.
 timeout 9000s ./sim/scripts/run_m7_regression.sh
 ```
 
-Pass requires every focused M7 program, deterministic regeneration, full
-M6/M5/M4/M3 preservation, Python tests, clean temporary cleanup, and the final
+Pass requires every focused M7 program, primitive-boundary cases, deterministic
+regeneration, full M6/M5/M4/M3 preservation, Python tests, clean temporary
+cleanup, and the final
 `M7_REGRESSION_STATUS=PASS` machine-readable summary.

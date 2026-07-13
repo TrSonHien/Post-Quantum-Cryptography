@@ -41,7 +41,9 @@ Stalled cycles are 17,755--17,756.
 
 Twenty actual-RTL KeyGen-to-Encrypt-to-Decrypt roundtrips pass 69,120 byte
 comparisons. Roundtrip no-stall cycles are 46,438--46,738, 54,510--54,810, and
-17,755 respectively. Project vectors regenerate byte-identically.
+17,755 respectively. The corpus includes zero, all-ones, alternating,
+sequential, eight selected walking-one, and deterministic-random messages.
+Project vectors regenerate byte-identically.
 
 ## Control, security, and regression
 
@@ -50,11 +52,16 @@ matrix/dot, INTT, add/sub, codec, and stalled output; cancellation and clean
 restart pass. Malformed keep/last, command while busy, exact output length,
 one-cycle done, and stable backpressure payload pass.
 
+A separate three-transaction boundary test passes 1,152 exact output-byte
+comparisons: noncanonical ekPKE and dkPKE coefficients assert informational
+metadata but do not abort Algorithms 14/15, and arbitrary ciphertext bytes are
+decrypted exactly as the independent Python oracle specifies.
+
 Reset invalidates control, ownership, completeness, domain, and valid metadata
 but does not physically erase payload arrays. M8/top-level must add explicit
 zeroization/scrub policy and proof. Functional K-PKE does not depend on scrub.
 
-Unified M7 regression passes 13/13 programs, 6,102,998 checks, 150,564 byte and
+Unified M7 regression passes 14/14 programs, 6,104,150 checks, 151,716 byte and
 324,096 coefficient comparisons. Full M6/M5/M4/M3 and Python regressions pass.
 M2.3b server synthesis remains pending. There is no full ML-KEM completion,
 authoritative final CAVP/ACVP KAT, synthesis, area, timing-closure, or Fmax
