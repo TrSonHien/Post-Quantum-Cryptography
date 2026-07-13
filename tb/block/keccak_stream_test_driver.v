@@ -1,6 +1,7 @@
 `timescale 1ns/1ps
 module keccak_stream_test_driver #(
-    parameter integer FILTER_MODE=-1
+    parameter integer FILTER_MODE=-1,
+    parameter integer RUN_ERROR_TESTS=1
 )(
     output reg clk,output reg rst_n,output reg cmd_valid,input wire cmd_ready,
     output reg [1:0] mode,output reg [31:0] msg_len_bytes,output reg [31:0] out_len_bytes,
@@ -71,7 +72,7 @@ module keccak_stream_test_driver #(
         clk=0;cycles=0;vectors=0;byte_checks=0;cmd_valid=0;in_valid=0;out_ready=0;mode=0;msg_len_bytes=0;out_len_bytes=0;in_data=0;in_keep=0;in_last=0;reset_dut();
         if(!$value$plusargs("VECTORS=%s",path))$fatal(1,"missing vectors");fd=$fopen(path,"r");if(fd==0)$fatal(1,"open vectors");
         while(!$feof(fd))begin rc=$fscanf(fd,"%d %d %d %h %h\n",vmode,mlen,olen,message,expected);if(rc==5&&(FILTER_MODE<0||vmode==FILTER_MODE))run_vector();end
-        $fclose(fd);if(vectors<64)$fatal(1,"vector minimum got=%0d",vectors);if(FILTER_MODE<0)error_tests();
+        $fclose(fd);if(vectors<64)$fatal(1,"vector minimum got=%0d",vectors);if(RUN_ERROR_TESTS)error_tests();
         $display("PASS keccak_stream mode_filter=%0d vectors=%0d byte_checks=%0d cycles=%0d",FILTER_MODE,vectors,byte_checks,cycles);$finish;
     end
 endmodule

@@ -46,6 +46,7 @@ M4 complete; M5 Keccak-f1600, SHA3, and SHAKE architecture is next
 - [x] M5.2 byte-stream sponge absorb/pad/squeeze and one-shot controller
 - [x] M5.3 SHA3-256 and SHA3-512 stream wrappers
 - [x] M5.4 SHAKE128 and SHAKE256 one-shot/incremental engines
+- [x] M5.5 ML-KEM H/G/J/PRF/XOF wrappers
 
 ## In Progress
 
@@ -97,6 +98,29 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M5.5 ML-KEM Hash Wrappers
+
+Requested: implement exact FIPS 203 H/G/J/PRF/XOF wrappers without duplicated
+Keccak logic or sampler/codec functionality.
+
+Changed: added five wrappers, deterministic hashlib vectors, three TBs, bounded
+runners, and the M5.5 report. H/G/J reuse verified modes; PRF emits exactly
+seed then nonce; XOF emits exactly seed then caller-ordered indices and exposes
+continuing requests plus a generic 34-byte input.
+
+Commands run: H/G/J, PRF, and XOF runners; dual deterministic regeneration;
+compile review; `git diff --check`.
+
+Verified: H/G/J 80 vectors each and 2,560/5,120/2,560 bytes; PRF 128 vectors,
+8,192 eta2 bytes and 12,288 eta3 bytes; XOF 64 vectors, 5,561 bytes, and 1,155
+squeeze requests. Invalid eta, busy start, generic/convenience equivalence,
+backpressure, rate crossing, and byte order pass.
+
+Remains: M5.6 unified regression/docs/handoff and M2.3b synthesis.
+
+Next Session Start Here: build the fail-fast M5 regression, measure selected
+cycle cases, rerun M4/M3 preservation gates, then freeze the M6 handoff.
 
 ### 2026-07-13 M5.2-M5.4 Sponge, SHA3, and SHAKE
 
