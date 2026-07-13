@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M3: Banked Fmax-oriented NTT/INTT engine
+M3 complete: banked pipelined NTT/INTT engine; M4 entry-ready
 
 ## Completed
 
@@ -42,6 +42,8 @@ M3: Banked Fmax-oriented NTT/INTT engine
 - M3.3 banked pipelined inverse NTT scheduler and seven-stage core (completed).
 - M3.4 two-lane final inverse scaling pass (completed).
 - M3.5 independent NTT/INTT differential and roundtrip verification (completed).
+- M3.6 unified NTT/INTT regression, architecture closure, interface freeze,
+  and M4 handoff (completed).
 
 ## In Progress
 
@@ -57,7 +59,9 @@ None
 
 ## Next Target
 
-M2.3b server ASIC synthesis comparison and M4 polynomial/polyvec engine planning. Final CAVP/ACVP ML-KEM verification remains pending.
+M2.3b server ASIC synthesis comparison and M4 polynomial/polyvec engine
+implementation planning. M4 functional RTL has not started. Final CAVP/ACVP
+ML-KEM verification remains pending.
 
 ## Current Focus
 

@@ -1,6 +1,10 @@
 `timescale 1ns/1ps
 
 module tb_intt_core_pipe;
+    initial if ($test$plusargs("DEBUG_WAVES")) begin
+        $dumpfile("sim/waves/tb_intt_core_pipe.vcd");
+        $dumpvars(0, tb_intt_core_pipe);
+    end
     localparam VECTOR_COUNT = 31;
     localparam WORDS_PER_VECTOR = 512;
     reg clk = 0;
@@ -24,7 +28,59 @@ module tb_intt_core_pipe;
     integer cycles;
     integer first_inverse_cycles = 0;
     integer first_transform_cycles = 0;
+    integer stage_write_count [0:6];
+    integer stage_first_issue_cycle [0:6];
+    integer stage_last_issue_cycle [0:6];
+    reg stage_write_seen [0:6][0:255];
+    reg scale_write_seen [0:255];
+    integer scale_logical_write_count = 0;
+    integer mon_stage;
+    integer mon_index;
     string vector_file;
+
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            scale_logical_write_count = 0;
+            for (mon_index = 0; mon_index < 256; mon_index = mon_index + 1)
+                scale_write_seen[mon_index] = 1'b0;
+            for (mon_stage = 0; mon_stage < 7; mon_stage = mon_stage + 1) begin
+                stage_write_count[mon_stage] = 0;
+                stage_first_issue_cycle[mon_stage] = -1;
+                stage_last_issue_cycle[mon_stage] = -1;
+                for (mon_index = 0; mon_index < 256; mon_index = mon_index + 1)
+                    stage_write_seen[mon_stage][mon_index] = 1'b0;
+            end
+        end else begin
+            if (dut.intt_read_req && dut.sched_bfly_idx == 0)
+                stage_first_issue_cycle[dut.sched_stage] = dut.transform_cycle_count + 1;
+            if (dut.intt_read_req && dut.sched_bfly_idx == 127)
+                stage_last_issue_cycle[dut.sched_stage] = dut.transform_cycle_count + 1;
+            if (busy && dut.mem_dst_wr_en &&
+                !(dut.intt_write_setup_valid || dut.scale_out_valid))
+                $fatal(1, "INTT invariant: busy write without matching output/metadata valid");
+            if (dut.intt_write_setup_valid) begin
+                if (stage_write_seen[dut.write_stage][dut.write_u_idx] ||
+                    stage_write_seen[dut.write_stage][dut.write_v_idx])
+                    $fatal(1, "INTT invariant: duplicate stage write stage=%0d u=%0d v=%0d",
+                           dut.write_stage, dut.write_u_idx, dut.write_v_idx);
+                stage_write_seen[dut.write_stage][dut.write_u_idx] = 1'b1;
+                stage_write_seen[dut.write_stage][dut.write_v_idx] = 1'b1;
+                stage_write_count[dut.write_stage] = stage_write_count[dut.write_stage] + 2;
+            end
+            if (dut.scale_out_valid) begin
+                if (scale_write_seen[{1'b0, dut.scale_out_pair}] ||
+                    scale_write_seen[{1'b1, dut.scale_out_pair}])
+                    $fatal(1, "INTT invariant: duplicate scaler write pair=%0d", dut.scale_out_pair);
+                scale_write_seen[{1'b0, dut.scale_out_pair}] = 1'b1;
+                scale_write_seen[{1'b1, dut.scale_out_pair}] = 1'b1;
+                scale_logical_write_count = scale_logical_write_count + 2;
+            end
+            if (done && (dut.pending_reads != 0 || dut.pending_butterflies != 0 ||
+                         dut.pending_writes != 0 || dut.scale_pending_reads != 0 ||
+                         dut.scale_pending_mults != 0 || dut.scale_pending_writes != 0))
+                $fatal(1, "INTT invariant: done with pending traffic");
+        end
+    end
 
     intt_core_pipe dut (.*);
     always #5 clk = ~clk;
@@ -113,6 +169,23 @@ module tb_intt_core_pipe;
                          dut.scale_coefficient_input_count, dut.scale_coefficient_output_count,
                          dut.scale_output_pair_count, dut.scale_write_count, dut.total_role_swap_count);
             end
+            for (mon_stage = 0; mon_stage < 7; mon_stage = mon_stage + 1) begin
+                if ((stage_last_issue_cycle[mon_stage] - stage_first_issue_cycle[mon_stage] + 1) != 128)
+                    failures = failures + 1;
+                if (mon_stage > 0 &&
+                    (stage_first_issue_cycle[mon_stage] - stage_last_issue_cycle[mon_stage-1] - 1) != 8)
+                    failures = failures + 1;
+                if (stage_write_count[mon_stage] != 256)
+                    failures = failures + 1;
+                for (mon_index = 0; mon_index < 256; mon_index = mon_index + 1)
+                    if (!stage_write_seen[mon_stage][mon_index])
+                        failures = failures + 1;
+            end
+            if (scale_logical_write_count != 256)
+                failures = failures + 1;
+            for (mon_index = 0; mon_index < 256; mon_index = mon_index + 1)
+                if (!scale_write_seen[mon_index])
+                    failures = failures + 1;
         end
     endtask
 
@@ -215,6 +288,8 @@ module tb_intt_core_pipe;
                      dut.scale_first_issue_cycle, dut.scale_final_issue_cycle,
                      dut.scale_final_commit_cycle, dut.scale_swap_cycle, dut.done_cycle);
             $display("COUNTS inverse=896/896/896/896/896 stage_swaps=7 scale=128/256/256/128 total_swaps=9");
+        $display("ISSUE_WINDOWS first=%0d per_stage=128 inter_stage_idle=8",
+                 stage_first_issue_cycle[0]);
             $finish;
         end
         $fatal(1, "FAIL tb_intt_core_pipe failures=%0d checks=%0d", failures, coefficient_checks);

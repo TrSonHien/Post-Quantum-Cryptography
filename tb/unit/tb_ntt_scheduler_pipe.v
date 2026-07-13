@@ -2,6 +2,10 @@
 `include "kyber_params.vh"
 
 module tb_ntt_scheduler_pipe;
+    initial if ($test$plusargs("DEBUG_WAVES")) begin
+        $dumpfile("sim/waves/tb_ntt_scheduler_pipe.vcd");
+        $dumpvars(0, tb_ntt_scheduler_pipe);
+    end
 
     reg         clk;
     reg         rst_n;

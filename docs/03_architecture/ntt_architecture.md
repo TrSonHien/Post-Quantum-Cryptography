@@ -105,13 +105,13 @@ Inverse NTT:
 
 | Stage | `L` | Source layout | Destination layout | Butterflies | Reads | Writes |
 |---:|---:|---|---|---:|---:|---:|
-| 0 | 2   | `b=i1, a=rm1` | `b=i1^i2, a=rm2` | 128 | 256 | 256 |
-| 1 | 4   | `b=i1^i2, a=rm2` | `b=i2^i3, a=rm3` | 128 | 256 | 256 |
-| 2 | 8   | `b=i2^i3, a=rm3` | `b=i3^i4, a=rm4` | 128 | 256 | 256 |
-| 3 | 16  | `b=i3^i4, a=rm4` | `b=i4^i5, a=rm5` | 128 | 256 | 256 |
-| 4 | 32  | `b=i4^i5, a=rm5` | `b=i5^i6, a=rm6` | 128 | 256 | 256 |
-| 5 | 64  | `b=i5^i6, a=rm6` | `b=i6^i7, a=rm7` | 128 | 256 | 256 |
-| 6 | 128 | `b=i6^i7, a=rm7` | `b=i7, a=rm7` | 128 | 256 | 256 |
+| 0 | 2   | `b=i1, a=rm1` | `b=i2^i1, a=rm1` | 128 | 256 | 256 |
+| 1 | 4   | `b=i2^i1, a=rm1` | `b=i3^i2, a=rm2` | 128 | 256 | 256 |
+| 2 | 8   | `b=i3^i2, a=rm2` | `b=i4^i3, a=rm3` | 128 | 256 | 256 |
+| 3 | 16  | `b=i4^i3, a=rm3` | `b=i5^i4, a=rm4` | 128 | 256 | 256 |
+| 4 | 32  | `b=i5^i4, a=rm4` | `b=i6^i5, a=rm5` | 128 | 256 | 256 |
+| 5 | 64  | `b=i6^i5, a=rm5` | `b=i7^i6, a=rm6` | 128 | 256 | 256 |
+| 6 | 128 | `b=i7^i6, a=rm6` | `b=i7, a=rm7` | 128 | 256 | 256 |
 
 Here `rmN` means `remove_bit(i,N)`. Every row has one read per source bank and
 one write per destination bank per cycle.
@@ -127,12 +127,14 @@ implemented as pipeline drain, not an idle bubble hidden from accounting.
 |---|---:|---:|---:|---:|---:|
 | NTT | 7 x 128 butterflies | 896 | 1,792 | 1,792 | `896 + 7*(1+L_bf)` plus command/response handshakes |
 | INTT butterflies | 7 x 128 | 896 | 1,792 | 1,792 | `896 + 7*(1+L_bf)` |
-| INTT final scale | 256 | 256 | 256 | 256 | `256 + 1 + L_scale` |
-| Full INTT | above combined | 1,152 | 2,048 | 2,048 | `1152 + 7*(1+L_bf) + 1 + L_scale` plus handshakes |
+| INTT final scale | 128 coefficient pairs | 128 | 256 | 256 | 135 cycles through final ownership, 136 through public `done` |
+| Full INTT | above combined | 1,024 pair issues | 2,048 | 2,048 | 1,090 measured start-to-`done` cycles |
 
 Peak active-stage bandwidth is two 12-bit reads and two 12-bit writes each
-cycle (24 read bits/cycle and 24 write bits/cycle). No architectural completion
-is emitted until the last destination write commits.
+cycle (24 read bits/cycle and 24 write bits/cycle). The final scaler uses two
+parallel `mod_mul_pipe` lanes with operand 512. No architectural completion is
+emitted until the last destination write commits and final result ownership is
+established.
 
 When a poly-level block writes basemul results back to a polynomial buffer, its
 write address, coefficient-pair index, zeta index, and output valid strobes must

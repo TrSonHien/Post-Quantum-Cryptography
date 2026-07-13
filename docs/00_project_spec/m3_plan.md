@@ -126,3 +126,23 @@ The final scaling by $128^{-1} \pmod q$ is performed using two parallel `mod_mul
     *   $3303 \cdot 128 = 422784 = 127 \cdot 3329 + 1 \equiv 1 \pmod q$
     *   $512 \equiv 3303 \cdot R \pmod q$ (since $-26 \cdot 2285 = -59410 \equiv 512 \pmod q$)
     *   $1441 \equiv 3303 \cdot R^2 \pmod q$ (since $512 \cdot 2285 = 1169920 \equiv 1441 \pmod q$)
+
+---
+
+## 7. M3.6 Measured Closure
+
+The unified M3 regression freezes the implemented timing and bandwidth:
+
+| Phase | Pair issues | Measured cycles | Issue utilization |
+| :--- | ---: | ---: | ---: |
+| Forward NTT | 896 | 955 start-to-done | 93.82% |
+| Inverse butterflies | 896 | 954 through stage completion | 93.92% |
+| Two-lane scaler | 128 | 135 through final ownership | 94.81% |
+| Full inverse | 1024 | 1090 start-to-done | mixed operation |
+
+Both butterfly schedulers issue 128 consecutive pairs per stage. The measured
+gap after one stage's last issue and before the next stage's first issue is
+eight no-issue cycles. Butterfly issue-to-committed-write latency is seven
+cycles; scaler issue-to-committed-write latency is six cycles. These are cycle
+contracts only. M2.3b synthesis remains pending, so no clock frequency or Fmax
+is selected or claimed.

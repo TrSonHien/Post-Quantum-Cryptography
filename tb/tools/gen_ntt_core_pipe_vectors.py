@@ -46,15 +46,25 @@ def main() -> int:
     path = Path(args.output)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="ascii") as handle:
-        handle.write("// format: for each vector, 256 input words then 256 expected NTT words\n")
-        handle.write(f"// vector_count {len(vectors)}\n")
-        handle.write("// coefficient representation: canonical unsigned hex, q=3329\n")
-        for name, poly in vectors:
+        handle.write("// schema: m3-ntt-vector-v1\n")
+        handle.write("// operation: forward_ntt\n")
+        handle.write("// format: 256 input words then 256 expected output words per vector\n")
+        handle.write(f"// vector_count: {len(vectors)}\n")
+        handle.write("// coefficient_representation: canonical_unsigned_integer\n")
+        handle.write("// input_domain: normal_poly\n")
+        handle.write("// output_domain: ntt_poly_hat\n")
+        handle.write("// q: 3329\n// N: 256\n// input_count: 256\n// output_count: 256\n")
+        handle.write("// seed: 0x4d334b32; source: ref_model.python_model.ntt.ntt\n")
+        for vector_id, (name, poly) in enumerate(vectors):
             expected = ntt(poly)
-            handle.write(f"// vector {name}\n")
+            handle.write(f"// vector_id: {vector_id}; name: {name}\n")
             for value in poly:
+                if not isinstance(value, int) or not 0 <= value < Q:
+                    raise ValueError(f"non-canonical input in {name}")
                 handle.write(f"{value:03x}\n")
             for value in expected:
+                if not isinstance(value, int) or not 0 <= value < Q:
+                    raise ValueError(f"non-canonical output in {name}")
                 handle.write(f"{value:03x}\n")
     return 0
 

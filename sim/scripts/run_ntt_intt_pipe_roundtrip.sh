@@ -7,7 +7,9 @@ LOG_DIR="${ROOT_DIR}/sim/logs"
 OUT_DIR="${ROOT_DIR}/sim/outputs"
 INTT_VECTOR_FILE="${OUT_DIR}/intt_core_pipe_vectors.mem"
 VECTOR_FILE="${OUT_DIR}/ntt_intt_pipe_roundtrip_vectors.mem"
-mkdir -p "${LOG_DIR}" "${OUT_DIR}"
+mkdir -p "${LOG_DIR}" "${OUT_DIR}" "${ROOT_DIR}/sim/waves"
+DEBUG_ARGS=()
+[[ "${DEBUG_WAVES:-0}" == "1" ]] && DEBUG_ARGS=(+DEBUG_WAVES)
 
 PYTHONPATH="${ROOT_DIR}${PYTHONPATH:+:${PYTHONPATH}}" \
 python3 "${ROOT_DIR}/tb/tools/gen_intt_pipe_vectors.py" \
@@ -33,6 +35,6 @@ iverilog -g2012 -Wall -I "${ROOT_DIR}/rtl/common" \
     "${ROOT_DIR}/rtl/ntt/intt_core_pipe.v" \
     "${ROOT_DIR}/tb/block/tb_ntt_intt_pipe_roundtrip.v"
 
-timeout 30s vvp "${OUT_DIR}/tb_ntt_intt_pipe_roundtrip.vvp" +VECTOR_FILE="${VECTOR_FILE}" \
+timeout 30s vvp "${OUT_DIR}/tb_ntt_intt_pipe_roundtrip.vvp" +VECTOR_FILE="${VECTOR_FILE}" "${DEBUG_ARGS[@]}" \
     | tee "${LOG_DIR}/ntt_intt_pipe_roundtrip.log"
 grep -q "PASS tb_ntt_intt_pipe_roundtrip" "${LOG_DIR}/ntt_intt_pipe_roundtrip.log"

@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M3: Banked Fmax-oriented NTT/INTT engine
+M3 complete: Banked pipelined NTT/INTT engine; M4 entry-ready
 
 ## Completed
 
@@ -33,6 +33,7 @@ M3: Banked Fmax-oriented NTT/INTT engine
 - [x] M3.3 banked pipelined inverse NTT scheduler and core (completed)
 - [x] M3.4 two-lane final inverse scaling pass (completed)
 - [x] M3.5 independent NTT/INTT differential and roundtrip verification (completed)
+- [x] M3.6 unified regression, architecture closure, interface freeze, and M4 handoff
 
 ## In Progress
 
@@ -81,6 +82,60 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M3.6 Unified Regression and Architecture Closure
+
+Requested:
+
+- Close M3 with one bounded, fail-fast regression; audit interfaces and
+  deterministic vectors; freeze the NTT/INTT contract; and prepare an M4
+  handoff without implementing M4 functional RTL.
+
+Files changed:
+
+- Added `sim/scripts/run_m3_regression.sh`, the M3.6 unified report, M3
+  completion report, frozen engine contract, and M4 handoff contract.
+- Extended forward/inverse core TBs with cycle-window, unique logical-write,
+  pending-at-done, and write-valid/metadata invariants.
+- Added conditional `DEBUG_WAVES=1` dumps to the six M3 tests and propagated
+  the flag through their bounded runners; default regression remains wave-free.
+- Added deterministic vector metadata/range validation to both M3 generators.
+- Corrected the forward scheduler to the frozen synchronous reset contract and
+  corrected stale inverse-layout/scaler-bandwidth architecture documentation.
+- Updated `TODO.md`, milestone status, M3 plan, and architecture index.
+
+Commands run:
+
+- Repository/branch/status/log/stash/worktree/process/artifact audits.
+- Focused forward scheduler, forward core, and inverse core regressions.
+- `bash -n sim/scripts/run_m3_regression.sh`
+- `timeout 180s ./sim/scripts/run_m3_regression.sh`
+- Final status, artifact, process, diff review, and `git diff --check` gates.
+
+Verified:
+
+- Unified regression PASS: 22/22 programs, 361656 internal checks, 21 seconds
+  on the final clean-tree run.
+- Forward differential PASS: 28 polynomials, 7168 comparisons, 955 cycles.
+- Inverse differential PASS: 31 polynomials, 7936 comparisons; inverse stages
+  954 cycles and full scaled inverse 1090 cycles.
+- Roundtrip PASS: 30 polynomials, 7680 independent forward and 7680 final
+  comparisons. Deterministic M3 vectors regenerate byte-identically.
+- Structural, reset/control, M2 arithmetic/memory, legacy adjacency, Python
+  model/schema, and cleanliness gates pass.
+
+Remains to do:
+
+- Run M2.3b server ASIC synthesis comparison; no synthesis/Fmax claim exists.
+- Begin M4 polynomial/polyvec RTL only as a separate explicitly scoped task.
+- Final NIST CAVP/ACVP ML-KEM verification remains pending.
+
+Next Session Start Here:
+
+1. Read `docs/04_design/ntt_intt_engine_contract.md` and the M3 completion report.
+2. Use `sim/scripts/run_m3_regression.sh` as the M3 preservation gate.
+3. Plan one coherent M4 controller/adapter milestone without bypassing logical
+   preload/readback or canonical domain metadata.
 
 ### 2026-07-13 M3.3-M3.5 Pipelined Inverse NTT Closure
 

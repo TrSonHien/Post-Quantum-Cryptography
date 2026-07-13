@@ -8,7 +8,9 @@ OUT_DIR="${ROOT_DIR}/sim/outputs"
 SIM_OUT="${OUT_DIR}/tb_ntt_scheduler_pipe.vvp"
 LOG_FILE="${LOG_DIR}/ntt_scheduler_pipe.log"
 
-mkdir -p "${LOG_DIR}" "${OUT_DIR}"
+mkdir -p "${LOG_DIR}" "${OUT_DIR}" "${ROOT_DIR}/sim/waves"
+DEBUG_ARGS=()
+[[ "${DEBUG_WAVES:-0}" == "1" ]] && DEBUG_ARGS=(+DEBUG_WAVES)
 
 iverilog -g2012 -Wall \
     -I "${ROOT_DIR}/rtl/common" \
@@ -17,6 +19,6 @@ iverilog -g2012 -Wall \
     "${ROOT_DIR}/rtl/ntt/ntt_scheduler_pipe.v" \
     "${ROOT_DIR}/tb/unit/tb_ntt_scheduler_pipe.v"
 
-vvp "${SIM_OUT}" | tee "${LOG_FILE}"
+vvp "${SIM_OUT}" "${DEBUG_ARGS[@]}" | tee "${LOG_FILE}"
 
 grep -q "PASS tb_ntt_scheduler_pipe" "${LOG_FILE}"

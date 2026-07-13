@@ -1,6 +1,10 @@
 `timescale 1ns/1ps
 
 module tb_ntt_core_pipe;
+    initial if ($test$plusargs("DEBUG_WAVES")) begin
+        $dumpfile("sim/waves/tb_ntt_core_pipe.vcd");
+        $dumpvars(0, tb_ntt_core_pipe);
+    end
     localparam N = 256;
     localparam Q = 3329;
     localparam NUM_VECTORS = 28;
@@ -49,8 +53,45 @@ module tb_ntt_core_pipe;
     integer transform_cycles = 0;
     integer expected_transform_cycles = -1;
     integer done_pulses = 0;
+    integer stage_write_count [0:6];
+    integer stage_first_issue_cycle [0:6];
+    integer stage_last_issue_cycle [0:6];
+    reg stage_write_seen [0:6][0:255];
+    integer mon_stage;
+    integer mon_index;
     integer vec;
     integer i;
+
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            for (mon_stage = 0; mon_stage < 7; mon_stage = mon_stage + 1) begin
+                stage_write_count[mon_stage] = 0;
+                stage_first_issue_cycle[mon_stage] = -1;
+                stage_last_issue_cycle[mon_stage] = -1;
+                for (mon_index = 0; mon_index < 256; mon_index = mon_index + 1)
+                    stage_write_seen[mon_stage][mon_index] = 1'b0;
+            end
+        end else begin
+            if (dut.core_read_req && dut.sched_bfly_idx == 0)
+                stage_first_issue_cycle[dut.sched_stage] = dut.transform_cycle_count + 1;
+            if (dut.core_read_req && dut.sched_bfly_idx == 127)
+                stage_last_issue_cycle[dut.sched_stage] = dut.transform_cycle_count + 1;
+            if (busy && dut.mem_dst_wr_en && !dut.run_write_setup_valid)
+                $fatal(1, "NTT invariant: busy write without butterfly output/metadata valid");
+            if (dut.run_write_setup_valid) begin
+                if (stage_write_seen[dut.write_stage][dut.write_u_idx] ||
+                    stage_write_seen[dut.write_stage][dut.write_v_idx])
+                    $fatal(1, "NTT invariant: duplicate logical write stage=%0d u=%0d v=%0d",
+                           dut.write_stage, dut.write_u_idx, dut.write_v_idx);
+                stage_write_seen[dut.write_stage][dut.write_u_idx] = 1'b1;
+                stage_write_seen[dut.write_stage][dut.write_v_idx] = 1'b1;
+                stage_write_count[dut.write_stage] = stage_write_count[dut.write_stage] + 2;
+            end
+            if (done && (dut.pending_reads != 0 || dut.pending_butterflies != 0 ||
+                         dut.pending_writes != 0))
+                $fatal(1, "NTT invariant: done with pending traffic");
+        end
+    end
 
     task fail;
         input [1023:0] msg;
@@ -177,6 +218,18 @@ module tb_ntt_core_pipe;
             if (dut.pending_reads !== 8'd0) fail("pending read count not zero");
             if (dut.pending_butterflies !== 8'd0) fail("pending butterfly count not zero");
             if (dut.pending_writes !== 8'd0) fail("pending write count not zero");
+            for (mon_stage = 0; mon_stage < 7; mon_stage = mon_stage + 1) begin
+                if ((stage_last_issue_cycle[mon_stage] - stage_first_issue_cycle[mon_stage] + 1) != 128)
+                    fail("stage issue window is not 128 contiguous cycles");
+                if (mon_stage > 0 &&
+                    (stage_first_issue_cycle[mon_stage] - stage_last_issue_cycle[mon_stage-1] - 1) != 8)
+                    fail("inter-stage no-issue overhead mismatch");
+                if (stage_write_count[mon_stage] != 256)
+                    fail("stage logical write count mismatch");
+                for (mon_index = 0; mon_index < 256; mon_index = mon_index + 1)
+                    if (!stage_write_seen[mon_stage][mon_index])
+                        fail("missing logical coefficient write");
+            end
             if (error) fail("error asserted after legal transform");
             if (busy) fail("busy still high after done");
             if (expected_transform_cycles < 0)
@@ -315,6 +368,8 @@ module tb_ntt_core_pipe;
                  dut.accepted_read_count, dut.ram_response_count, dut.butterfly_input_count,
                  dut.butterfly_output_count, dut.committed_write_count,
                  dut.stage_role_swap_count, dut.stage_advance_count, dut.total_role_swap_count);
+        $display("INFO tb_ntt_core_pipe: first_issue_cycle=%0d per_stage_issue=128 inter_stage_idle=8",
+                 stage_first_issue_cycle[0]);
         if (fail_count == 0)
             $display("PASS tb_ntt_core_pipe");
         else

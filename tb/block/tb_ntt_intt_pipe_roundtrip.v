@@ -1,6 +1,10 @@
 `timescale 1ns/1ps
 
 module tb_ntt_intt_pipe_roundtrip;
+    initial if ($test$plusargs("DEBUG_WAVES")) begin
+        $dumpfile("sim/waves/tb_ntt_intt_pipe_roundtrip.vcd");
+        $dumpvars(0, tb_ntt_intt_pipe_roundtrip);
+    end
     localparam VECTOR_COUNT = 30;
     localparam WORDS_PER_VECTOR = 768;
     reg clk = 0;

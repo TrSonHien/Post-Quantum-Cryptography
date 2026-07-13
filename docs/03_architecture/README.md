@@ -15,3 +15,8 @@ M1 v0.1 contract sources:
 
 These contracts govern future RTL. Existing baseline RTL may differ and is not
 silently reclassified as compliant.
+
+M3 implementation freeze and M4 handoff:
+
+- `../04_design/ntt_intt_engine_contract.md`
+- `../04_design/m4_poly_polyvec_handoff.md`

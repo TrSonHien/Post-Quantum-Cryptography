@@ -11,14 +11,22 @@ from ref_model.python_model.ntt import intt, ntt
 from ref_model.python_model.params import N, Q
 
 
-def write_words(path: Path, header: list[str], vectors: list[list[int]]) -> None:
+def write_words(
+    path: Path,
+    header: list[str],
+    vectors: list[tuple[str, list[list[int]]]],
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="ascii") as handle:
         for line in header:
             handle.write(f"// {line}\n")
-        for vector in vectors:
-            for value in vector:
-                handle.write(f"{value:03x}\n")
+        for vector_id, (name, blocks) in enumerate(vectors):
+            handle.write(f"// vector_id: {vector_id}; name: {name}\n")
+            for block in blocks:
+                for value in block:
+                    if not isinstance(value, int) or not 0 <= value < Q:
+                        raise ValueError(f"non-canonical coefficient in {name}")
+                    handle.write(f"{value:03x}\n")
 
 
 def standalone_vectors() -> list[tuple[str, list[int]]]:
@@ -64,24 +72,33 @@ def main() -> int:
     args = parser.parse_args()
 
     inverse = standalone_vectors()
-    inverse_words: list[list[int]] = []
-    for _, poly in inverse:
-        inverse_words.extend((poly, intt(poly)))
+    inverse_words = [(name, [poly, intt(poly)]) for name, poly in inverse]
     write_words(Path(args.intt_output), [
-        "format: each vector has 256 canonical NTT-domain inputs then 256 canonical normal outputs",
-        f"vector_count {len(inverse)} seed 0x4d33494e coefficient_count 256",
-        "source: ref_model.python_model.ntt.intt",
+        "schema: m3-ntt-vector-v1",
+        "operation: inverse_ntt_with_canonical_scale",
+        "format: 256 input words then 256 expected output words per vector",
+        f"vector_count: {len(inverse)}",
+        "coefficient_representation: canonical_unsigned_integer",
+        "input_domain: ntt_poly_hat",
+        "output_domain: normal_poly",
+        "q: 3329; N: 256; input_count: 256; output_count: 256",
+        "seed: 0x4d33494e; source: ref_model.python_model.ntt.intt",
     ], inverse_words)
 
     roundtrip = roundtrip_vectors()
-    roundtrip_words: list[list[int]] = []
-    for _, poly in roundtrip:
+    roundtrip_words: list[tuple[str, list[list[int]]]] = []
+    for name, poly in roundtrip:
         transformed = ntt(poly)
-        roundtrip_words.extend((poly, transformed, intt(transformed)))
+        roundtrip_words.append((name, [poly, transformed, intt(transformed)]))
     write_words(Path(args.roundtrip_output), [
-        "format: each vector has 256 normal inputs, 256 expected NTT, 256 expected INTT",
-        f"vector_count {len(roundtrip)} seed 0x4d335254 coefficient_count 256",
-        "source: ref_model.python_model.ntt.ntt and intt",
+        "schema: m3-ntt-vector-v1",
+        "operation: forward_inverse_roundtrip",
+        "format: 256 normal inputs, 256 expected NTT outputs, 256 expected INTT outputs",
+        f"vector_count: {len(roundtrip)}",
+        "coefficient_representation: canonical_unsigned_integer",
+        "input_domain: normal_poly; intermediate_domain: ntt_poly_hat; output_domain: normal_poly",
+        "q: 3329; N: 256; input_count: 256; intermediate_count: 256; output_count: 256",
+        "seed: 0x4d335254; source: ref_model.python_model.ntt.ntt,intt",
     ], roundtrip_words)
     print(f"PASS gen_intt_pipe_vectors intt_vectors={len(inverse)} roundtrip_vectors={len(roundtrip)}")
     return 0

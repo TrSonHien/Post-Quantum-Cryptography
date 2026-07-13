@@ -146,7 +146,7 @@ module ntt_scheduler_pipe (
     );
 
     // Controller FSM
-    always @(posedge clk or negedge rst_n) begin
+    always @(posedge clk) begin
         if (!rst_n) begin
             state            <= ST_IDLE;
             busy             <= 1'b0;

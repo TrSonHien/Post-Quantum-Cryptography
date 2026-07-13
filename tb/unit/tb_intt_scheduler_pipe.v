@@ -1,6 +1,10 @@
 `timescale 1ns/1ps
 
 module tb_intt_scheduler_pipe;
+    initial if ($test$plusargs("DEBUG_WAVES")) begin
+        $dumpfile("sim/waves/tb_intt_scheduler_pipe.vcd");
+        $dumpvars(0, tb_intt_scheduler_pipe);
+    end
     reg clk = 0;
     reg rst_n = 0;
     reg start = 0;
