@@ -43,6 +43,9 @@ M4 complete; M5 Keccak-f1600, SHA3, and SHAKE architecture is next
 - [x] M4.6 unified M4 regression, architecture freeze, and handoff
 - [x] M5.0 Keccak/SHA3/SHAKE audit and architecture freeze
 - [x] M5.1 Keccak round and iterative Keccak-f[1600] permutation
+- [x] M5.2 byte-stream sponge absorb/pad/squeeze and one-shot controller
+- [x] M5.3 SHA3-256 and SHA3-512 stream wrappers
+- [x] M5.4 SHAKE128 and SHAKE256 one-shot/incremental engines
 
 ## In Progress
 
@@ -94,6 +97,30 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M5.2-M5.4 Sponge, SHA3, and SHAKE
+
+Requested: implement the incremental byte-stream sponge, bounded one-shot
+controller, SHA3-256/512, SHAKE128/256, repeated squeeze, and protocol/reset/
+backpressure verification without duplicating Keccak logic.
+
+Changed: added the context/controller and four thin wrappers; deterministic
+hashlib/pure-Python vectors; direct and wrapper TBs; bounded temporary runners;
+and M5.2-M5.4 reports. Pre-M5 RTL and reference semantics are unchanged.
+
+Commands run: all context/hash/SHA3/SHAKE runners under hard timeouts, dual
+vector regeneration/diff, compile/lint, artifact checks, and `git diff --check`.
+
+Verified: 320 one-shot and 320 incremental vectors; 21,174 bytes each path;
+80 vectors per algorithm; SHA3 byte counts 2,560/5,120 and SHAKE counts
+6,747/6,747. Irregular absorbs and 3,601 squeeze requests pass. Empty/exact/
+multi-rate padding, suffixes, backpressure, seven error classes, reset at all
+24 permutation rounds, stalled-output reset, and restart pass.
+
+Remains: M5.5 wrappers, M5.6 unified closure, and M2.3b synthesis.
+
+Next Session Start Here: implement H/G/J as fixed thin wrappers, PRF as exactly
+`seed||nonce` with eta controlling length only, and continuing SHAKE128 XOF.
 
 ### 2026-07-13 M5.1 Keccak Round and Permutation
 
