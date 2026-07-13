@@ -93,6 +93,31 @@ The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains
 
 ## Session Log
 
+### 2026-07-13 M5.0 Keccak/SHA3/SHAKE Architecture Freeze
+
+Requested: audit existing Keccak/hash sources and freeze the FIPS 202 state,
+byte-stream, padding, context, reset, and ML-KEM wrapper contracts before RTL.
+
+Changed: added the M5.0 audit and frozen Keccak/SHA3/SHAKE contract; expanded
+the FIPS 202 and Keccak architecture notes. No RTL, testbench, reference model,
+standard, synthesis, PD, sampler, codec, or frozen-baseline file was changed.
+
+Commands run: mandated repository/branch/status/log/stash/worktree/process and
+artifact audits; read all startup/project/M4 sources; inspected both Keccak RTL
+trees, the independent Python symmetric model, Kyber `fips202.c` and
+`symmetric-shake.c`; extracted the relevant local FIPS 202, FIPS 203, and SP
+800-185 PDF sections; ran `git diff --check` before the phase commit.
+
+Verified: checkout is clean at the M4.6 starting checkpoint, no prior Keccak RTL
+exists, frozen baseline is clean and unchanged, and the contract matches FIPS
+lane order, little-endian bytes, rates, suffixes, and exact-boundary padding.
+
+Remains: implement and verify M5.1-M5.6; M2.3b server synthesis remains pending.
+
+Next Session Start Here: read `docs/04_design/keccak_sha3_shake_contract.md`
+and `reports/m5_0_keccak_audit.md`, then implement the independently checked
+combinational round and single-state iterative permutation.
+
 ### 2026-07-13 M4.6 Unified Closure
 
 Added the isolated fail-fast `run_m4_regression.sh`, final regression and M4
