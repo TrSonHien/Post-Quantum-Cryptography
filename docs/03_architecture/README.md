@@ -21,3 +21,5 @@ M3 implementation freeze and M4 handoff:
 - `../04_design/ntt_intt_engine_contract.md`
 - `../04_design/m4_poly_polyvec_handoff.md`
 - `../04_design/poly_polyvec_engine_contract.md`
+- `../04_design/poly_basemul_contract.md`
+- `../04_design/m4_to_kpke_handoff.md`

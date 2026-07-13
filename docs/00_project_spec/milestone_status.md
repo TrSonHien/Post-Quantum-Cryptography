@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0-M4.5 complete; M4.6 unified regression and architecture closure pending
+M4 complete; M5 Keccak-f1600, SHA3, and SHAKE architecture is next
 
 ## Completed
 
@@ -56,11 +56,13 @@ M4.0-M4.5 complete; M4.6 unified regression and architecture closure pending
   with independent vector roundtrip (completed).
 - M4.5 exact K=3 polyvec MultiplyNTTs accumulation and M7 row handoff
   (completed).
+- M4.6 unified 33-program regression, architecture freeze, and M5 handoff
+  (completed).
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M4.6 unified M4 closure and M5 handoff.
+- M5 Keccak-f1600, SHA3, and SHAKE engines.
 
 ## Blocked By
 
@@ -72,7 +74,7 @@ None
 
 ## Next Target
 
-M4.6 unified M4 closure and M5 handoff. M2.3b server ASIC
+M5 Keccak/SHA3/SHAKE architecture audit. M2.3b server ASIC
 synthesis and final CAVP/ACVP ML-KEM verification remain pending.
 
 ## Current Focus

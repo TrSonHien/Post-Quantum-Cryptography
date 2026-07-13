@@ -13,7 +13,7 @@ Folder map:
 - `memory/` for RAM wrappers, buffers, and memory scheduling.
 - `control/` for KeyGen, Encaps, Decaps, and top-level controllers.
 
-M0-M4.2 blocks are verified only to their documented milestone boundaries;
+M0-M4 blocks are verified only to their documented milestone boundaries;
 the repository is not yet a complete ML-KEM implementation.
 
 M2.1 contract primitives:
@@ -27,7 +27,7 @@ M2.1 contract primitives:
 These modules do not implement NTT arithmetic or a controller and carry no
 synthesis/Fmax claim.
 
-M4.1-M4.2 polynomial RTL:
+M4 polynomial/polyvec RTL:
 
 - `poly/poly_workspace.v`: synchronous even/odd-bank workspace with ownership,
   completeness, and semantic domain metadata;
@@ -35,5 +35,9 @@ M4.1-M4.2 polynomial RTL:
   canonical two-lane polynomial controllers;
 - `poly/poly_ntt_pipe.v`, `poly/poly_intt_pipe.v`: logical-interface adapters
   around the frozen M3 cores.
+- `arithmetic/mod_mul_normal_pipe.v`, `poly/basecase_mul_pipe.v`, and
+  `poly/poly_basemul_pipe.v`: exact FIPS MultiplyNTTs path;
+- `poly/polyvec_workspace.v` and `poly/polyvec_*_pipe.v`: serialized K=3
+  arithmetic, transforms, and exact MultiplyNTTs accumulation.
 
-M4.3 pointwise multiplication and polyvec accumulation remain pending.
+M5 Keccak/SHA3/SHAKE remains pending.
