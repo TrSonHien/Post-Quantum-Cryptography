@@ -2,11 +2,11 @@
 
 ## Scope and constants
 
-This contract freezes M4.0 through M4.4. One polynomial has `N=256`
+This contract freezes M4.0 through M4.5. One polynomial has `N=256`
 coefficients, each externally encoded as an unsigned 12-bit canonical residue
 in `[0,3328]` for `q=3329`. One ML-KEM-768 polyvec has `K=3` polynomials and
 768 coefficients. Exact polynomial MultiplyNTTs is frozen; K=3 orchestration
-accumulation remains M4.5 work.
+accumulation is frozen; unified closure remains M4.6 work.
 
 ## Domains
 
@@ -109,6 +109,15 @@ busy remains high through all transfers, child operations, and final publish.
 Add/sub preserve a common NORMAL or NTT domain; reduce preserves the vector
 domain; NTT maps all NORMAL elements to NTT; INTT maps all NTT elements to
 NORMAL. No caller accesses child or M3 physical storage.
+
+## Polyvec MultiplyNTTs accumulation
+
+Two complete K=3 NTT-domain vectors produce one complete canonical NTT-domain
+polynomial. One shared exact polynomial MultiplyNTTs child runs three times.
+The first product initializes the accumulator and the next two products are
+added canonically coefficient-by-coefficient. The public result is NTT, not
+POINTWISE; no Montgomery factor remains. Matrix row selection, transposition,
+and K-PKE mode belong to M7 and are outside M4.
 
 ## Limitations
 

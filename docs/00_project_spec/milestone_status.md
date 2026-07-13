@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0-M4.4 complete; M4.5 polyvec MultiplyNTTs accumulation pending
+M4.0-M4.5 complete; M4.6 unified regression and architecture closure pending
 
 ## Completed
 
@@ -54,11 +54,12 @@ M4.0-M4.4 complete; M4.5 polyvec MultiplyNTTs accumulation pending
   MultiplyNTTs with frozen Montgomery-factor proof (completed).
 - M4.4 K=3 polyvec workspace and serialized add/sub/reduce/NTT/INTT controllers
   with independent vector roundtrip (completed).
+- M4.5 exact K=3 polyvec MultiplyNTTs accumulation and M7 row handoff
+  (completed).
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M4.5 polyvec MultiplyNTTs accumulation.
 - M4.6 unified M4 closure and M5 handoff.
 
 ## Blocked By
@@ -71,7 +72,7 @@ None
 
 ## Next Target
 
-M4.5 polyvec MultiplyNTTs accumulation. M2.3b server ASIC
+M4.6 unified M4 closure and M5 handoff. M2.3b server ASIC
 synthesis and final CAVP/ACVP ML-KEM verification remain pending.
 
 ## Current Focus

@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0-M4.4 complete; M4.5 polyvec MultiplyNTTs accumulation pending
+M4.0-M4.5 complete; M4.6 unified regression and architecture closure pending
 
 ## Completed
 
@@ -39,11 +39,11 @@ M4.0-M4.4 complete; M4.5 polyvec MultiplyNTTs accumulation pending
 - [x] M4.2 polynomial forward/inverse NTT adapters and roundtrip verification
 - [x] M4.3 exact BaseCaseMultiply and polynomial MultiplyNTTs engine
 - [x] M4.4 ML-KEM-768 polyvec workspace and serialized elementwise controllers
+- [x] M4.5 polyvec MultiplyNTTs accumulation engine
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
-- [ ] M4.5: Polyvec MultiplyNTTs accumulation
 - [ ] M4.6: Unified M4 regression, architecture freeze, and M5 handoff
 
 ## Blocked By
@@ -52,7 +52,7 @@ M4.0-M4.4 complete; M4.5 polyvec MultiplyNTTs accumulation pending
 
 ## Next Target
 
-M4.5 polyvec MultiplyNTTs accumulation, with M2.3b
+M4.6 unified M4 regression and architecture freeze, with M2.3b
 server ASIC synthesis still pending. Final NIST CAVP/ACVP ML-KEM vector
 verification remains pending.
 
@@ -91,6 +91,14 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M4.5 Polyvec MultiplyNTTs Accumulation
+
+Added one-child K=3 dot-product controller, independent vectors, bounded
+runner, K-PKE handoff, and report. Verified 32 vectors/8192 comparisons at
+2757 cycles, exactly three polynomial products, 384 BaseCaseMultiply requests,
+384 pair writes, and 512 canonical accumulation writes per result. Reset,
+restart, domain, completeness, and overwrite controls pass. M4.6 remains.
 
 ### 2026-07-13 M4.4 K=3 Polyvec Workspace and Elementwise Engines
 
