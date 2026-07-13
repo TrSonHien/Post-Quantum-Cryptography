@@ -13,7 +13,8 @@ Folder map:
 - `memory/` for RAM wrappers, buffers, and memory scheduling.
 - `control/` for KeyGen, Encaps, Decaps, and top-level controllers.
 
-Current RTL is scaffold only and is not a verified ML-KEM implementation.
+M0-M4.2 blocks are verified only to their documented milestone boundaries;
+the repository is not yet a complete ML-KEM implementation.
 
 M2.1 contract primitives:
 
@@ -25,3 +26,14 @@ M2.1 contract primitives:
 
 These modules do not implement NTT arithmetic or a controller and carry no
 synthesis/Fmax claim.
+
+M4.1-M4.2 polynomial RTL:
+
+- `poly/poly_workspace.v`: synchronous even/odd-bank workspace with ownership,
+  completeness, and semantic domain metadata;
+- `poly/poly_add_pipe.v`, `poly/poly_sub_pipe.v`, `poly/poly_reduce_pipe.v`:
+  canonical two-lane polynomial controllers;
+- `poly/poly_ntt_pipe.v`, `poly/poly_intt_pipe.v`: logical-interface adapters
+  around the frozen M3 cores.
+
+M4.3 pointwise multiplication and polyvec accumulation remain pending.

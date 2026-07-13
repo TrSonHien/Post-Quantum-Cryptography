@@ -85,6 +85,10 @@ def main() -> int:
         "version": 1,
         "q": Q,
         "N": N,
+        "coefficient_width_bits": 12,
+        "canonical_range": [0, Q - 1],
+        "reduce_input_width_bits": 32,
+        "reduce_input_range": [0, (1 << 32) - 1],
         "coefficient_encoding": "canonical_unsigned_integer",
         "seed": SEED,
         "vectors": {

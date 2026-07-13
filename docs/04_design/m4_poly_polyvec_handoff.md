@@ -80,3 +80,11 @@ time, or operations-per-second estimate is frozen.
 M4 may begin after the M3 unified regression passes, this engine contract is
 frozen, canonical domains are tracked, and no memory/reset/control issue is
 open. M2.3b may remain pending but must stay visible as the synthesis dependency.
+
+## Implemented through M4.2
+
+`poly_workspace`, canonical add/sub/reduce controllers, and forward/inverse
+polynomial adapters now implement this handoff. The adapters preserve the M3
+boundary: NORMAL maps to NTT through `poly_ntt_pipe`, NTT maps to canonical
+NORMAL through `poly_intt_pipe`, and all transfers use logical coefficient
+indices. M4.3 basemul/pointwise accumulation remains pending.

@@ -1,5 +1,6 @@
 `timescale 1ns/1ps
 module tb_poly_reduce_pipe;
+    initial if($test$plusargs("DEBUG_WAVES")) begin $dumpfile("sim/waves/tb_poly_reduce_pipe.vcd"); $dumpvars(0,tb_poly_reduce_pipe); end
     reg clk=0, rst_n=0, load_begin=0, load_we=0, start=0;
     reg result_req=0, result_release=0;
     reg [1:0] load_domain=0;

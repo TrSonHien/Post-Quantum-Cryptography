@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0-M4.1 complete; M4.2 polynomial NTT adapters in progress
+M4.0-M4.2 complete; M4.3 pointwise/basemul orchestration pending
 
 ## Completed
 
@@ -36,11 +36,12 @@ M4.0-M4.1 complete; M4.2 polynomial NTT adapters in progress
 - [x] M3.6 unified regression, architecture closure, interface freeze, and M4 handoff
 - [x] M4.0 polynomial/polyvec architecture audit and contract freeze
 - [x] M4.1 polynomial workspace and canonical arithmetic controllers
+- [x] M4.2 polynomial forward/inverse NTT adapters and roundtrip verification
 
 ## In Progress
 
 - [ ] M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution)
-- [ ] M4.2: Polynomial forward/inverse NTT adapters
+- [ ] M4.3: Polynomial basemul orchestration and polyvec pointwise accumulation
 
 ## Blocked By
 
@@ -48,7 +49,9 @@ M4.0-M4.1 complete; M4.2 polynomial NTT adapters in progress
 
 ## Next Target
 
-M2.3b server ASIC synthesis comparison and M4 polynomial/polyvec engine planning. Final NIST CAVP/ACVP ML-KEM vector verification remains pending.
+M4.3 pointwise/basemul orchestration and polyvec accumulation, with M2.3b
+server ASIC synthesis still pending. Final NIST CAVP/ACVP ML-KEM vector
+verification remains pending.
 
 ## Current Focus
 
@@ -85,6 +88,62 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M4.0-M4.2 Polynomial Architecture, Arithmetic, and NTT Adapters
+
+Requested:
+
+- Audit and freeze polynomial/polyvec domains and ownership, implement a
+  synchronous polynomial workspace and canonical add/sub/reduce controllers,
+  integrate frozen M3 forward/inverse engines through logical adapters, and
+  stop before M4.3.
+
+Files changed:
+
+- Added the M4 domain contract and architecture audit; workspace, shared
+  arithmetic/transform controllers and thin wrappers; unit/block TBs; bounded
+  runners; deterministic vector generator; seven phase reports; and unified
+  M4.0-M4.2 regression.
+- Updated milestone status and the M3-to-M4 handoff. Existing legacy polynomial,
+  M2 arithmetic, M3 engine, independent model, synthesis, and PD semantics were
+  not changed.
+
+Commands run:
+
+- Startup repository/worktree/process/artifact audit and complete legacy
+  polynomial/reference-model review.
+- Focused workspace, add, sub, reduce, forward adapter, inverse adapter, and
+  adapter roundtrip runners under 30-90 second timeouts.
+- `timeout 180s ./sim/scripts/run_m3_regression.sh`
+- `timeout 360s ./sim/scripts/run_m4_0_m4_2_regression.sh`
+- Deterministic dual-directory generation/diff, debug-wave smoke check, final
+  artifact/process/status review, and `git diff --check`.
+
+Verified:
+
+- Workspace 524 checks PASS; all 256 indices read back after sequential and
+  arbitrary-order loads; ownership/domain/reset/reuse behavior PASS.
+- Add/sub/reduce each pass 32 vectors and 8192 Python comparisons; measured
+  cycles are 132/132/134.
+- Forward/inverse adapters each pass 32 vectors and 8192 comparisons; measured
+  cycles are 1473/1608. Roundtrip passes 30 vectors and 15360 comparisons.
+- Unified regression passes 19/19 programs and 741497 checks in 45 seconds;
+  M3 unified, M2, legacy adjacency, Python/schema, and vector reproducibility
+  remain PASS.
+
+Remains to do:
+
+- M4.3 pointwise/basemul orchestration and polyvec accumulation.
+- M2.3b server synthesis and final NIST CAVP/ACVP verification remain pending.
+- No synthesis/Fmax claim exists.
+
+Next Session Start Here:
+
+1. Read `docs/04_design/poly_polyvec_engine_contract.md` and the M4.0-M4.2
+   completion report.
+2. Run `sim/scripts/run_m4_0_m4_2_regression.sh` before M4.3 changes.
+3. Freeze POINTWISE-domain and accumulation semantics before reusing legacy
+   basemul RTL.
 
 ### 2026-07-13 M3.6 Unified Regression and Architecture Closure
 

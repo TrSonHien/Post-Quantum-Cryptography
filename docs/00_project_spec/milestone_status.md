@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M4.0-M4.1 complete; polynomial NTT adapters in progress
+M4.0-M4.2 complete; M4.3 pointwise/basemul orchestration pending
 
 ## Completed
 
@@ -48,11 +48,13 @@ M4.0-M4.1 complete; polynomial NTT adapters in progress
   ownership, and external interface freeze (completed).
 - M4.1 synchronous polynomial workspace and two-lane canonical add, subtract,
   and 32-bit reduction controllers (completed).
+- M4.2 polynomial forward/inverse NTT adapters, independent differential, and
+  adapter roundtrip verification (completed).
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M4.2 polynomial forward/inverse NTT adapters.
+- M4.3 polynomial basemul orchestration and polyvec pointwise accumulation.
 
 ## Blocked By
 
@@ -64,9 +66,8 @@ None
 
 ## Next Target
 
-M2.3b server ASIC synthesis comparison and M4 polynomial/polyvec engine
-implementation planning. M4 functional RTL has not started. Final CAVP/ACVP
-ML-KEM verification remains pending.
+M4.3 pointwise/basemul orchestration and polyvec accumulation. M2.3b server ASIC
+synthesis and final CAVP/ACVP ML-KEM verification remain pending.
 
 ## Current Focus
 

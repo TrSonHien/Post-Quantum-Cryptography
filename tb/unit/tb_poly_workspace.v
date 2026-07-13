@@ -1,5 +1,6 @@
 `timescale 1ns/1ps
 module tb_poly_workspace;
+  initial if($test$plusargs("DEBUG_WAVES"))begin $dumpfile("sim/waves/tb_poly_workspace.vcd");$dumpvars(0,tb_poly_workspace);end
   reg clk=0,rst_n=0,load_begin=0,load_we=0,acquire_internal=0,init_internal=0;
   reg publish_result=0,release_internal=0,result_req=0,int_rd_req=0,int_pair_rd_req=0;
   reg int_wr_en=0,int_pair_wr_en=0; reg[1:0]load_domain=0,init_domain=0;
