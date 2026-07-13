@@ -41,6 +41,8 @@ M4 complete; M5 Keccak-f1600, SHA3, and SHAKE architecture is next
 - [x] M4.4 ML-KEM-768 polyvec workspace and serialized elementwise controllers
 - [x] M4.5 polyvec MultiplyNTTs accumulation engine
 - [x] M4.6 unified M4 regression, architecture freeze, and handoff
+- [x] M5.0 Keccak/SHA3/SHAKE audit and architecture freeze
+- [x] M5.1 Keccak round and iterative Keccak-f[1600] permutation
 
 ## In Progress
 
@@ -92,6 +94,29 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M5.1 Keccak Round and Permutation
+
+Requested: implement the exact FIPS 202 round and a single-state, one-round-per-
+cycle Keccak-f[1600] core with independent trace, reset, and timing proof.
+
+Changed: added `keccak_round.v`, `keccak_f1600_core.v`, a pure-Python round/
+permutation/sponge generator, mapping/round/core TBs, three bounded temporary
+runners, and two reports. No pre-M5 RTL or reference semantics changed.
+
+Commands run: deterministic two-directory generation/diff; state mapping,
+round, and permutation runners under hard timeouts; `git diff --check`.
+
+Verified: 2,072 full round states plus 24 intermediate traces pass; 132 full
+permutations pass; 24-cycle start-to-done latency, one-cycle done, busy-start
+error, reset at all 24 rounds, no stale output, and restart pass. Mapping proves
+200 bytes, 1,600 bits, 25 lanes, and capacity exclusion. Python sponge matches
+all four `hashlib` modes. No synthesis/Fmax claim exists.
+
+Remains: M5.2-M5.6 and M2.3b server synthesis.
+
+Next Session Start Here: implement `keccak_sponge_ctx.v` using the frozen mode,
+padding, core-ownership, repeated-squeeze, reset, and backpressure contract.
 
 ### 2026-07-13 M5.0 Keccak/SHA3/SHAKE Architecture Freeze
 

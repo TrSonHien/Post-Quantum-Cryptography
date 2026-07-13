@@ -1,0 +1,53 @@
+`timescale 1ns/1ps
+
+module keccak_f1600_core (
+    input  wire          clk,
+    input  wire          rst_n,
+    input  wire          start,
+    input  wire [1599:0] state_in,
+    output reg           busy,
+    output reg           done,
+    output reg           error,
+    output reg  [1599:0] state_out
+);
+    reg [1599:0] state_reg;
+    reg [4:0] round_index;
+    wire [1599:0] round_result;
+
+    keccak_round u_round (
+        .state_in(state_reg),
+        .round_index(round_index),
+        .state_out(round_result)
+    );
+
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            busy        <= 1'b0;
+            done        <= 1'b0;
+            error       <= 1'b0;
+            round_index <= 5'd0;
+            state_out   <= 1600'h0;
+        end else begin
+            done <= 1'b0;
+            if (start && busy)
+                error <= 1'b1;
+
+            if (!busy) begin
+                if (start) begin
+                    state_reg   <= state_in;
+                    round_index <= 5'd0;
+                    busy        <= 1'b1;
+                end
+            end else begin
+                state_reg <= round_result;
+                if (round_index == 5'd23) begin
+                    state_out <= round_result;
+                    busy      <= 1'b0;
+                    done      <= 1'b1;
+                end else begin
+                    round_index <= round_index + 5'd1;
+                end
+            end
+        end
+    end
+endmodule
