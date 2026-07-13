@@ -14,7 +14,7 @@ The RTL is being built and verified incrementally. Passing unit/block tests are 
 
 ## Current Milestone
 
-M1: Algorithm and Verification Foundation
+M7: deterministic K-PKE KeyGen, Encrypt, and Decrypt closure; M8 entry-ready
 
 ## Current Scope
 
@@ -88,4 +88,6 @@ The `pd/` directory is intentionally left as a placeholder for later manual use.
 
 ## Current Next Target
 
-Continue building high-frequency RTL foundations: validate pipelined basemul as the main basemul architecture, update the poly-level plan to feed pipelined datapaths, and connect the RTL tests to trusted KAT/golden-reference comparison.
+Begin M8 architecture audit for ML-KEM internal/public control while preserving
+the frozen deterministic M7 K-PKE boundary. M2.3b server synthesis and final
+authoritative NIST CAVP/ACVP validation remain pending.

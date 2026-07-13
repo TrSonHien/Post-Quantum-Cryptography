@@ -13,7 +13,7 @@ Folder map:
 - `memory/` for RAM wrappers, buffers, and memory scheduling.
 - `control/` for KeyGen, Encaps, Decaps, and top-level controllers.
 
-M0-M4 blocks are verified only to their documented milestone boundaries;
+M0-M7 blocks are verified only to their documented milestone boundaries;
 the repository is not yet a complete ML-KEM implementation.
 
 M2.1 contract primitives:
@@ -40,4 +40,6 @@ M4 polynomial/polyvec RTL:
 - `poly/polyvec_workspace.v` and `poly/polyvec_*_pipe.v`: serialized K=3
   arithmetic, transforms, and exact MultiplyNTTs accumulation.
 
-M5 Keccak/SHA3/SHAKE remains pending.
+M5 Keccak/SHA3/SHAKE, M6 codec/sampler, and deterministic M7 K-PKE standalone
+controllers are implemented and differentially verified. M8 ML-KEM control is
+not implemented.

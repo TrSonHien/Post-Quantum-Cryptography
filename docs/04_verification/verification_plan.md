@@ -38,3 +38,12 @@ two-directory regeneration, and complete M2--M5 preservation are run by
 protocol/memory/domain assertions, exhaustive bank-schedule checks, reset
 tests, and completion-ordering gates for future RTL. Existing asynchronous
 memory RTL remains a legacy baseline and is not M1-contract evidence.
+
+## M7 deterministic K-PKE verification
+
+`sim/scripts/run_m7_regression.sh` runs matrix/transpose and nonce helpers, 20
+standalone vectors for each Algorithm 13--15 controller, 20 actual-RTL chained
+roundtrips, protocol/reset stress, two-directory vector reproduction, full
+M3--M6 preservation, and Python model/schema tests. Expected values come from
+the unchanged independent FIPS-first Python model. This is not final NIST
+CAVP/ACVP validation.

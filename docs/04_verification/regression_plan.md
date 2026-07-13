@@ -31,3 +31,13 @@ git diff --check
 Future M2/M3 regressions must add exhaustive bank-map tests, protocol
 assertions, synchronous-memory latency checks, and `mlkem-vector-v1` adapters
 before claiming compliance with the M1 contracts.
+
+## M7 regression
+
+```sh
+timeout 9000s ./sim/scripts/run_m7_regression.sh
+```
+
+Pass requires every focused M7 program, deterministic regeneration, full
+M6/M5/M4/M3 preservation, Python tests, clean temporary cleanup, and the final
+`M7_REGRESSION_STATUS=PASS` machine-readable summary.

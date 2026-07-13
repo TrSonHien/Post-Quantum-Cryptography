@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M6 complete; M7 K-PKE architecture is entry-ready, not started
+M7 deterministic K-PKE complete; M8 architecture entry-ready, not started
 
 ## Completed
 
@@ -55,6 +55,13 @@ M6 complete; M7 K-PKE architecture is entry-ready, not started
 - [x] M6.4 rejection parser and continuing-XOF SampleNTT
 - [x] M6.5 integrated codec/sampler verification and K-PKE handoff
 - [x] M6.6 unified regression and milestone closure
+- [x] M7.0 K-PKE integration audit and interface/domain/index freeze
+- [x] M7.1 matrix-row and noise-nonce orchestration
+- [x] M7.2 deterministic K-PKE.KeyGen
+- [x] M7.3 deterministic K-PKE.Encrypt
+- [x] M7.4 deterministic K-PKE.Decrypt
+- [x] M7.5 standalone differential and chained K-PKE roundtrip verification
+- [x] M7.6 unified regression, architecture closure, and M8 handoff
 
 ## In Progress
 
@@ -66,8 +73,8 @@ M6 complete; M7 K-PKE architecture is entry-ready, not started
 
 ## Next Target
 
-M7 K-PKE architecture audit, with M2.3b server ASIC synthesis still pending.
-M7 functional RTL is not started. Final NIST CAVP/ACVP ML-KEM vector
+M8 ML-KEM architecture audit, with M2.3b server ASIC synthesis still pending.
+M8 functional RTL is not started. Final NIST CAVP/ACVP ML-KEM vector
 verification remains pending.
 
 ## Current Focus
@@ -105,6 +112,44 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-13 M7.0-M7.6 Deterministic K-PKE Closure
+
+Requested: implement and close FIPS 203 Algorithms 13--15 with exact matrix
+and transpose indexing, nonce scheduling, deterministic standalone
+KeyGen/Encrypt/Decrypt, independent Python differential vectors, actual-RTL
+roundtrip, reset/backpressure/error stress, unified preservation regression,
+and a frozen M8 handoff; do not implement M8 ML-KEM behavior.
+
+Changed: added `rtl/kpke/` matrix/noise helpers and standalone controllers;
+focused and chained TBs; deterministic `gen_kpke_vectors.py`; seven focused
+runners plus protocol and unified M7 runners; M7 audit/contract/simulation/
+completion reports; M8 handoff; and synchronized README, roadmap, milestone,
+FIPS, standard, and verification documents. M2--M6 semantics, references,
+synthesis/PD, frozen PQC_main, and M8 RTL were not modified.
+
+Commands run: startup path/branch/status/log/stash/worktree/process/artifact
+audit; focused matrix/noise/KeyGen/Encrypt/Decrypt/roundtrip/protocol runners;
+two-directory vector regeneration; `run_m7_regression.sh` with explicit full
+M6/M5/M4/M3 and Python preservation; compile, status, artifact, frozen-worktree,
+process, and `git diff --check` audits.
+
+Verified: M7 unified PASS is 13/13 programs, 6,102,998 checks, 150,564 byte and
+324,096 coefficient comparisons. Standalone modes pass 20 vectors each;
+roundtrip passes 20 actual-RTL chains and 69,120 bytes. Matrix/transpose,
+nonces, domains, exact formats, reset/restart, malformed protocol,
+backpressure, and deterministic regeneration pass. M6/M5/M4/M3 remain passing.
+
+Remains: M8 is not started; M2.3b server synthesis and final authoritative NIST
+CAVP/ACVP validation remain pending. Reset logically invalidates but does not
+physically zeroize secret arrays; M8/top-level needs explicit scrub policy. No
+synthesis/area/timing/Fmax or full ML-KEM completion claim exists.
+
+Next Session Start Here: read `reports/m7_completion_report.md`,
+`docs/04_design/kpke_engine_contract.md`, and
+`docs/04_design/m7_to_mlkem_handoff.md`; run `run_m7_regression.sh`; then audit
+M8 ML-KEM control/input-check/implicit-rejection/zeroization architecture
+without changing the frozen M7 deterministic K-PKE contracts.
 
 ### 2026-07-13 M6.0-M6.6 Codec and Sampler Closure
 

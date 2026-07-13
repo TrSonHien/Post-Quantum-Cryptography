@@ -492,7 +492,7 @@ keccak_ctrl.v
 **Status (2026-07-13): complete through M6.6.** FIPS Algorithms 3--8,
 message/poly/polyvec and K-PKE format adapters, eta2/eta3 CBD, integrated PRF
 noise, continuing-XOF SampleNTT, deterministic vectors, unified regression, and
-the M7 handoff are frozen. M7 is not started. No synthesis/area/Fmax claim is
+the M7 handoff are frozen. M7 is complete and the M8 handoff is frozen. No synthesis/area/Fmax claim is
 included.
 
 **Estimated time:** 2–3 months
@@ -545,6 +545,13 @@ unpack_ciphertext.v
 ---
 
 ## Phase 7 — KeyGen RTL Integration
+
+**Status (2026-07-13): complete as M7 deterministic K-PKE Algorithms 13--15.**
+The implemented boundary uses `rtl/kpke/kpke_keygen.v`, `kpke_encrypt.v`, and
+`kpke_decrypt.v` plus shared serialized helpers; the older illustrative module
+names below are not the source of record. Independent Python differential,
+roundtrip, reset/protocol, and unified preservation regression pass. Resource
+usage and synthesis remain unclaimed; M2.3b is pending.
 
 **Estimated time:** 2 months
 
@@ -605,6 +612,10 @@ keygen_top.v
 ---
 
 ## Phase 8 — Encaps RTL Integration
+
+**Status: entry-ready, not started.** M8 covers final ML-KEM KeyGen, Encaps,
+Decaps, input checking, implicit rejection, and top-level security policy; none
+is implemented by M7.
 
 **Estimated time:** 2 months
 

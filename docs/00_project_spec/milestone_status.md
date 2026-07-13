@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M6 complete; M7 K-PKE architecture is entry-ready, not started
+M7 deterministic K-PKE complete; M8 architecture is entry-ready, not started
 
 ## Completed
 
@@ -63,6 +63,9 @@ M6 complete; M7 K-PKE architecture is entry-ready, not started
 - M6.0-M6.6 FIPS codec/compression, message/poly/polyvec/K-PKE formats, CBD,
   PRF noise, continuing-XOF SampleNTT, unified regression, and M7 handoff
   (completed).
+- M7.0-M7.6 FIPS Algorithms 13--15, matrix/transpose and nonce orchestration,
+  deterministic KeyGen/Encrypt/Decrypt, independent differential and chained
+  roundtrip verification, protocol/reset closure, and M8 handoff (completed).
 
 ## In Progress
 
@@ -78,8 +81,8 @@ None
 
 ## Next Target
 
-M7 K-PKE architecture audit and operation contract. M2.3b server ASIC synthesis
-and final CAVP/ACVP ML-KEM verification remain pending. M7 RTL is not started.
+M8 ML-KEM architecture audit only; M8 functional RTL is not started. M2.3b
+server ASIC synthesis and final CAVP/ACVP ML-KEM verification remain pending.
 
 ## Current Focus
 

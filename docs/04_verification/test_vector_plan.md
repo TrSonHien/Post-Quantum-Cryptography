@@ -27,3 +27,9 @@ M6 bulk vectors are generated temporarily by `gen_codec_vectors.py`,
 `gen_cbd_vectors.py`, and `gen_sample_ntt_vectors.py`. They record deterministic
 seeds and stable ordering, are checked by exact two-directory regeneration, and
 are not tracked as bulk artifacts.
+
+M7 bulk vectors are generated temporarily by `tb/tools/gen_kpke_vectors.py`.
+The stable `m7-kpke-v1` metadata records parameters, byte order, coefficient
+convention, deterministic seed, and the non-authoritative Python source. The
+generator emits helper, standalone intermediate, and chained roundtrip files;
+two-directory byte identity is a regression gate. No bulk M7 vector is tracked.
