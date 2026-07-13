@@ -1,0 +1,3 @@
+`timescale 1ns/1ps
+module kpke_dk_pack_pipe(input wire clk,input wire rst_n,input wire start,output wire busy,output wire done,output wire error,input wire in_valid,output wire in_ready,input wire[31:0]in_data,input wire[3:0]in_keep,input wire in_last,output wire out_valid,input wire out_ready,output wire[31:0]out_data,output wire[3:0]out_keep,output wire out_last);
+ wire segment;kpke_format_pipe #(.WORDS(288),.SPLIT_WORDS(288))u(clk,rst_n,start,busy,done,error,in_valid,in_ready,in_data,in_keep,in_last,out_valid,out_ready,out_data,out_keep,out_last,segment);endmodule
