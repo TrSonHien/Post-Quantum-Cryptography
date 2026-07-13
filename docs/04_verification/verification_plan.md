@@ -24,6 +24,14 @@ Required before correctness claims:
 This baseline proves deterministic internal consistency and catches exact data
 divergence. It is not final NIST CAVP/ACVP ML-KEM validation.
 
+## M6 codec and sampler verification
+
+M6 uses the unchanged independent Python codec/sampling model plus hashlib
+SHAKE. Exhaustive compression/decompression and CBD pair spaces, full packed
+transactions, synthetic rejection streams, 64 integrated SampleNTT vectors,
+two-directory regeneration, and complete M2--M5 preservation are run by
+`sim/scripts/run_m6_regression.sh`.
+
 ## M1 architecture-contract verification
 
 `m1_architecture_verification_plan.md` defines vector-to-interface translation,

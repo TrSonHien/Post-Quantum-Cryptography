@@ -22,3 +22,8 @@ model, so these are project golden vectors, not authoritative external KATs.
 
 Final NIST CAVP/ACVP ML-KEM vectors remain pending. Legacy Kyber 2020 vectors
 remain separate regression inputs and must not be relabeled as FIPS validation.
+
+M6 bulk vectors are generated temporarily by `gen_codec_vectors.py`,
+`gen_cbd_vectors.py`, and `gen_sample_ntt_vectors.py`. They record deterministic
+seeds and stable ordering, are checked by exact two-directory regeneration, and
+are not tracked as bulk artifacts.
