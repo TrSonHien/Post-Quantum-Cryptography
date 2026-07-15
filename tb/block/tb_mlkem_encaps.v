@@ -1,0 +1,11 @@
+`timescale 1ns/1ps
+module tb_mlkem_encaps;
+ reg clk=0,rst_n=0,cmd_valid=0,in_valid=0,in_last=0,rng_req_ready=0,rng_data_valid=0,rng_last=0,rng_fail=0,out_ready=1,zeroize_req=0;reg[31:0]in_data=0,rng_data=0;reg[3:0]in_keep=0,rng_keep=0;
+ wire cmd_ready,in_ready,rng_req_valid,rng_data_ready,out_valid,out_last,out_kind,busy,done,error,zeroize_busy,zeroize_done;wire[15:0]rng_req_len_bytes;wire[31:0]out_data;wire[3:0]out_keep;reg[7:0]ek[0:1183],badek[0:1183],m[0:31],k[0:31],c[0:1087];integer i,w,oi,checks=0,wait_cycles;
+ mlkem_encaps dut(.*);always #5 clk=~clk;task tick;begin @(posedge clk);#1;end endtask
+ task sendek(input bad);begin for(w=0;w<296;w=w+1)begin in_data=bad?{badek[w*4+3],badek[w*4+2],badek[w*4+1],badek[w*4]}:{ek[w*4+3],ek[w*4+2],ek[w*4+1],ek[w*4]};in_keep=4'hf;in_last=w==295;in_valid=1;while(!in_ready)tick;tick;in_valid=0;end end endtask
+ initial begin string dir;repeat(2)tick;rst_n=1;tick;if(!$value$plusargs("VEC_DIR=%s",dir))$fatal;$readmemh({dir,"/smoke_ek.mem"},ek);$readmemh({dir,"/smoke_m.mem"},m);$readmemh({dir,"/smoke_k.mem"},k);$readmemh({dir,"/smoke_c.mem"},c);for(i=0;i<1184;i=i+1)badek[i]=ek[i];badek[0]=8'h01;badek[1]=(badek[1]&8'hf0)|8'h0d;
+ if(!$test$plusargs("INVALID_ONLY"))begin cmd_valid=1;tick;cmd_valid=0;sendek(0);while(!rng_req_valid)tick;if(rng_req_len_bytes!=32)$fatal;rng_req_ready=1;tick;rng_req_ready=0;for(w=0;w<8;w=w+1)begin rng_data={m[w*4+3],m[w*4+2],m[w*4+1],m[w*4]};rng_keep=4'hf;rng_last=w==7;rng_data_valid=1;tick;rng_data_valid=0;end oi=0;while(!done)begin if(out_valid)begin for(i=0;i<4;i=i+1)begin if(!out_kind&&out_data[i*8+:8]!==k[oi*4+i])$fatal;if(out_kind&&out_data[i*8+:8]!==c[(oi-8)*4+i])$fatal;checks=checks+1;end oi=oi+1;end tick;end if(error||oi!=280)$fatal;tick;$display("M8_PUBLIC_ENCAPS_PROGRESS valid_done cycle=%0t",$time);end
+ cmd_valid=1;tick;cmd_valid=0;sendek(1);wait_cycles=0;while(!done)begin if(rng_req_valid||out_valid)$fatal;tick;wait_cycles=wait_cycles+1;if(wait_cycles==10000)$fatal(1,"invalid cleanup timeout state=%0d req=%b seen=%b chk_state=%0d core_state=%0d czd=%b izd=%b",dut.state,dut.child_zeroize_req,dut.child_zeroized,dut.chk.state,dut.core.state,dut.czd,dut.izd);end if(!error)$fatal;$display("PASS valid=%0d noncanonical_rejected=1 rng_after_check=1 bytes=%0d",!$test$plusargs("INVALID_ONLY"),checks);$finish;end
+ initial begin #5000000000;$fatal;end
+endmodule

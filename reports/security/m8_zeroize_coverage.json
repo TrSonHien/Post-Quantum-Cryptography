@@ -213,13 +213,88 @@
             "dedicated_tb": "tb/block/tb_m7_kpke_zeroize.v",
             "checked_element_count": 26,
             "status": "PASS"
+        },
+        {
+            "inventory_id": "M8-PUBLIC-CHECK-STORAGE",
+            "module": "mlkem_ek_check/mlkem_decaps_input_check",
+            "state_identifier": "candidate_EK_DK_ciphertext_and_digest_staging",
+            "expected_element_count": 4704,
+            "scrub_mechanism": "fixed_address_scan_and_H_child_acknowledgement",
+            "dedicated_tb": "tb/unit/tb_mlkem_ek_check.v;tb/unit/tb_mlkem_decaps_input_check.v",
+            "checked_element_count": 4704,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "M8-INTERNAL-LOCAL",
+            "module": "mlkem_keygen_internal/mlkem_encaps_internal/mlkem_decaps_internal",
+            "state_identifier": "all_d_z_m_h_K_r_private_key_ciphertext_and_rejection_staging",
+            "expected_element_count": 11970,
+            "scrub_mechanism": "fixed_address_local_array_scan_and_direct_reject_state_clear",
+            "dedicated_tb": "tb/block/tb_mlkem_keygen_internal.v;tb/block/tb_mlkem_encaps_internal.v;tb/block/tb_mlkem_decaps_internal.v;tb/system/tb_mlkem768_top.v",
+            "checked_element_count": 11970,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "M8-INTERNAL-CHILD-JOIN",
+            "module": "mlkem_keygen_internal/mlkem_encaps_internal/mlkem_decaps_internal",
+            "state_identifier": "two_three_and_four_child_zeroize_acknowledgements",
+            "expected_element_count": 9,
+            "scrub_mechanism": "one_cycle_child_request_and_latched_acknowledgement_join",
+            "dedicated_tb": "tb/system/tb_mlkem768_top.v",
+            "checked_element_count": 9,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "M8-PUBLIC-LOCAL",
+            "module": "mlkem_keygen/mlkem_encaps/mlkem_decaps",
+            "state_identifier": "entropy_EK_DK_message_and_ciphertext_staging",
+            "expected_element_count": 4768,
+            "scrub_mechanism": "fixed_address_scan_after_success_input_failure_RNG_failure_or_abort",
+            "dedicated_tb": "tb/block/tb_mlkem_keygen.v;tb/block/tb_mlkem_encaps.v;tb/block/tb_mlkem_decaps.v;tb/system/tb_mlkem768_top.v",
+            "checked_element_count": 4768,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "M8-PUBLIC-CHILD-JOIN",
+            "module": "mlkem_keygen/mlkem_encaps/mlkem_decaps",
+            "state_identifier": "five_checker_and_internal_controller_acknowledgements",
+            "expected_element_count": 5,
+            "scrub_mechanism": "held_child_request_and_latched_acknowledgement_join",
+            "dedicated_tb": "tb/system/tb_mlkem768_top.v",
+            "checked_element_count": 5,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "M8-TOP-PROTOCOL",
+            "module": "mlkem768_top",
+            "state_identifier": "mode_ownership_request_acknowledgement_error_and_completion_state",
+            "expected_element_count": 10,
+            "scrub_mechanism": "direct_clear_after_three_public_wrapper_acknowledgements",
+            "dedicated_tb": "tb/system/tb_mlkem768_top.v",
+            "checked_element_count": 10,
+            "status": "PASS"
         }
   ],
   "summary": {
-        "entries_total": 21,
-        "entries_passed": 21,
+        "entries_total": 27,
+        "entries_passed": 27,
     "entries_failed": 0,
-        "checked_element_count": 24977,
-    "inventory_complete": false
+        "checked_element_count": 46443,
+    "retained_state_owner_entries": 50,
+    "elaborated_instances": 449,
+    "retained_state_objects": 4190,
+    "retained_bits": 1020266,
+    "secret_entries": 27,
+    "ephemeral_entries": 45,
+    "public_entries": 17,
+    "designated_output_entries": 10,
+    "scan_scrub_entries": 18,
+    "pipeline_flush_entries": 24,
+    "direct_clear_entries": 46,
+    "child_propagation_entries": 33,
+    "exempt_entries": 0,
+    "verified_objects": 4190,
+    "uncovered_entries": 0,
+    "inventory_complete": true
   }
 }

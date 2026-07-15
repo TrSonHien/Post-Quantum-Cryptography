@@ -117,20 +117,31 @@ scrubbed; no FIPS seed-retention exception is selected.
 ## Ownership conclusion
 
 Every retained state family has an identified owner.  No ownership
-contradiction blocks bottom-up implementation.  The unresolved items are
-implementation and verification gaps, not ambiguous ownership.  M8 completion
-remains blocked until every `missing` or `partially complete` entry maps to a
-passing coverage-manifest check.
+contradiction remains.  All 50 owner families, 449 elaborated instances, 4,190
+state objects, and 1,020,266 retained bits map to a passing family-level
+coverage record. Public matrix payload is scrubbed by the implemented uniform
+controller policy, so the final manifest takes no payload exemption.
 
 ## Implementation checkpoint 2026-07-16
 
-Bottom-up owner closure has reached M7 without changing mathematical outputs.
+Bottom-up owner closure has reached the unified M8 top without changing
+mathematical outputs.
 M6 codec/sampler propagation is committed at `399e727`. Transform adapters,
 normal multiply/Barrett pipelines, M7 sampler parents, and all three K-PKE
 controllers now use explicit child request/acknowledgement joins. The
 nonrecursive M7 ordinary regression passes 11/11 with 497,775 accounted checks; its
 21,462-check scrub test covers 21,408 controller-local locations, 16
 representative child locations, all 26 direct child acknowledgements, repeated
-scrub, active abort, reset interruption, and clean restart. This is not M8
-completion: M8 internal controllers, public wrappers, automatic cleanup, and
-unified boot scrub remain open.
+scrub, active abort, reset interruption, and clean restart. M8 deterministic
+controllers now scan 11,970 local retained locations and wait for all H/G/J and
+K-PKE acknowledgements. Public wrappers scan 4,768 input/entropy locations and
+wait for five checker/internal acknowledgements. The unified top issues
+one-cycle scrub requests, latches three wrapper acknowledgements, performs a
+mandatory boot scrub after reset, and never uses reset as erase.
+
+`tb/system/tb_mlkem768_top.v` verifies 33,511 automatic/explicit/boot scrub
+observations including full M8 local arrays and representative M7 workspace,
+NTT-bank, sampler, codec, and M5 sponge state. Reset interruption retains an
+unreached final DK byte, then boot scrub restarts at address zero and clears it
+before `cmd_ready`. The focused M8 regression passes 21/21 with 64,505 reported
+zeroize checks. The coverage manifest reports `uncovered_entries: 0`.
