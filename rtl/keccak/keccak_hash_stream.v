@@ -8,7 +8,8 @@ module keccak_hash_stream (
     input wire [3:0] in_keep,input wire in_last,
     output wire out_valid,input wire out_ready,output wire [31:0] out_data,
     output wire [3:0] out_keep,output wire out_last,
-    output reg busy,output reg done,output reg error
+    output reg busy,output reg done,output reg error,
+    input wire zeroize_req,output wire zeroize_done
 );
     localparam IDLE=3'd0,INIT=3'd1,INPUT=3'd2,FINAL=3'd3,
                WAIT_SQ=3'd4,REQ_SQ=3'd5,OUTPUT=3'd6;
@@ -33,10 +34,12 @@ module keccak_hash_stream (
       .absorb_phase(cap),.squeeze_phase(csp),.busy(cbusy),.done(cdone),.error(cerror),
       .absorb_valid(ca_valid),.absorb_ready(ca_ready),.absorb_data(in_data),.absorb_keep(in_keep),
       .squeeze_req_valid(cs_valid),.squeeze_req_ready(cs_ready),.squeeze_len_bytes(out_len_reg),
-      .out_valid(cov),.out_ready((state==OUTPUT)&&out_ready),.out_data(cod),.out_keep(cok),.out_last(col));
+      .out_valid(cov),.out_ready((state==OUTPUT)&&out_ready),.out_data(cod),.out_keep(cok),.out_last(col),
+      .zeroize_req(zeroize_req),.zeroize_done(zeroize_done));
 
     always @(posedge clk) begin
       if(!rst_n)begin state<=IDLE;busy<=0;done<=0;error<=0;mode_reg<=0;msg_remaining<=0;out_len_reg<=0;input_grace<=0;end
+      else if(zeroize_req===1'b1)begin state<=IDLE;busy<=0;done<=0;error<=0;mode_reg<=0;msg_remaining<=0;out_len_reg<=0;input_grace<=0;end
       else begin
         if(input_grace)input_grace<=0;
         done<=0;if(cerror)begin error<=1;`ifdef M5_DEBUG $display("HASH_ERR ctx");`endif end

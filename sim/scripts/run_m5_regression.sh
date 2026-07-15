@@ -19,14 +19,17 @@ run_test shake128 300s 6747 "$ROOT/sim/scripts/run_shake128_stream.sh"
 run_test shake256 300s 6747 "$ROOT/sim/scripts/run_shake256_stream.sh"
 run_test shake_incremental 360s 21174 "$ROOT/sim/scripts/run_shake_incremental_equivalence.sh"
 run_test mlkem_hgj 360s 10240 "$ROOT/sim/scripts/run_mlkem_hgj.sh"
+run_test mlkem_zeroize 60s 123 "$ROOT/sim/scripts/run_m5_mlkem_zeroize.sh"
 run_test mlkem_prf 360s 20480 "$ROOT/sim/scripts/run_mlkem_prf.sh"
 run_test mlkem_xof 360s 5561 "$ROOT/sim/scripts/run_mlkem_xof.sh"
 run_test cycle_accounting 240s 1 "$ROOT/sim/scripts/run_m5_cycle_accounting.sh"
 run_test vector_repro 120s 3 bash -c 'set -euo pipefail;a="$1/a";b="$1/b";mkdir -p "$a" "$b";for g in gen_keccak_round_vectors.py gen_keccak_sponge_vectors.py gen_mlkem_hash_vectors.py;do mkdir -p "$a/$g" "$b/$g";python3 "$2/tb/tools/$g" --output-dir "$a/$g" >/dev/null;python3 "$2/tb/tools/$g" --output-dir "$b/$g" >/dev/null;diff -qr "$a/$g" "$b/$g" >/dev/null;done' _ "$TMP" "$ROOT"
-run_test m4_unified 1000s 996965 "$ROOT/sim/scripts/run_m4_regression.sh"
-run_test m3_unified 300s 361656 "$ROOT/sim/scripts/run_m3_regression.sh"
-run_test m2_memory 120s 5417 "$ROOT/sim/scripts/run_m2_1_primitives.sh"
-run_test m2_arithmetic 240s 312935 "$ROOT/sim/scripts/run_m2_2_regression.sh"
-run_test python_selftest 45s 1 python3 -m ref_model.python_model.selftest
-run_test python_schema 45s 5 python3 -m ref_model.compare.test_compare_tools
+if [[ "${RUN_LOWER_REGRESSIONS:-1}" != "0" ]]; then
+ run_test m4_unified 1000s 996965 "$ROOT/sim/scripts/run_m4_regression.sh"
+ run_test m3_unified 300s 361656 "$ROOT/sim/scripts/run_m3_regression.sh"
+ run_test m2_memory 120s 5417 "$ROOT/sim/scripts/run_m2_1_primitives.sh"
+ run_test m2_arithmetic 240s 312935 "$ROOT/sim/scripts/run_m2_2_regression.sh"
+ run_test python_selftest 45s 1 python3 -m ref_model.python_model.selftest
+ run_test python_schema 45s 5 python3 -m ref_model.compare.test_compare_tools
+fi
 summary PASS

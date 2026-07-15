@@ -25,7 +25,9 @@ module keccak_sponge_ctx (
     input  wire        out_ready,
     output reg  [31:0] out_data,
     output reg  [3:0]  out_keep,
-    output reg         out_last
+    output reg         out_last,
+    input  wire        zeroize_req,
+    output reg         zeroize_done
 );
     localparam OWNER_ABSORB=2'd0, OWNER_FINAL=2'd1, OWNER_SQUEEZE=2'd2;
     reg [1:0] mode_reg;
@@ -44,7 +46,7 @@ module keccak_sponge_ctx (
     reg perm_active;
     reg [1:0] perm_owner;
     reg [1599:0] perm_state_in;
-    wire perm_busy,perm_done,perm_error;
+    wire perm_busy,perm_done,perm_error,perm_zeroize_done;
     wire [1599:0] perm_state_out;
 
     reg squeeze_active;
@@ -116,7 +118,8 @@ module keccak_sponge_ctx (
 
     keccak_f1600_core u_perm (
         .clk(clk),.rst_n(rst_n),.start(perm_start),.state_in(perm_state_in),
-        .busy(perm_busy),.done(perm_done),.error(perm_error),.state_out(perm_state_out)
+        .busy(perm_busy),.done(perm_done),.error(perm_error),.state_out(perm_state_out),
+        .zeroize_req(zeroize_req),.zeroize_done(perm_zeroize_done)
     );
 
     always @(posedge clk) begin
@@ -128,8 +131,19 @@ module keccak_sponge_ctx (
             perm_owner<=0;perm_state_in<=0;squeeze_active<=0;
             squeeze_remaining<=0;build_data<=0;build_count<=0;
             out_valid<=0;out_data<=0;out_keep<=0;out_last<=0;sha3_used<=0;
+            zeroize_done<=0;
         end else begin
-            done<=0;perm_start<=0;
+            done<=0;perm_start<=0;zeroize_done<=0;
+            if(zeroize_req===1'b1)begin
+                mode_reg<=0;rate_bytes<=0;suffix<=0;state_reg<=0;
+                context_valid<=0;absorb_phase<=0;squeeze_phase<=0;
+                error<=0;absorb_offset<=0;squeeze_offset<=0;
+                hold_valid<=0;hold_data<=0;hold_count<=0;hold_index<=0;
+                perm_active<=0;perm_owner<=0;perm_state_in<=0;
+                squeeze_active<=0;squeeze_remaining<=0;build_data<=0;
+                build_count<=0;out_valid<=0;out_data<=0;out_keep<=0;
+                out_last<=0;sha3_used<=0;zeroize_done<=perm_zeroize_done;
+            end else begin
             if(perm_error)error<=1;
 
             // Illegal-phase commands error; temporary ready stalls do not.
@@ -219,6 +233,7 @@ module keccak_sponge_ctx (
                     squeeze_active<=0;done<=1;
                     if(mode_reg<2)begin sha3_used<=1;context_valid<=0;squeeze_phase<=0;end
                 end
+            end
             end
         end
     end

@@ -8,7 +8,9 @@ module keccak_f1600_core (
     output reg           busy,
     output reg           done,
     output reg           error,
-    output reg  [1599:0] state_out
+    output reg  [1599:0] state_out,
+    input  wire          zeroize_req,
+    output reg           zeroize_done
 );
     reg [1599:0] state_reg;
     reg [4:0] round_index;
@@ -27,8 +29,18 @@ module keccak_f1600_core (
             error       <= 1'b0;
             round_index <= 5'd0;
             state_out   <= 1600'h0;
+            zeroize_done<= 1'b0;
         end else begin
             done <= 1'b0;
+            zeroize_done <= 1'b0;
+            if (zeroize_req === 1'b1) begin
+                state_reg <= 1600'h0;
+                state_out <= 1600'h0;
+                round_index <= 5'd0;
+                busy <= 1'b0;
+                error <= 1'b0;
+                zeroize_done <= 1'b1;
+            end else begin
             if (start && busy)
                 error <= 1'b1;
 
@@ -47,6 +59,7 @@ module keccak_f1600_core (
                 end else begin
                     round_index <= round_index + 5'd1;
                 end
+            end
             end
         end
     end
