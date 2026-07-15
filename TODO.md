@@ -62,6 +62,7 @@ M7 deterministic K-PKE complete; M8 architecture entry-ready, not started
 - [x] M7.4 deterministic K-PKE.Decrypt
 - [x] M7.5 standalone differential and chained K-PKE roundtrip verification
 - [x] M7.6 unified regression, architecture closure, and M8 handoff
+- [x] M8.0 ML-KEM architecture, public/internal boundary, and security freeze
 
 ## In Progress
 
@@ -73,9 +74,9 @@ M7 deterministic K-PKE complete; M8 architecture entry-ready, not started
 
 ## Next Target
 
-M8 ML-KEM architecture audit, with M2.3b server ASIC synthesis still pending.
-M8 functional RTL is not started. Final NIST CAVP/ACVP ML-KEM vector
-verification remains pending.
+M8.1 key layout, public input-check, constant-work compare/select, and physical
+zeroization primitives, with M2.3b server ASIC synthesis still pending. Final
+NIST CAVP/ACVP ML-KEM vector verification remains pending.
 
 ## Current Focus
 
