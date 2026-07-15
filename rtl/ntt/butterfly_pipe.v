@@ -37,7 +37,10 @@ module butterfly_pipe (
     input  wire [11:0] zeta_mont,
     output wire        out_valid,
     output wire [11:0] out0,
-    output wire [11:0] out1
+    output wire [11:0] out1,
+    input  wire        zeroize_req,
+    output reg         zeroize_busy,
+    output reg         zeroize_done
 );
 
     // Simulation assertions
@@ -73,15 +76,20 @@ module butterfly_pipe (
     // Stage 1-4: Montgomery multiply
     wire [11:0] t;
     wire        mul_valid;
+    wire mul_zeroize_done,delay_zeroize_done,add_zeroize_done,sub_zeroize_done;
+    wire mul_zeroize_busy,delay_zeroize_busy,add_zeroize_busy,sub_zeroize_busy;
+    reg child_zeroize_req;reg[3:0]child_done_seen;
+    wire add_out_valid;wire[11:0]add_out,sub_out;
 
     mod_mul_pipe u_mul (
         .clk(clk),
         .rst_n(rst_n),
-        .in_valid(in_valid),
+        .in_valid(in_valid&&!zeroize_busy),
         .a(zeta_mont),
         .b(v),
         .out_valid(mul_valid),
-        .r(t)
+        .r(t),.zeroize_req(child_zeroize_req),.zeroize_busy(mul_zeroize_busy),
+        .zeroize_done(mul_zeroize_done)
     );
 
     // Delay u by 4 stages to align with t
@@ -96,12 +104,13 @@ module butterfly_pipe (
     ) u_delay (
         .clk(clk),
         .rst_n(rst_n),
-        .in_valid(in_valid),
+        .in_valid(in_valid&&!zeroize_busy),
         .in_payload(u),
         .in_metadata(1'b0),
         .out_valid(val_delayed),
         .out_payload(u_delayed),
-        .out_metadata(dummy_meta)
+        .out_metadata(dummy_meta),.zeroize_req(child_zeroize_req),
+        .zeroize_busy(delay_zeroize_busy),.zeroize_done(delay_zeroize_done)
     );
 
     // Stage 5: modular addition and subtraction
@@ -112,8 +121,9 @@ module butterfly_pipe (
         .in_valid(mul_valid),
         .a(u_delayed),
         .b(t),
-        .out_valid(out_valid),
-        .r(out0)
+        .out_valid(add_out_valid),
+        .r(add_out),.zeroize_req(child_zeroize_req),.zeroize_busy(add_zeroize_busy),
+        .zeroize_done(add_zeroize_done)
     );
 
     mod_sub_pipe u_sub (
@@ -123,7 +133,20 @@ module butterfly_pipe (
         .a(u_delayed),
         .b(t),
         .out_valid(), // out_valid is shared with u_add
-        .r(out1)
+        .r(sub_out),.zeroize_req(child_zeroize_req),.zeroize_busy(sub_zeroize_busy),
+        .zeroize_done(sub_zeroize_done)
     );
+
+    assign out_valid=!zeroize_busy&&add_out_valid;
+    assign out0=add_out;assign out1=sub_out;
+    always@(posedge clk)begin
+        zeroize_done<=0;child_zeroize_req<=0;
+        if(!rst_n)begin zeroize_busy<=0;zeroize_done<=0;child_zeroize_req<=0;child_done_seen<=0;end
+        else if(zeroize_req===1'b1&&!zeroize_busy)begin zeroize_busy<=1;child_zeroize_req<=1;child_done_seen<=0;end
+        else if(zeroize_busy)begin
+            child_done_seen<=child_done_seen|{sub_zeroize_done,add_zeroize_done,delay_zeroize_done,mul_zeroize_done};
+            if(&(child_done_seen|{sub_zeroize_done,add_zeroize_done,delay_zeroize_done,mul_zeroize_done}))begin zeroize_busy<=0;zeroize_done<=1;end
+        end
+    end
 
 endmodule

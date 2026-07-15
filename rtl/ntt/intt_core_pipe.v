@@ -17,7 +17,10 @@ module intt_core_pipe #(
     input  wire                  result_rd_req,
     input  wire [7:0]            result_rd_idx,
     output wire                  result_rd_valid,
-    output wire [11:0]           result_rd_data
+    output wire [11:0]           result_rd_data,
+    input  wire                  zeroize_req,
+    output reg                   zeroize_busy,
+    output reg                   zeroize_done
 );
     localparam RAM_READ_LATENCY = 1;
     localparam INTT_BFLY_LATENCY = 5;
@@ -51,7 +54,10 @@ module intt_core_pipe #(
     wire [7:0] preload_u_idx = {preload_idx[7:2], 1'b0, preload_idx[0]};
     wire [7:0] preload_v_idx = {preload_idx[7:2], 1'b1, preload_idx[0]};
     wire all_pairs_loaded = (preload_pair_count == 8'd128);
-    assign preload_ready = !busy;
+    assign preload_ready = !busy&&!zeroize_busy;
+    reg child_zeroize_req;reg[5:0]child_done_seen;reg[6:0]scrub_addr;reg local_scrub_done;
+    wire sched_zeroize_done,zeta_zeroize_done,meta_zeroize_done,bfly_zeroize_done,scale_zeroize_done,banks_zeroize_done;
+    wire sched_zeroize_busy,zeta_zeroize_busy,meta_zeroize_busy,bfly_zeroize_busy,scale_zeroize_busy,banks_zeroize_busy;
 
     wire sched_start = (state == ST_START_SCHED);
     wire sched_stage_advance = (state == ST_STAGE_ADVANCE);
@@ -80,7 +86,8 @@ module intt_core_pipe #(
         .group_idx(sched_group_idx), .offset(sched_offset),
         .last_issue_in_stage(sched_last_stage),
         .last_issue_in_transform(sched_last_transform),
-        .stage_issue_done(sched_stage_issue_done), .schedule_done(sched_schedule_done)
+        .stage_issue_done(sched_stage_issue_done), .schedule_done(sched_schedule_done),
+        .zeroize_req(child_zeroize_req),.zeroize_busy(sched_zeroize_busy),.zeroize_done(sched_zeroize_done)
     );
 
     wire [2:0] issue_src_pair_bit = sched_stage + 3'd1;
@@ -114,7 +121,8 @@ module intt_core_pipe #(
     u_zeta_delay (
         .clk(clk), .rst_n(rst_n), .in_valid(intt_read_req), .in_payload(zeta_now),
         .in_metadata(1'b0), .out_valid(zeta_valid), .out_payload(zeta_for_bfly),
-        .out_metadata(zeta_meta_unused)
+        .out_metadata(zeta_meta_unused),.zeroize_req(child_zeroize_req),
+        .zeroize_busy(zeta_zeroize_busy),.zeroize_done(zeta_zeroize_done)
     );
 
     wire [META_WIDTH-1:0] issue_meta = {
@@ -131,7 +139,8 @@ module intt_core_pipe #(
     ) u_write_meta_delay (
         .clk(clk), .rst_n(rst_n), .in_valid(intt_read_req), .in_payload(issue_meta),
         .in_metadata(1'b0), .out_valid(write_meta_valid), .out_payload(write_meta),
-        .out_metadata(write_meta_unused)
+        .out_metadata(write_meta_unused),.zeroize_req(child_zeroize_req),
+        .zeroize_busy(meta_zeroize_busy),.zeroize_done(meta_zeroize_done)
     );
 
     wire [7:0] write_u_idx = write_meta[71:64];
@@ -157,7 +166,8 @@ module intt_core_pipe #(
     intt_butterfly_pipe u_butterfly (
         .clk(clk), .rst_n(rst_n), .in_valid(intt_bfly_in_valid),
         .u(mem_src_data0), .v(mem_src_data1), .zeta_mont(zeta_for_bfly),
-        .out_valid(intt_bfly_out_valid), .out0(intt_bfly_out0), .out1(intt_bfly_out1)
+        .out_valid(intt_bfly_out_valid), .out0(intt_bfly_out0), .out1(intt_bfly_out1),
+        .zeroize_req(child_zeroize_req),.zeroize_busy(bfly_zeroize_busy),.zeroize_done(bfly_zeroize_done)
     );
     wire intt_write_setup_valid = intt_bfly_out_valid && write_meta_valid && busy;
 
@@ -179,7 +189,8 @@ module intt_core_pipe #(
         .in0(mem_src_data0), .in1(mem_src_data1),
         .pair_idx(scale_response_pair_d[6:0]), .last_in(scale_response_pair_d == 8'd127),
         .out_valid(scale_out_valid), .out0(scale_out0), .out1(scale_out1),
-        .pair_idx_out(scale_out_pair), .last_out(scale_out_last)
+        .pair_idx_out(scale_out_pair), .last_out(scale_out_last),
+        .zeroize_req(child_zeroize_req),.zeroize_busy(scale_zeroize_busy),.zeroize_done(scale_zeroize_done)
     );
     reg scale_write_setup_valid_d;
     reg scale_write_last_d;
@@ -210,7 +221,8 @@ module intt_core_pipe #(
         .src_data0(mem_src_data0), .src_data1(mem_src_data1),
         .dst_wr_en(mem_dst_wr_en), .dst_index0(mem_dst_index0), .dst_index1(mem_dst_index1),
         .dst_pair_bit(mem_dst_pair_bit), .dst_addr_bit(mem_dst_addr_bit),
-        .dst_xor_layout(mem_dst_xor_layout), .dst_data0(mem_dst_data0), .dst_data1(mem_dst_data1)
+        .dst_xor_layout(mem_dst_xor_layout), .dst_data0(mem_dst_data0), .dst_data1(mem_dst_data1),
+        .zeroize_req(child_zeroize_req),.zeroize_busy(banks_zeroize_busy),.zeroize_done(banks_zeroize_done)
     );
 
     assign result_rd_valid = legal_result_req ? mem_src_rd_valid : 1'b0;
@@ -258,12 +270,37 @@ module intt_core_pipe #(
             scale_output_pair_count <= 0; scale_write_count <= 0;
             scale_coefficient_input_count <= 0; scale_coefficient_output_count <= 0;
             scale_pending_reads <= 0; scale_pending_mults <= 0; scale_pending_writes <= 0;
+            zeroize_busy<=0;zeroize_done<=0;child_zeroize_req<=0;child_done_seen<=0;
+            scrub_addr<=0;local_scrub_done<=0;
             for (preload_i = 0; preload_i < 128; preload_i = preload_i + 1) begin
                 preload_first_seen[preload_i] <= 0;
                 preload_pair_written[preload_i] <= 0;
             end
         end else begin
             done <= 0;
+            zeroize_done<=0;child_zeroize_req<=0;
+            if(zeroize_req===1'b1&&!zeroize_busy)begin
+                state<=ST_IDLE;busy<=1;error<=0;final_stage_latched<=0;results_valid<=0;
+                preload_pair_count<=0;scale_pair_count<=0;intt_write_setup_valid_d<=0;
+                intt_write_last_stage_d<=0;intt_write_last_transform_d<=0;
+                scale_response_pair_d<=0;scale_response_valid_d<=0;scale_write_setup_valid_d<=0;scale_write_last_d<=0;
+                accepted_read_count<=0;ram_response_count<=0;butterfly_input_count<=0;butterfly_output_count<=0;
+                committed_write_count<=0;stage_drain_count<=0;stage_advance_count<=0;stage_role_swap_count<=0;total_role_swap_count<=0;
+                pending_reads<=0;pending_butterflies<=0;pending_writes<=0;inverse_cycle_count<=0;transform_cycle_count<=0;
+                scale_first_issue_cycle<=0;scale_final_issue_cycle<=0;scale_final_commit_cycle<=0;scale_swap_cycle<=0;done_cycle<=0;
+                scale_read_count<=0;scale_response_count<=0;scale_output_pair_count<=0;scale_write_count<=0;
+                scale_coefficient_input_count<=0;scale_coefficient_output_count<=0;scale_pending_reads<=0;scale_pending_mults<=0;scale_pending_writes<=0;
+                zeroize_busy<=1;child_zeroize_req<=1;child_done_seen<=0;scrub_addr<=0;local_scrub_done<=0;
+            end else if(zeroize_busy)begin
+                child_done_seen<=child_done_seen|{banks_zeroize_done,scale_zeroize_done,bfly_zeroize_done,meta_zeroize_done,zeta_zeroize_done,sched_zeroize_done};
+                if(!local_scrub_done)begin
+                    preload_first[scrub_addr]<=0;preload_first_seen[scrub_addr]<=0;preload_pair_written[scrub_addr]<=0;
+                    if(scrub_addr==7'd127)local_scrub_done<=1;else scrub_addr<=scrub_addr+1'b1;
+                end
+                if(local_scrub_done&&(&(child_done_seen|{banks_zeroize_done,scale_zeroize_done,bfly_zeroize_done,meta_zeroize_done,zeta_zeroize_done,sched_zeroize_done})))begin
+                    zeroize_busy<=0;zeroize_done<=1;busy<=0;state<=ST_IDLE;
+                end
+            end else begin
             intt_write_setup_valid_d <= intt_write_setup_valid;
             intt_write_last_stage_d <= write_last_stage;
             intt_write_last_transform_d <= write_last_transform;
@@ -385,22 +422,23 @@ module intt_core_pipe #(
                 end
                 default: state <= ST_IDLE;
             endcase
+            end
         end
     end
 
 `ifndef SYNTHESIS
     always @(posedge clk) begin
-        if (rst_n && intt_bfly_in_valid && !zeta_valid)
+        if (rst_n && !zeroize_busy && intt_bfly_in_valid && !zeta_valid)
             $fatal(1, "INTT_ZETA_ALIGNMENT: RAM response without zeta");
-        if (rst_n && (intt_bfly_out_valid !== write_meta_valid))
+        if (rst_n && !zeroize_busy && (intt_bfly_out_valid !== write_meta_valid))
             $fatal(1, "INTT_METADATA_ALIGNMENT: butterfly and metadata valid mismatch");
-        if (rst_n && intt_write_setup_valid &&
+        if (rst_n && !zeroize_busy && intt_write_setup_valid &&
             ((write_dst_u_bank == write_dst_v_bank) ||
              (write_bfly_idx > 127) || (write_zeta_addr == 0)))
             $fatal(1, "INTT_WRITE_METADATA: invalid delayed transaction");
-        if (rst_n && scale_input_valid && !scale_response_valid_d)
+        if (rst_n && !zeroize_busy && scale_input_valid && !scale_response_valid_d)
             $fatal(1, "INTT_SCALE_ALIGNMENT: response without request metadata");
-        if (rst_n && swap_roles && (mem_src_rd_en || mem_dst_wr_en || mem_src_rd_valid))
+        if (rst_n && !zeroize_busy && swap_roles && (mem_src_rd_en || mem_dst_wr_en || mem_src_rd_valid))
             $fatal(1, "INTT_ROLE_SWAP: active or pending memory traffic");
     end
 `endif

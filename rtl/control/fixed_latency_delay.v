@@ -12,13 +12,19 @@ module fixed_latency_delay #(
     input  wire [METADATA_WIDTH-1:0] in_metadata,
     output wire                      out_valid,
     output wire [PAYLOAD_WIDTH-1:0]  out_payload,
-    output wire [METADATA_WIDTH-1:0] out_metadata
+    output wire [METADATA_WIDTH-1:0] out_metadata,
+    input  wire                      zeroize_req,
+    output reg                       zeroize_busy,
+    output reg                       zeroize_done
 );
 
     reg [LATENCY-1:0] valid_pipe;
     reg [PAYLOAD_WIDTH-1:0] payload_pipe [0:LATENCY-1];
     reg [METADATA_WIDTH-1:0] metadata_pipe [0:LATENCY-1];
     integer i;
+    integer zero_count;
+    reg zero_commit_pending;
+    wire accept_zeroize = (zeroize_req === 1'b1);
 
     initial begin
         if (LATENCY < 1)
@@ -28,7 +34,37 @@ module fixed_latency_delay #(
     always @(posedge clk) begin
         if (!rst_n) begin
             valid_pipe <= {LATENCY{1'b0}};
+            zeroize_busy <= 1'b0;
+            zeroize_done <= 1'b0;
+            zero_count <= 0;
+            zero_commit_pending <= 1'b0;
         end else begin
+            zeroize_done <= 1'b0;
+            if (accept_zeroize && !zeroize_busy) begin
+                zeroize_busy <= 1'b1;
+                zero_count <= 0;
+                zero_commit_pending <= 1'b0;
+            end else if (zeroize_busy) begin
+                if (zero_commit_pending) begin
+                    valid_pipe <= {LATENCY{1'b0}};
+                    zeroize_busy <= 1'b0;
+                    zeroize_done <= 1'b1;
+                    zero_commit_pending <= 1'b0;
+                end else begin
+                    valid_pipe[0] <= 1'b1;
+                    payload_pipe[0] <= {PAYLOAD_WIDTH{1'b0}};
+                    metadata_pipe[0] <= {METADATA_WIDTH{1'b0}};
+                    for (i = 1; i < LATENCY; i = i + 1) begin
+                        valid_pipe[i] <= 1'b1;
+                        payload_pipe[i] <= payload_pipe[i-1];
+                        metadata_pipe[i] <= metadata_pipe[i-1];
+                    end
+                    if (zero_count == LATENCY-1)
+                        zero_commit_pending <= 1'b1;
+                    else
+                        zero_count <= zero_count + 1;
+                end
+            end else begin
             valid_pipe[0] <= in_valid;
             if (in_valid) begin
                 payload_pipe[0] <= in_payload;
@@ -41,10 +77,11 @@ module fixed_latency_delay #(
                     metadata_pipe[i] <= metadata_pipe[i-1];
                 end
             end
+            end
         end
     end
 
-    assign out_valid = valid_pipe[LATENCY-1];
+    assign out_valid = !zeroize_busy && valid_pipe[LATENCY-1];
     assign out_payload = payload_pipe[LATENCY-1];
     assign out_metadata = metadata_pipe[LATENCY-1];
 

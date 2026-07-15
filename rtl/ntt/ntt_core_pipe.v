@@ -24,7 +24,10 @@ module ntt_core_pipe #(
     input  wire                  result_rd_req,
     input  wire [7:0]            result_rd_idx,
     output wire                  result_rd_valid,
-    output wire [11:0]           result_rd_data
+    output wire [11:0]           result_rd_data,
+    input  wire                  zeroize_req,
+    output reg                   zeroize_busy,
+    output reg                   zeroize_done
 );
 
     localparam RAM_READ_LATENCY        = 1;
@@ -51,7 +54,10 @@ module ntt_core_pipe #(
     reg [7:0]  preload_pair_count;
 
     wire all_pairs_loaded = (preload_pair_count == 8'd128);
-    assign preload_ready = !busy;
+    assign preload_ready = !busy && !zeroize_busy;
+    reg child_zeroize_req;reg[4:0]child_done_seen;reg[6:0]scrub_addr;reg local_scrub_done;
+    wire sched_zeroize_done,zeta_zeroize_done,meta_zeroize_done,bfly_zeroize_done,banks_zeroize_done;
+    wire sched_zeroize_busy,zeta_zeroize_busy,meta_zeroize_busy,bfly_zeroize_busy,banks_zeroize_busy;
 
     function [2:0] fwd_src_pair_bit;
         input [2:0] stage;
@@ -164,7 +170,8 @@ module ntt_core_pipe #(
         .last_issue_in_stage(sched_last_issue_in_stage),
         .last_issue_in_transform(sched_last_issue_in_transform),
         .stage_issue_done(sched_stage_issue_done),
-        .schedule_done(sched_schedule_done)
+        .schedule_done(sched_schedule_done),.zeroize_req(child_zeroize_req),
+        .zeroize_busy(sched_zeroize_busy),.zeroize_done(sched_zeroize_done)
     );
 
     wire [2:0] issue_src_pair_bit = fwd_src_pair_bit(sched_stage);
@@ -211,7 +218,8 @@ module ntt_core_pipe #(
         .in_metadata(1'b0),
         .out_valid(zeta_valid),
         .out_payload(zeta_for_bfly),
-        .out_metadata(zeta_meta_unused)
+        .out_metadata(zeta_meta_unused),.zeroize_req(child_zeroize_req),
+        .zeroize_busy(zeta_zeroize_busy),.zeroize_done(zeta_zeroize_done)
     );
 
     wire [META_WIDTH-1:0] issue_meta_payload = {
@@ -251,7 +259,8 @@ module ntt_core_pipe #(
         .in_metadata(1'b0),
         .out_valid(write_meta_valid),
         .out_payload(write_meta_payload),
-        .out_metadata(write_meta_unused)
+        .out_metadata(write_meta_unused),.zeroize_req(child_zeroize_req),
+        .zeroize_busy(meta_zeroize_busy),.zeroize_done(meta_zeroize_done)
     );
 
     wire [7:0] write_u_idx = write_meta_payload[80:73];
@@ -284,7 +293,8 @@ module ntt_core_pipe #(
         .zeta_mont(zeta_for_bfly),
         .out_valid(bfly_out_valid),
         .out0(bfly_out0),
-        .out1(bfly_out1)
+        .out1(bfly_out1),.zeroize_req(child_zeroize_req),
+        .zeroize_busy(bfly_zeroize_busy),.zeroize_done(bfly_zeroize_done)
     );
 
     wire run_write_setup_valid = bfly_out_valid && write_meta_valid && busy;
@@ -332,7 +342,8 @@ module ntt_core_pipe #(
         .dst_addr_bit(mem_dst_addr_bit),
         .dst_xor_layout(mem_dst_xor_layout),
         .dst_data0(mem_dst_data0),
-        .dst_data1(mem_dst_data1)
+        .dst_data1(mem_dst_data1),.zeroize_req(child_zeroize_req),
+        .zeroize_busy(banks_zeroize_busy),.zeroize_done(banks_zeroize_done)
     );
 
     assign result_rd_valid = legal_result_req ? mem_src_rd_valid : 1'b0;
@@ -387,12 +398,34 @@ module ntt_core_pipe #(
             pending_butterflies <= 8'd0;
             pending_writes <= 8'd0;
             transform_cycle_count <= 16'd0;
+            zeroize_busy <= 1'b0;zeroize_done <= 1'b0;child_zeroize_req <= 1'b0;
+            child_done_seen <= 5'd0;scrub_addr <= 7'd0;local_scrub_done <= 1'b0;
             for (preload_i = 0; preload_i < 128; preload_i = preload_i + 1) begin
                 preload_lo_seen[preload_i] <= 1'b0;
                 preload_pair_written[preload_i] <= 1'b0;
             end
         end else begin
             done <= 1'b0;
+            zeroize_done <= 1'b0;child_zeroize_req <= 1'b0;
+            if(zeroize_req===1'b1&&!zeroize_busy)begin
+                state<=ST_IDLE;busy<=1;error<=0;results_valid<=0;final_stage_latched<=0;
+                preload_pair_count<=0;write_setup_valid_d<=0;write_setup_last_stage_d<=0;
+                write_setup_last_transform_d<=0;write_setup_stage_d<=0;
+                accepted_read_count<=0;ram_response_count<=0;butterfly_input_count<=0;
+                butterfly_output_count<=0;committed_write_count<=0;stage_drain_count<=0;
+                stage_advance_count<=0;stage_role_swap_count<=0;total_role_swap_count<=0;
+                pending_reads<=0;pending_butterflies<=0;pending_writes<=0;transform_cycle_count<=0;
+                zeroize_busy<=1;child_zeroize_req<=1;child_done_seen<=0;scrub_addr<=0;local_scrub_done<=0;
+            end else if(zeroize_busy)begin
+                child_done_seen<=child_done_seen|{banks_zeroize_done,bfly_zeroize_done,meta_zeroize_done,zeta_zeroize_done,sched_zeroize_done};
+                if(!local_scrub_done)begin
+                    preload_lo[scrub_addr]<=0;preload_lo_seen[scrub_addr]<=0;preload_pair_written[scrub_addr]<=0;
+                    if(scrub_addr==7'd127)local_scrub_done<=1;else scrub_addr<=scrub_addr+1'b1;
+                end
+                if(local_scrub_done && (&(child_done_seen|{banks_zeroize_done,bfly_zeroize_done,meta_zeroize_done,zeta_zeroize_done,sched_zeroize_done})))begin
+                    zeroize_busy<=0;zeroize_done<=1;busy<=0;state<=ST_IDLE;
+                end
+            end else begin
             write_setup_valid_d <= run_write_setup_valid;
             write_setup_last_stage_d <= write_last_issue_in_stage;
             write_setup_last_transform_d <= write_last_issue_in_transform;
@@ -517,6 +550,7 @@ module ntt_core_pipe #(
 
                 default: state <= ST_IDLE;
             endcase
+            end
         end
     end
 
@@ -567,7 +601,7 @@ module ntt_core_pipe #(
     );
 
     always @(posedge clk) begin
-        if (rst_n) begin
+        if (rst_n && !zeroize_busy) begin
             if (zeta_valid !== bfly_in_valid) begin
                 $display("NTT_CORE_PIPE_ALIGN: zeta_valid=%b bfly_in_valid=%b", zeta_valid, bfly_in_valid);
                 $fatal(1);

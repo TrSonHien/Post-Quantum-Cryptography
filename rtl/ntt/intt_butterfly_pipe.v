@@ -40,7 +40,10 @@ module intt_butterfly_pipe (
     input  wire [11:0] zeta_mont,
     output wire        out_valid,
     output wire [11:0] out0,
-    output wire [11:0] out1
+    output wire [11:0] out1,
+    input  wire        zeroize_req,
+    output reg         zeroize_busy,
+    output reg         zeroize_done
 );
 
     // Simulation assertions
@@ -77,15 +80,18 @@ module intt_butterfly_pipe (
     wire [11:0] sum;
     wire [11:0] diff;
     wire        add_sub_valid;
+    wire add_zeroize_done,sub_zeroize_done,mul_zeroize_done,delay_zeroize_done;
+    wire add_zeroize_busy,sub_zeroize_busy,mul_zeroize_busy,delay_zeroize_busy;
+    reg child_zeroize_req;reg[3:0]child_done_seen;
 
     mod_add_pipe u_add (
         .clk(clk),
         .rst_n(rst_n),
-        .in_valid(in_valid),
+        .in_valid(in_valid&&!zeroize_busy),
         .a(u),
         .b(v),
         .out_valid(add_sub_valid),
-        .r(sum)
+        .r(sum),.zeroize_req(child_zeroize_req),.zeroize_busy(add_zeroize_busy),.zeroize_done(add_zeroize_done)
     );
 
     mod_sub_pipe u_sub (
@@ -95,13 +101,15 @@ module intt_butterfly_pipe (
         .a(v), // Note Gentleman-Sande subtraction: diff = v - u
         .b(u),
         .out_valid(),
-        .r(diff)
+        .r(diff),.zeroize_req(child_zeroize_req),.zeroize_busy(sub_zeroize_busy),.zeroize_done(sub_zeroize_done)
     );
 
     // Delay zeta_mont by 1 cycle to align with diff at Cycle 1
     reg [11:0] zeta_mont_d1;
     always @(posedge clk) begin
-        if (in_valid) begin
+        if (!rst_n) zeta_mont_d1 <= 12'd0;
+        else if(zeroize_req===1'b1||zeroize_busy)zeta_mont_d1<=12'd0;
+        else if (in_valid) begin
             zeta_mont_d1 <= zeta_mont;
         end
     end
@@ -118,7 +126,7 @@ module intt_butterfly_pipe (
         .a(zeta_mont_d1),
         .b(diff),
         .out_valid(mul_valid),
-        .r(prod)
+        .r(prod),.zeroize_req(child_zeroize_req),.zeroize_busy(mul_zeroize_busy),.zeroize_done(mul_zeroize_done)
     );
 
     // Delay sum (available at Cycle 1) by 4 cycles to align with prod at Cycle 5
@@ -138,11 +146,21 @@ module intt_butterfly_pipe (
         .in_metadata(1'b0),
         .out_valid(val_delayed),
         .out_payload(sum_delayed),
-        .out_metadata(dummy_meta)
+        .out_metadata(dummy_meta),.zeroize_req(child_zeroize_req),.zeroize_busy(delay_zeroize_busy),.zeroize_done(delay_zeroize_done)
     );
 
     assign out0      = sum_delayed;
     assign out1      = prod;
-    assign out_valid = mul_valid;
+    assign out_valid = !zeroize_busy&&mul_valid;
+
+    always@(posedge clk)begin
+        zeroize_done<=0;child_zeroize_req<=0;
+        if(!rst_n)begin zeroize_busy<=0;zeroize_done<=0;child_zeroize_req<=0;child_done_seen<=0;end
+        else if(zeroize_req===1'b1&&!zeroize_busy)begin zeroize_busy<=1;child_zeroize_req<=1;child_done_seen<=0;end
+        else if(zeroize_busy)begin
+            child_done_seen<=child_done_seen|{delay_zeroize_done,mul_zeroize_done,sub_zeroize_done,add_zeroize_done};
+            if(&(child_done_seen|{delay_zeroize_done,mul_zeroize_done,sub_zeroize_done,add_zeroize_done}))begin zeroize_busy<=0;zeroize_done<=1;end
+        end
+    end
 
 endmodule

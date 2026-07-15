@@ -12,10 +12,12 @@ module tb_intt_scaler_pipe;
     reg [11:0] in1 = 0;
     reg [6:0] pair_idx = 0;
     reg last_in = 0;
+    reg zeroize_req = 0;
     wire out_valid;
     wire [11:0] out0, out1;
     wire [6:0] pair_idx_out;
     wire last_out;
+    wire zeroize_busy, zeroize_done;
 
     reg [11:0] exp0 [0:3];
     reg [11:0] exp1 [0:3];

@@ -37,7 +37,10 @@ module poly_workspace (
     input  wire        int_pair_wr_en,
     input  wire [6:0]  int_pair_wr_idx,
     input  wire [11:0] int_pair_wr0,
-    input  wire [11:0] int_pair_wr1
+    input  wire [11:0] int_pair_wr1,
+    input  wire        zeroize_req,
+    output reg         zeroize_busy,
+    output reg         zeroize_done
 );
     localparam [1:0] EXTERNAL_LOAD = 2'd0;
     localparam [1:0] INTERNAL_OPERATION = 2'd1;
@@ -48,9 +51,12 @@ module poly_workspace (
     reg [11:0] bank_odd [0:127];
     reg [255:0] valid_bitmap;
     reg [8:0] valid_count;
+    reg [6:0] scrub_addr;
+    reg scrub_commit_pending;
+    wire accept_zeroize = (zeroize_req === 1'b1);
 
     assign complete = (valid_count == 9'd256);
-    assign load_ready = (owner == EXTERNAL_LOAD);
+    assign load_ready = (owner == EXTERNAL_LOAD) && !zeroize_busy;
 
     integer i;
     reg [1:0] pair_new_count;
@@ -64,10 +70,47 @@ module poly_workspace (
             result_valid <= 1'b0;
             int_rd_valid <= 1'b0;
             int_pair_rd_valid <= 1'b0;
+            zeroize_busy <= 1'b0;
+            zeroize_done <= 1'b0;
+            scrub_addr <= 7'd0;
+            scrub_commit_pending <= 1'b0;
         end else begin
             result_valid <= 1'b0;
             int_rd_valid <= 1'b0;
             int_pair_rd_valid <= 1'b0;
+            zeroize_done <= 1'b0;
+
+            if (accept_zeroize && !zeroize_busy) begin
+                owner <= EXTERNAL_LOAD;
+                domain <= DOMAIN_INVALID;
+                error <= 1'b0;
+                valid_bitmap <= 256'd0;
+                valid_count <= 9'd0;
+                result_coeff <= 12'd0;
+                int_rd_coeff <= 12'd0;
+                int_pair_rd0 <= 12'd0;
+                int_pair_rd1 <= 12'd0;
+                scrub_addr <= 7'd0;
+                scrub_commit_pending <= 1'b0;
+                zeroize_busy <= 1'b1;
+            end else if (zeroize_busy) begin
+                result_coeff <= 12'd0;
+                int_rd_coeff <= 12'd0;
+                int_pair_rd0 <= 12'd0;
+                int_pair_rd1 <= 12'd0;
+                if (scrub_commit_pending) begin
+                    scrub_commit_pending <= 1'b0;
+                    zeroize_busy <= 1'b0;
+                    zeroize_done <= 1'b1;
+                end else begin
+                    bank_even[scrub_addr] <= 12'd0;
+                    bank_odd[scrub_addr] <= 12'd0;
+                    if (scrub_addr == 7'd127)
+                        scrub_commit_pending <= 1'b1;
+                    else
+                        scrub_addr <= scrub_addr + 1'b1;
+                end
+            end else begin
 
             if (load_begin) begin
                 if (owner == INTERNAL_OPERATION) begin
@@ -187,6 +230,7 @@ module poly_workspace (
                     valid_bitmap[{int_pair_wr_idx, 1'b1}] <= 1'b1;
                     valid_count <= valid_count + pair_new_count;
                 end
+            end
             end
         end
     end

@@ -23,7 +23,10 @@ module mod_sub_pipe (
     input  wire [11:0] a,
     input  wire [11:0] b,
     output reg         out_valid,
-    output reg  [11:0] r
+    output reg  [11:0] r,
+    input  wire        zeroize_req,
+    output reg         zeroize_busy,
+    output reg         zeroize_done
 );
 
     wire [12:0] diff_wrapped;
@@ -37,13 +40,26 @@ module mod_sub_pipe (
     always @(posedge clk) begin
         if (!rst_n) begin
             out_valid <= 1'b0;
+            zeroize_busy <= 1'b0;
+            zeroize_done <= 1'b0;
+        end else if (zeroize_req === 1'b1 && !zeroize_busy) begin
+            out_valid <= 1'b0;
+            r <= 12'd0;
+            zeroize_busy <= 1'b1;
+            zeroize_done <= 1'b0;
+        end else if (zeroize_busy) begin
+            out_valid <= 1'b0;
+            r <= 12'd0;
+            zeroize_busy <= 1'b0;
+            zeroize_done <= 1'b1;
         end else begin
             out_valid <= in_valid;
+            zeroize_done <= 1'b0;
         end
     end
 
     always @(posedge clk) begin
-        if (in_valid) begin
+        if (in_valid && !zeroize_busy && zeroize_req !== 1'b1) begin
             r <= r_next;
         end
     end

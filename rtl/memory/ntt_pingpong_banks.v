@@ -27,7 +27,11 @@ module ntt_pingpong_banks #(
     input  wire [2:0]            dst_addr_bit,
     input  wire                  dst_xor_layout,
     input  wire [DATA_WIDTH-1:0] dst_data0,
-    input  wire [DATA_WIDTH-1:0] dst_data1
+    input  wire [DATA_WIDTH-1:0] dst_data1,
+
+    input  wire                  zeroize_req,
+    output reg                   zeroize_busy,
+    output reg                   zeroize_done
 );
 
     wire src_bank0_sel, src_bank1_sel;
@@ -54,11 +58,36 @@ module ntt_pingpong_banks #(
     wire [DATA_WIDTH-1:0] source_data_bank1 = role_select ? b1_rd_data : a1_rd_data;
 
     reg src_index0_bank_d;
+    reg [6:0] scrub_addr;
+    reg scrub_commit_pending;
+    wire accept_zeroize = (zeroize_req === 1'b1);
     always @(posedge clk) begin
         if (!rst_n) begin
             role_select <= 1'b0;
             src_index0_bank_d <= 1'b0;
+            scrub_addr <= 7'd0;
+            scrub_commit_pending <= 1'b0;
+            zeroize_busy <= 1'b0;
+            zeroize_done <= 1'b0;
         end else begin
+            zeroize_done <= 1'b0;
+            if (accept_zeroize && !zeroize_busy) begin
+                role_select <= 1'b0;
+                src_index0_bank_d <= 1'b0;
+                scrub_addr <= 7'd0;
+                scrub_commit_pending <= 1'b0;
+                zeroize_busy <= 1'b1;
+            end else if (zeroize_busy) begin
+                if (scrub_commit_pending) begin
+                    scrub_commit_pending <= 1'b0;
+                    zeroize_busy <= 1'b0;
+                    zeroize_done <= 1'b1;
+                end else if (scrub_addr == 7'd127) begin
+                    scrub_commit_pending <= 1'b1;
+                end else begin
+                    scrub_addr <= scrub_addr + 1'b1;
+                end
+            end else begin
             if (src_rd_en)
                 src_index0_bank_d <= src_bank0_sel;
             if (swap_roles)
@@ -71,32 +100,47 @@ module ntt_pingpong_banks #(
             if (swap_roles && (src_rd_en || dst_wr_en || source_rd_valid0 || source_rd_valid1))
                 $fatal(1, "NTT_BANK_SWAP: swap with active or pending traffic");
 `endif
+            end
         end
     end
 
-    assign src_rd_valid = source_rd_valid0 && source_rd_valid1;
+    assign src_rd_valid = !zeroize_busy && source_rd_valid0 && source_rd_valid1;
     assign src_data0 = src_index0_bank_d ? source_data_bank1 : source_data_bank0;
     assign src_data1 = src_index0_bank_d ? source_data_bank0 : source_data_bank1;
 
+    wire scrub_write = zeroize_busy && !scrub_commit_pending;
+    wire a0_wr_en = scrub_write || (dst_wr_en && role_select);
+    wire a1_wr_en = scrub_write || (dst_wr_en && role_select);
+    wire b0_wr_en = scrub_write || (dst_wr_en && !role_select);
+    wire b1_wr_en = scrub_write || (dst_wr_en && !role_select);
+    wire [6:0] a0_wr_addr = scrub_write ? scrub_addr : dst_phys_addr0;
+    wire [6:0] a1_wr_addr = scrub_write ? scrub_addr : dst_phys_addr1;
+    wire [6:0] b0_wr_addr = scrub_write ? scrub_addr : dst_phys_addr0;
+    wire [6:0] b1_wr_addr = scrub_write ? scrub_addr : dst_phys_addr1;
+    wire [DATA_WIDTH-1:0] a0_wr_data = scrub_write ? {DATA_WIDTH{1'b0}} : dst_phys_data0;
+    wire [DATA_WIDTH-1:0] a1_wr_data = scrub_write ? {DATA_WIDTH{1'b0}} : dst_phys_data1;
+    wire [DATA_WIDTH-1:0] b0_wr_data = scrub_write ? {DATA_WIDTH{1'b0}} : dst_phys_data0;
+    wire [DATA_WIDTH-1:0] b1_wr_data = scrub_write ? {DATA_WIDTH{1'b0}} : dst_phys_data1;
+
     sync_1r1w_ram #(.DATA_WIDTH(DATA_WIDTH)) u_set_a_bank0 (
         clk, rst_n,
-        src_rd_en && !role_select, src_phys_addr0, a0_rd_valid, a0_rd_data,
-        dst_wr_en && role_select, dst_phys_addr0, dst_phys_data0
+        src_rd_en && !role_select && !zeroize_busy, src_phys_addr0, a0_rd_valid, a0_rd_data,
+        a0_wr_en, a0_wr_addr, a0_wr_data
     );
     sync_1r1w_ram #(.DATA_WIDTH(DATA_WIDTH)) u_set_a_bank1 (
         clk, rst_n,
-        src_rd_en && !role_select, src_phys_addr1, a1_rd_valid, a1_rd_data,
-        dst_wr_en && role_select, dst_phys_addr1, dst_phys_data1
+        src_rd_en && !role_select && !zeroize_busy, src_phys_addr1, a1_rd_valid, a1_rd_data,
+        a1_wr_en, a1_wr_addr, a1_wr_data
     );
     sync_1r1w_ram #(.DATA_WIDTH(DATA_WIDTH)) u_set_b_bank0 (
         clk, rst_n,
-        src_rd_en && role_select, src_phys_addr0, b0_rd_valid, b0_rd_data,
-        dst_wr_en && !role_select, dst_phys_addr0, dst_phys_data0
+        src_rd_en && role_select && !zeroize_busy, src_phys_addr0, b0_rd_valid, b0_rd_data,
+        b0_wr_en, b0_wr_addr, b0_wr_data
     );
     sync_1r1w_ram #(.DATA_WIDTH(DATA_WIDTH)) u_set_b_bank1 (
         clk, rst_n,
-        src_rd_en && role_select, src_phys_addr1, b1_rd_valid, b1_rd_data,
-        dst_wr_en && !role_select, dst_phys_addr1, dst_phys_data1
+        src_rd_en && role_select && !zeroize_busy, src_phys_addr1, b1_rd_valid, b1_rd_data,
+        b1_wr_en, b1_wr_addr, b1_wr_data
     );
 
 endmodule

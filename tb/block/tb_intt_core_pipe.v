@@ -19,6 +19,8 @@ module tb_intt_core_pipe;
     reg [7:0] result_rd_idx = 0;
     wire result_rd_valid;
     wire [11:0] result_rd_data;
+    reg zeroize_req = 0;
+    wire zeroize_busy, zeroize_done;
     reg [11:0] vectors [0:VECTOR_COUNT*WORDS_PER_VECTOR-1];
     reg [11:0] zero_poly [0:255];
     integer failures = 0;

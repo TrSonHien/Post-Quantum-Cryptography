@@ -23,13 +23,16 @@ module montgomery_reduce_pipe (
     input  wire        in_valid,
     input  wire [31:0] a,
     output reg         out_valid,
-    output reg  [11:0] r
+    output reg  [11:0] r,
+    input  wire        zeroize_req,
+    output reg         zeroize_busy,
+    output reg         zeroize_done
 );
 
     // Simulation assertion for input range check
     // synopsys translate_off
     always @(posedge clk) begin
-        if (in_valid && a >= 32'd218169344) begin
+        if (in_valid && !zeroize_busy && a >= 32'd218169344) begin
             $display("ASSERTION FAILED in montgomery_reduce_pipe: input a=%0d >= q*R (218169344)", a);
             $fatal(1);
         end
@@ -52,38 +55,6 @@ module montgomery_reduce_pipe (
     wire [16:0] t_sub;
     wire [11:0] r_next;
 
-    // Stage 1 logic (registered)
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            val_d1 <= 1'b0;
-        end else begin
-            val_d1 <= in_valid;
-        end
-    end
-
-    always @(posedge clk) begin
-        if (in_valid) begin
-            m_reg <= a[15:0] * 16'd3327; // low16(a * q_dash)
-            a_d1  <= a;
-        end
-    end
-
-    // Stage 2 logic (registered)
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            val_d2 <= 1'b0;
-        end else begin
-            val_d2 <= val_d1;
-        end
-    end
-
-    always @(posedge clk) begin
-        if (val_d1) begin
-            mq_reg <= m_reg * 28'd3329;
-            a_d2   <= a_d1;
-        end
-    end
-
     // Stage 3 logic
     assign sum      = {1'b0, a_d2} + {5'b0, mq_reg};
     assign t        = sum[32:16];
@@ -92,15 +63,31 @@ module montgomery_reduce_pipe (
 
     always @(posedge clk) begin
         if (!rst_n) begin
-            out_valid <= 1'b0;
+            val_d1 <= 1'b0;val_d2 <= 1'b0;out_valid <= 1'b0;
+            zeroize_busy <= 1'b0;zeroize_done <= 1'b0;
         end else begin
-            out_valid <= val_d2;
-        end
-    end
-
-    always @(posedge clk) begin
-        if (val_d2) begin
-            r <= r_next;
+            zeroize_done <= 1'b0;
+            if (zeroize_req === 1'b1 && !zeroize_busy) begin
+                val_d1 <= 1'b0;val_d2 <= 1'b0;out_valid <= 1'b0;
+                m_reg <= 16'd0;a_d1 <= 32'd0;mq_reg <= 28'd0;a_d2 <= 32'd0;r <= 12'd0;
+                zeroize_busy <= 1'b1;
+            end else if (zeroize_busy) begin
+                val_d1 <= 1'b0;val_d2 <= 1'b0;out_valid <= 1'b0;
+                m_reg <= 16'd0;a_d1 <= 32'd0;mq_reg <= 28'd0;a_d2 <= 32'd0;r <= 12'd0;
+                zeroize_busy <= 1'b0;zeroize_done <= 1'b1;
+            end else begin
+                val_d1 <= in_valid;val_d2 <= val_d1;out_valid <= val_d2;
+                if (in_valid) begin
+                    m_reg <= a[15:0] * 16'd3327;
+                    a_d1 <= a;
+                end
+                if (val_d1) begin
+                    mq_reg <= m_reg * 28'd3329;
+                    a_d2 <= a_d1;
+                end
+                if (val_d2)
+                    r <= r_next;
+            end
         end
     end
 

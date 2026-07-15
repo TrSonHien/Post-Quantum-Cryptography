@@ -27,7 +27,10 @@ module intt_scheduler_pipe (
     output wire       last_issue_in_stage,
     output wire       last_issue_in_transform,
     output reg        stage_issue_done,
-    output reg        schedule_done
+    output reg        schedule_done,
+    input  wire       zeroize_req,
+    output reg        zeroize_busy,
+    output reg        zeroize_done
 );
 
     localparam [1:0] ST_IDLE  = 2'd0;
@@ -81,10 +84,17 @@ module intt_scheduler_pipe (
             bfly_cnt <= 7'd0;
             stage_issue_done <= 1'b0;
             schedule_done <= 1'b0;
+            zeroize_busy <= 1'b0;
+            zeroize_done <= 1'b0;
         end else begin
             stage_issue_done <= 1'b0;
             schedule_done <= 1'b0;
-            case (state)
+            zeroize_done <= 1'b0;
+            if(zeroize_req===1'b1&&!zeroize_busy)begin
+                state<=ST_IDLE;busy<=0;error<=0;issue_valid<=0;stage<=0;bfly_cnt<=0;zeroize_busy<=1;
+            end else if(zeroize_busy)begin
+                state<=ST_IDLE;busy<=0;error<=0;issue_valid<=0;stage<=0;bfly_cnt<=0;zeroize_busy<=0;zeroize_done<=1;
+            end else case (state)
                 ST_IDLE: begin
                     issue_valid <= 1'b0;
                     if (stage_advance)
