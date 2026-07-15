@@ -1,0 +1,165 @@
+{
+  "schema": "mlkem-m8-zeroize-coverage-v1",
+  "generated_date": "2026-07-16",
+  "status": "partial",
+  "counting_rule": "checked_element_count is the number of distinct retained payload or metadata locations inspected by the dedicated test for this inventory entry",
+  "entries": [
+    {
+      "inventory_id": "H/G/J",
+      "module": "mlkem_h/mlkem_g/mlkem_j",
+      "state_identifier": "sponge_permutation_and_output_staging",
+      "expected_element_count": 21,
+      "scrub_mechanism": "direct_clear_and_child_ack",
+      "dedicated_tb": "tb/block/tb_m5_mlkem_zeroize.v",
+      "checked_element_count": 21,
+      "status": "PASS"
+    },
+    {
+      "inventory_id": "P-WS",
+      "module": "poly_workspace",
+      "state_identifier": "two_coefficient_banks_and_scalar_read_staging",
+      "expected_element_count": 260,
+      "scrub_mechanism": "parallel_two_bank_address_scan_and_direct_clear",
+      "dedicated_tb": "tb/unit/tb_poly_workspace_zeroize.v",
+      "checked_element_count": 260,
+      "status": "PASS"
+    },
+    {
+      "inventory_id": "PV-WS",
+      "module": "polyvec_workspace",
+      "state_identifier": "three_child_workspaces",
+      "expected_element_count": 780,
+      "scrub_mechanism": "parallel_child_request_and_ack_join",
+      "dedicated_tb": "tb/unit/tb_polyvec_workspace_zeroize.v",
+      "checked_element_count": 780,
+      "status": "PASS"
+    },
+    {
+      "inventory_id": "NTT-BANK",
+      "module": "ntt_pingpong_banks",
+      "state_identifier": "set_a_bank0_set_a_bank1_set_b_bank0_set_b_bank1",
+      "expected_element_count": 512,
+      "scrub_mechanism": "four_parallel_ram_writes_for_128_addresses",
+      "dedicated_tb": "tb/unit/tb_ntt_pingpong_banks_zeroize.v",
+      "checked_element_count": 512,
+      "status": "PASS"
+    },
+    {
+      "inventory_id": "FLD",
+      "module": "fixed_latency_delay",
+      "state_identifier": "four_payload_and_four_metadata_stages",
+      "expected_element_count": 8,
+      "scrub_mechanism": "valid_zero_pipeline_flush",
+      "dedicated_tb": "tb/unit/tb_fixed_latency_delay_zeroize.v",
+      "checked_element_count": 8,
+      "status": "PASS"
+    },
+    {
+      "inventory_id": "MOD-ADD/MOD-SUB/MOD-MUL/MONT",
+      "module": "arithmetic_pipeline_family",
+      "state_identifier": "registered_arithmetic_payload_and_valid_stages",
+      "expected_element_count": 23,
+      "scrub_mechanism": "direct_clear_and_child_ack",
+      "dedicated_tb": "tb/unit/tb_arithmetic_pipeline_zeroize.v",
+      "checked_element_count": 23,
+      "status": "PASS"
+    },
+    {
+      "inventory_id": "NTT-PRE/INTT-PRE/BFLY",
+      "module": "ntt_core_pipe/intt_core_pipe",
+      "state_identifier": "preload_arrays_transform_banks_and_selected_pipeline_payload",
+      "expected_element_count": 1284,
+      "scrub_mechanism": "local_scan_pipeline_flush_and_six_child_ack_join",
+      "dedicated_tb": "tb/block/tb_ntt_intt_zeroize.v",
+      "checked_element_count": 1284,
+      "status": "PASS"
+    },
+        {
+            "inventory_id": "PRF/XOF",
+      "module": "mlkem_prf/mlkem_xof",
+      "state_identifier": "seed_input_control_and_child_sponge_state",
+      "expected_element_count": 14,
+      "scrub_mechanism": "direct_local_clear_and_held_child_request_until_ack",
+      "dedicated_tb": "tb/block/tb_m6_prf_xof_zeroize.v",
+            "checked_element_count": 14,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "CODEC-SCALAR",
+            "module": "bits_to_bytes_pipe/bytes_to_bits_pipe/compress_coeff_pipe/decompress_coeff_pipe",
+            "state_identifier": "registered_payload_valid_error_and_arithmetic_stages",
+            "expected_element_count": 17,
+            "scrub_mechanism": "direct_clear",
+            "dedicated_tb": "tb/unit/tb_m6_codec_zeroize.v",
+            "checked_element_count": 17,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "CODEC-RESERVOIR",
+            "module": "byte_encode_poly_pipe/byte_decode_poly_pipe",
+            "state_identifier": "reservoir_temporary_output_counter_and_metadata_registers",
+            "expected_element_count": 29,
+            "scrub_mechanism": "direct_clear",
+            "dedicated_tb": "tb/unit/tb_m6_codec_zeroize.v",
+            "checked_element_count": 29,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "CODEC-WRAPPER",
+            "module": "kpke_format_pipe/polyvec_codec_pipe",
+            "state_identifier": "format_output_and_polyvec_child_ownership_state",
+            "expected_element_count": 14,
+            "scrub_mechanism": "direct_clear_and_child_ack",
+            "dedicated_tb": "tb/unit/tb_m6_codec_zeroize.v",
+            "checked_element_count": 14,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "CBD",
+            "module": "cbd_pair_pipe/sample_poly_cbd_pipe",
+            "state_identifier": "reservoir_coefficient_output_counter_and_metadata_registers",
+            "expected_element_count": 14,
+            "scrub_mechanism": "direct_clear",
+            "dedicated_tb": "tb/block/tb_m6_sampler_zeroize.v",
+            "checked_element_count": 14,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "SAMPLE-NTT-PARSER",
+            "module": "sample_ntt_parser",
+            "state_identifier": "candidate_queue_output_and_accounting_registers",
+            "expected_element_count": 9,
+            "scrub_mechanism": "direct_clear",
+            "dedicated_tb": "tb/block/tb_m6_sampler_zeroize.v",
+            "checked_element_count": 9,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "NOISE-HIERARCHY",
+            "module": "mlkem_noise_sampler",
+            "state_identifier": "controller_ownership_and_PRF_CBD_child_join",
+            "expected_element_count": 7,
+            "scrub_mechanism": "direct_clear_and_child_ack",
+            "dedicated_tb": "tb/block/tb_m6_sampler_zeroize.v",
+            "checked_element_count": 7,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "SAMPLE-NTT-HIERARCHY",
+            "module": "mlkem_sample_ntt",
+            "state_identifier": "controller_ownership_and_XOF_parser_child_join",
+            "expected_element_count": 8,
+            "scrub_mechanism": "direct_clear_and_child_ack",
+            "dedicated_tb": "tb/block/tb_m6_sampler_zeroize.v",
+            "checked_element_count": 8,
+            "status": "PASS"
+        }
+  ],
+  "summary": {
+        "entries_total": 15,
+        "entries_passed": 15,
+    "entries_failed": 0,
+        "checked_element_count": 3000,
+    "inventory_complete": false
+  }
+}

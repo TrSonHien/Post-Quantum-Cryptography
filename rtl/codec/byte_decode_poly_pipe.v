@@ -9,7 +9,8 @@ module byte_decode_poly_pipe #(
     input wire in_valid, output wire in_ready, input wire [31:0] in_data,
     input wire [3:0] in_keep, input wire in_last,
     output reg out_valid, input wire out_ready, output reg [11:0] out_value,
-    output reg [7:0] out_index, output reg noncanonical_seen
+    output reg [7:0] out_index, output reg noncanonical_seen,
+    input wire zeroize_req, output reg zeroize_busy, output reg zeroize_done
 );
     localparam integer WORDS = 8*D;
     reg [63:0] reservoir;
@@ -21,14 +22,22 @@ module byte_decode_poly_pipe #(
     reg ovtmp;
     reg [11:0] rawtmp;
     wire expected_last = (words_in == WORDS-1);
-    assign in_ready = busy && words_in < WORDS && bit_count <= 32 &&
+    assign in_ready = !zeroize_busy && !(zeroize_req === 1'b1) && busy && words_in < WORDS && bit_count <= 32 &&
                       (!out_valid || out_ready);
     always @(posedge clk) begin
-        done<=1'b0;
+        done<=1'b0; zeroize_done<=1'b0;
         if (!rst_n) begin
             busy<=0; done<=0; error<=0; reservoir<=0; bit_count<=0;
             words_in<=0; values_out<=0; out_valid<=0; out_value<=0;
-            out_index<=0; noncanonical_seen<=0;
+            out_index<=0; noncanonical_seen<=0; zeroize_busy<=0; zeroize_done<=0;
+        end else if ((zeroize_req === 1'b1) && !zeroize_busy) begin
+            busy<=0; error<=0; reservoir<=0; bit_count<=0; words_in<=0; values_out<=0;
+            out_valid<=0; out_value<=0; out_index<=0; noncanonical_seen<=0;
+            rtmp<=0; ctmp<=0; ovtmp<=0; rawtmp<=0; zeroize_busy<=1;
+        end else if (zeroize_busy) begin
+            busy<=0; error<=0; reservoir<=0; bit_count<=0; words_in<=0; values_out<=0;
+            out_valid<=0; out_value<=0; out_index<=0; noncanonical_seen<=0;
+            rtmp<=0; ctmp<=0; ovtmp<=0; rawtmp<=0; zeroize_busy<=0; zeroize_done<=1;
         end else if (start) begin
             if (busy) error<=1'b1;
             else if (!((D==1)||(D==4)||(D==10)||(D==12))) error<=1'b1;

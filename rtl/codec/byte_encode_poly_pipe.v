@@ -8,7 +8,8 @@ module byte_encode_poly_pipe #(
     input wire start, output reg busy, output reg done, output reg error,
     input wire in_valid, output wire in_ready, input wire [11:0] in_value,
     output reg out_valid, input wire out_ready, output reg [31:0] out_data,
-    output reg [3:0] out_keep, output reg out_last
+    output reg [3:0] out_keep, output reg out_last,
+    input wire zeroize_req, output reg zeroize_busy, output reg zeroize_done
 );
     localparam integer WORDS = 8*D;
     reg [63:0] reservoir;
@@ -24,14 +25,22 @@ module byte_encode_poly_pipe #(
                           (D==10) ? (in_value < 12'd1024) :
                           (D==4)  ? (in_value < 12'd16) :
                           (D==1)  ? (in_value < 12'd2) : 1'b0;
-    assign in_ready = busy && accepted < 256 && bit_count <= (64-D) &&
+    assign in_ready = !zeroize_busy && !(zeroize_req === 1'b1) && busy && accepted < 256 && bit_count <= (64-D) &&
                       (!out_valid || out_ready);
     always @(posedge clk) begin
-        done <= 1'b0;
+        done <= 1'b0; zeroize_done<=1'b0;
         if (!rst_n) begin
             busy<=1'b0; done<=1'b0; error<=1'b0; reservoir<=64'd0;
             bit_count<=0; accepted<=0; emitted<=0; out_valid<=1'b0;
-            out_data<=0; out_keep<=0; out_last<=1'b0;
+            out_data<=0; out_keep<=0; out_last<=1'b0; zeroize_busy<=0; zeroize_done<=0;
+        end else if ((zeroize_req === 1'b1) && !zeroize_busy) begin
+            busy<=0; error<=0; reservoir<=0; bit_count<=0; accepted<=0; emitted<=0;
+            out_valid<=0; out_data<=0; out_keep<=0; out_last<=0;
+            rtmp<=0; ctmp<=0; ovtmp<=0; odtmp<=0; oltmp<=0; zeroize_busy<=1;
+        end else if (zeroize_busy) begin
+            busy<=0; error<=0; reservoir<=0; bit_count<=0; accepted<=0; emitted<=0;
+            out_valid<=0; out_data<=0; out_keep<=0; out_last<=0;
+            rtmp<=0; ctmp<=0; ovtmp<=0; odtmp<=0; oltmp<=0; zeroize_busy<=0; zeroize_done<=1;
         end else if (start) begin
             if (busy) error<=1'b1;
             else if (!((D==1)||(D==4)||(D==10)||(D==12))) error<=1'b1;

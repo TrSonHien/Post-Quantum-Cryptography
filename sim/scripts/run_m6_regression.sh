@@ -20,5 +20,7 @@ run noise_sampler 180s 32768 "$ROOT/sim/scripts/run_mlkem_noise_sampler.sh"
 run sample_ntt_parser 90s 2048 "$ROOT/sim/scripts/run_sample_ntt_parser.sh"
 run sample_ntt 240s 16384 "$ROOT/sim/scripts/run_mlkem_sample_ntt.sh"
 run vector_repro 180s 3 bash -c 'set -euo pipefail;for g in gen_codec_vectors.py gen_cbd_vectors.py gen_sample_ntt_vectors.py;do mkdir -p "$1/a/$g" "$1/b/$g";PYTHONPATH="$2" python3 "$2/tb/tools/$g" --output-dir "$1/a/$g" >/dev/null;PYTHONPATH="$2" python3 "$2/tb/tools/$g" --output-dir "$1/b/$g" >/dev/null;diff -qr "$1/a/$g" "$1/b/$g" >/dev/null;done' _ "$TMP" "$ROOT"
-run m5_unified 2400s 1802376 "$ROOT/sim/scripts/run_m5_regression.sh"
+if [[ "${RUN_LOWER_REGRESSIONS:-1}" != "0" ]]; then
+ run m5_unified 2400s 1802376 "$ROOT/sim/scripts/run_m5_regression.sh"
+fi
 summary PASS
