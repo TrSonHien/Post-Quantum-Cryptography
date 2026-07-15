@@ -19,7 +19,8 @@ module kpke_noise_vector_sampler (
     output wire [1:0]   out_domain,
     output wire [7:0]   active_nonce,
     output reg  [7:0]   next_nonce,
-    output reg  [2:0]   samples_started
+    output reg  [2:0]   samples_started,
+    input wire zeroize_req,output reg zeroize_busy,output reg zeroize_done
 );
     localparam [1:0] ST_IDLE=0, ST_START=1, ST_WAIT=2;
     reg [1:0] state;
@@ -27,6 +28,7 @@ module kpke_noise_vector_sampler (
     reg [7:0] nonce_q;
     reg [1:0] eta_q;
     reg [1:0] element;
+    reg child_zeroize_req;wire child_zeroize_busy,child_zeroize_done;
 
     wire child_start = (state == ST_START);
     wire child_busy;
@@ -40,10 +42,12 @@ module kpke_noise_vector_sampler (
         .nonce(active_nonce), .eta(eta_q), .busy(child_busy),
         .done(child_done), .error(child_error), .out_valid(out_valid),
         .out_ready(out_ready), .out_coeff(out_coeff), .out_index(out_index),
-        .out_domain(out_domain)
+        .out_domain(out_domain),.zeroize_req(child_zeroize_req),
+        .zeroize_busy(child_zeroize_busy),.zeroize_done(child_zeroize_done)
     );
 
     always @(posedge clk) begin
+        child_zeroize_req<=0;zeroize_done<=0;
         if (!rst_n) begin
             state <= ST_IDLE;
             seed_q <= 0;
@@ -54,7 +58,11 @@ module kpke_noise_vector_sampler (
             samples_started <= 0;
             busy <= 0;
             done <= 0;
-            error <= 0;
+            error <= 0;zeroize_busy<=0;zeroize_done<=0;child_zeroize_req<=0;
+        end else if((zeroize_req===1'b1)&&!zeroize_busy)begin
+            state<=ST_IDLE;seed_q<=0;nonce_q<=0;eta_q<=0;element<=0;next_nonce<=0;samples_started<=0;busy<=0;done<=0;error<=0;zeroize_busy<=1;child_zeroize_req<=1;
+        end else if(zeroize_busy)begin
+            state<=ST_IDLE;seed_q<=0;nonce_q<=0;eta_q<=0;element<=0;next_nonce<=0;samples_started<=0;busy<=0;done<=0;error<=0;child_zeroize_req<=1;if(child_zeroize_done)begin zeroize_busy<=0;zeroize_done<=1;child_zeroize_req<=0;end
         end else begin
             done <= 0;
             if (child_error)

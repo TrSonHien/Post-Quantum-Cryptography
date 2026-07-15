@@ -4,11 +4,13 @@ module poly_transform_pipe #(parameter IS_INVERSE=0)(
  input wire load_we,input wire[7:0]load_idx,input wire[11:0]load_coeff,output wire load_ready,
  input wire start,output reg busy,output reg done,output reg error,
  input wire result_req,input wire[7:0]result_idx,output wire result_valid,output wire[11:0]result_coeff,
- output wire[1:0]result_domain,output wire result_complete,input wire result_release);
+ output wire[1:0]result_domain,output wire result_complete,input wire result_release,
+ input wire zeroize_req,output reg zeroize_busy,output reg zeroize_done);
  localparam[1:0]INVALID=0,NORMAL=1,NTT=2;
  localparam[3:0]IDLE=0,LOAD_READ=1,LOAD_DRAIN=2,START_CORE=3,WAIT_CORE=4,
                  READ_CORE=5,READ_DRAIN=6,PUBLISH=7,DONE=8;
  reg[3:0]state;reg[7:0]transfer_idx,load_idx_d,result_idx_d;reg result_available;
+ reg child_zeroize_req;reg[2:0]child_done_seen;wire[2:0]child_zeroize_busy,child_zeroize_done;
  wire in_complete,out_complete;wire[1:0]in_domain,out_domain,in_owner,out_owner;wire in_error,out_error;
  wire ws_rd_req=(state==LOAD_READ);wire ws_rd_valid;wire[11:0]ws_rd_coeff;
  wire core_start=(state==START_CORE);wire core_busy,core_done,core_error,core_preload_ready;
@@ -17,7 +19,7 @@ module poly_transform_pipe #(parameter IS_INVERSE=0)(
  wire[1:0]expected_output=IS_INVERSE?NORMAL:NTT;
  wire start_ok=!busy&&!result_available&&in_complete&&expected_input;
  wire accepted=start&&start_ok;wire publish=(state==PUBLISH);wire source_release=(state==PUBLISH);
- assign load_ready=!busy;
+ assign load_ready=!busy&&!zeroize_busy;
  assign result_domain=result_available?out_domain:INVALID;
  assign result_complete=result_available&&out_complete;
 
@@ -29,7 +31,7 @@ module poly_transform_pipe #(parameter IS_INVERSE=0)(
   .int_rd_req(ws_rd_req),.int_rd_idx(transfer_idx),.int_rd_valid(ws_rd_valid),.int_rd_coeff(ws_rd_coeff),
   .int_pair_rd_req(1'b0),.int_pair_rd_idx(7'b0),.int_pair_rd_valid(),.int_pair_rd0(),.int_pair_rd1(),
   .int_wr_en(1'b0),.int_wr_idx(8'b0),.int_wr_coeff(12'b0),
-  .int_pair_wr_en(1'b0),.int_pair_wr_idx(7'b0),.int_pair_wr0(12'b0),.int_pair_wr1(12'b0));
+  .int_pair_wr_en(1'b0),.int_pair_wr_idx(7'b0),.int_pair_wr0(12'b0),.int_pair_wr1(12'b0),.zeroize_req(child_zeroize_req),.zeroize_busy(child_zeroize_busy[0]),.zeroize_done(child_zeroize_done[0]));
  poly_workspace ws_out(.clk(clk),.rst_n(rst_n),.load_begin(1'b0),.load_domain(2'b0),
   .load_we(1'b0),.load_idx(8'b0),.load_coeff(12'b0),.load_ready(),
   .acquire_internal(1'b0),.init_internal(accepted),.init_domain(expected_output),.publish_result(publish),
@@ -38,20 +40,23 @@ module poly_transform_pipe #(parameter IS_INVERSE=0)(
   .int_rd_req(1'b0),.int_rd_idx(8'b0),.int_rd_valid(),.int_rd_coeff(),
   .int_pair_rd_req(1'b0),.int_pair_rd_idx(7'b0),.int_pair_rd_valid(),.int_pair_rd0(),.int_pair_rd1(),
   .int_wr_en(core_result_valid),.int_wr_idx(result_idx_d),.int_wr_coeff(core_result_data),
-  .int_pair_wr_en(1'b0),.int_pair_wr_idx(7'b0),.int_pair_wr0(12'b0),.int_pair_wr1(12'b0));
+  .int_pair_wr_en(1'b0),.int_pair_wr_idx(7'b0),.int_pair_wr0(12'b0),.int_pair_wr1(12'b0),.zeroize_req(child_zeroize_req),.zeroize_busy(child_zeroize_busy[1]),.zeroize_done(child_zeroize_done[1]));
 
  generate if(IS_INVERSE) begin:intt_gen
   intt_core_pipe core(.clk(clk),.rst_n(rst_n),.start(core_start),.busy(core_busy),.done(core_done),.error(core_error),
    .preload_en(ws_rd_valid),.preload_idx(load_idx_d),.preload_coeff(ws_rd_coeff),.preload_ready(core_preload_ready),
-   .result_rd_req(core_result_req),.result_rd_idx(transfer_idx),.result_rd_valid(core_result_valid),.result_rd_data(core_result_data));
+   .result_rd_req(core_result_req),.result_rd_idx(transfer_idx),.result_rd_valid(core_result_valid),.result_rd_data(core_result_data),.zeroize_req(child_zeroize_req),.zeroize_busy(child_zeroize_busy[2]),.zeroize_done(child_zeroize_done[2]));
  end else begin:ntt_gen
   ntt_core_pipe core(.clk(clk),.rst_n(rst_n),.start(core_start),.busy(core_busy),.done(core_done),.error(core_error),
    .preload_en(ws_rd_valid),.preload_idx(load_idx_d),.preload_coeff(ws_rd_coeff),.preload_ready(core_preload_ready),
-   .result_rd_req(core_result_req),.result_rd_idx(transfer_idx),.result_rd_valid(core_result_valid),.result_rd_data(core_result_data));
+   .result_rd_req(core_result_req),.result_rd_idx(transfer_idx),.result_rd_valid(core_result_valid),.result_rd_data(core_result_data),.zeroize_req(child_zeroize_req),.zeroize_busy(child_zeroize_busy[2]),.zeroize_done(child_zeroize_done[2]));
  end endgenerate
 
  always @(posedge clk) begin
-  if(!rst_n)begin state<=IDLE;busy<=0;done<=0;error<=0;transfer_idx<=0;load_idx_d<=0;result_idx_d<=0;result_available<=0;end
+  child_zeroize_req<=0;zeroize_done<=0;
+  if(!rst_n)begin state<=IDLE;busy<=0;done<=0;error<=0;transfer_idx<=0;load_idx_d<=0;result_idx_d<=0;result_available<=0;zeroize_busy<=0;zeroize_done<=0;child_zeroize_req<=0;child_done_seen<=0;end
+  else if((zeroize_req===1'b1)&&!zeroize_busy)begin state<=IDLE;busy<=0;done<=0;error<=0;transfer_idx<=0;load_idx_d<=0;result_idx_d<=0;result_available<=0;zeroize_busy<=1;child_zeroize_req<=1;child_done_seen<=0;end
+  else if(zeroize_busy)begin state<=IDLE;busy<=0;done<=0;error<=0;transfer_idx<=0;load_idx_d<=0;result_idx_d<=0;result_available<=0;child_zeroize_req<=1;child_done_seen<=child_done_seen|child_zeroize_done;if(&(child_done_seen|child_zeroize_done))begin zeroize_busy<=0;zeroize_done<=1;child_zeroize_req<=0;child_done_seen<=0;end end
   else begin
    done<=0;
    if(ws_rd_req)load_idx_d<=transfer_idx;

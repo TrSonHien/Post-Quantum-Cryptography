@@ -153,13 +153,73 @@
             "dedicated_tb": "tb/block/tb_m6_sampler_zeroize.v",
             "checked_element_count": 8,
             "status": "PASS"
+        },
+        {
+            "inventory_id": "MOD-NMUL/BAR",
+            "module": "mod_mul_normal_pipe/barrett_reduce_pipe",
+            "state_identifier": "normal_product_and_barrett_registered_payload_stages",
+            "expected_element_count": 11,
+            "scrub_mechanism": "direct_clear_and_child_ack",
+            "dedicated_tb": "tb/unit/tb_arithmetic_pipeline_zeroize.v",
+            "checked_element_count": 11,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "P-REDUCE",
+            "module": "poly_reduce_pipe",
+            "state_identifier": "even_odd_input_arrays_result_workspace_and_barrett_lane_payload",
+            "expected_element_count": 516,
+            "scrub_mechanism": "parallel_two_array_address_scan_and_three_child_ack_join",
+            "dedicated_tb": "tb/block/tb_poly_reduce_pipe.v",
+            "checked_element_count": 516,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "M7-ADAPTER-HIERARCHY",
+            "module": "poly_transform_pipe/polyvec_elementwise_pipe/poly_binary_pipe/poly_basemul_pipe/polyvec_basemul_acc_pipe",
+            "state_identifier": "workspace_transform_bank_basemul_and_add_child_propagation",
+            "expected_element_count": 11,
+            "scrub_mechanism": "child_zeroize_request_and_ack_join",
+            "dedicated_tb": "tb/block/tb_m7_kpke_zeroize.v",
+            "checked_element_count": 11,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "M7-SAMPLER-PARENTS",
+            "module": "kpke_noise_vector_sampler/kpke_matrix_row_sampler",
+            "state_identifier": "seed_rho_and_nested_noise_service_staging",
+            "expected_element_count": 5,
+            "scrub_mechanism": "direct_clear_and_child_ack",
+            "dedicated_tb": "tb/block/tb_m7_kpke_zeroize.v",
+            "checked_element_count": 5,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "M7-CONTROLLER-LOCAL",
+            "module": "kpke_keygen/kpke_encrypt/kpke_decrypt",
+            "state_identifier": "all_controller_owned_byte_and_coefficient_arrays",
+            "expected_element_count": 21408,
+            "scrub_mechanism": "fixed_address_local_array_scan",
+            "dedicated_tb": "tb/block/tb_m7_kpke_zeroize.v",
+            "checked_element_count": 21408,
+            "status": "PASS"
+        },
+        {
+            "inventory_id": "M7-CONTROLLER-CHILD-JOIN",
+            "module": "kpke_keygen/kpke_encrypt/kpke_decrypt",
+            "state_identifier": "seven_eleven_and_eight_child_acknowledgements",
+            "expected_element_count": 26,
+            "scrub_mechanism": "per_child_held_request_and_acknowledgement_accumulator",
+            "dedicated_tb": "tb/block/tb_m7_kpke_zeroize.v",
+            "checked_element_count": 26,
+            "status": "PASS"
         }
   ],
   "summary": {
-        "entries_total": 15,
-        "entries_passed": 15,
+        "entries_total": 21,
+        "entries_passed": 21,
     "entries_failed": 0,
-        "checked_element_count": 3000,
+        "checked_element_count": 24977,
     "inventory_complete": false
   }
 }

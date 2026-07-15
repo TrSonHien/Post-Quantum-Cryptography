@@ -3,7 +3,7 @@ module tb_poly_binary_pipe #(parameter OP_SUB=0,parameter VECTOR_FILE="sim/outpu
  initial if($test$plusargs("DEBUG_WAVES"))begin $dumpfile(OP_SUB?"sim/waves/tb_poly_sub_pipe.vcd":"sim/waves/tb_poly_add_pipe.vcd");$dumpvars(0,tb_poly_binary_pipe);end
  reg clk=0,rst_n=0,load_begin=0,load_operand=0,a_load_we=0,b_load_we=0,start=0,result_req=0,result_release=0;
  reg[1:0]load_domain=0;reg[7:0]a_load_idx=0,b_load_idx=0,result_idx=0;reg[11:0]a_load_coeff=0,b_load_coeff=0;
- wire load_ready,busy,done,error,result_valid,result_complete;wire[11:0]result_coeff;wire[1:0]result_domain;
+ wire load_ready,busy,done,error,result_valid,result_complete;wire[11:0]result_coeff;wire[1:0]result_domain;wire zeroize_busy,zeroize_done;reg zeroize_req=0;
  reg[11:0]mem[0:24575];integer vec,i,checks=0,failures=0,cycles;reg[1:0]d;string vector_file;
  generate if(OP_SUB) poly_sub_pipe dut(.*); else poly_add_pipe dut(.*); endgenerate
  always #5 clk=~clk;

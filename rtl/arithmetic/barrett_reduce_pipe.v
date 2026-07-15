@@ -26,7 +26,8 @@ module barrett_reduce_pipe (
     input  wire        in_valid,
     input  wire [31:0] a,
     output reg         out_valid,
-    output reg  [11:0] r
+    output reg  [11:0] r,
+    input wire zeroize_req,output reg zeroize_busy,output reg zeroize_done
 );
 
     // Stage 1 registers
@@ -49,14 +50,19 @@ module barrett_reduce_pipe (
     // Stage 1 Logic
     always @(posedge clk) begin
         if (!rst_n) begin
-            val_d1 <= 1'b0;
+            val_d1 <= 1'b0;zeroize_busy<=0;zeroize_done<=0;
+        end else if((zeroize_req===1'b1)&&!zeroize_busy)begin
+            val_d1<=0;zeroize_busy<=1;zeroize_done<=0;
+        end else if(zeroize_busy)begin
+            val_d1<=0;zeroize_busy<=0;zeroize_done<=1;
         end else begin
-            val_d1 <= in_valid;
+            val_d1 <= in_valid;zeroize_done<=0;
         end
     end
 
     always @(posedge clk) begin
-        if (in_valid) begin
+        if ((zeroize_req===1'b1)||zeroize_busy)begin prod1<=0;a_d1<=0;end
+        else if (in_valid) begin
             prod1 <= a * 37'd84552411147;
             a_d1  <= a;
         end
@@ -68,13 +74,16 @@ module barrett_reduce_pipe (
     always @(posedge clk) begin
         if (!rst_n) begin
             val_d2 <= 1'b0;
+        end else if((zeroize_req===1'b1)||zeroize_busy)begin
+            val_d2<=0;
         end else begin
             val_d2 <= val_d1;
         end
     end
 
     always @(posedge clk) begin
-        if (val_d1) begin
+        if ((zeroize_req===1'b1)||zeroize_busy)begin prod2<=0;a_d2<=0;end
+        else if (val_d1) begin
             prod2 <= quotient * 33'd3329;
             a_d2  <= a_d1;
         end
@@ -89,13 +98,16 @@ module barrett_reduce_pipe (
     always @(posedge clk) begin
         if (!rst_n) begin
             out_valid <= 1'b0;
+        end else if((zeroize_req===1'b1)||zeroize_busy)begin
+            out_valid<=0;
         end else begin
             out_valid <= val_d2;
         end
     end
 
     always @(posedge clk) begin
-        if (val_d2) begin
+        if ((zeroize_req===1'b1)||zeroize_busy)r<=0;
+        else if (val_d2) begin
             r <= r_next;
         end
     end
@@ -103,7 +115,7 @@ module barrett_reduce_pipe (
     // Simulation assertions
     // synopsys translate_off
     always @(posedge clk) begin
-        if (val_d2) begin
+        if (val_d2 && !zeroize_busy && zeroize_req!==1'b1) begin
             if (prod2 > a_d2) begin
                 $display("ASSERTION FAILED in barrett_reduce_pipe: quotient*q (%0d) > a (%0d)", prod2, a_d2);
                 $fatal(1);

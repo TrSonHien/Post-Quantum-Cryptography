@@ -6,6 +6,6 @@ module poly_sub_pipe(
     output wire load_ready,input wire start,output wire busy,output wire done,output wire error,
     input wire result_req,input wire [7:0] result_idx,output wire result_valid,
     output wire [11:0] result_coeff,output wire [1:0] result_domain,
-    output wire result_complete,input wire result_release);
+    output wire result_complete,input wire result_release,input wire zeroize_req,output wire zeroize_busy,output wire zeroize_done);
     poly_binary_pipe #(.OP_SUB(1)) impl(.*);
 endmodule

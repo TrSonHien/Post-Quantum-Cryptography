@@ -2,11 +2,12 @@
 module tb_poly_reduce_pipe;
     initial if($test$plusargs("DEBUG_WAVES")) begin $dumpfile("sim/waves/tb_poly_reduce_pipe.vcd"); $dumpvars(0,tb_poly_reduce_pipe); end
     reg clk=0, rst_n=0, load_begin=0, load_we=0, start=0;
-    reg result_req=0, result_release=0;
+    reg result_req=0, result_release=0, zeroize_req=0;
     reg [1:0] load_domain=0;
     reg [7:0] load_idx=0, result_idx=0;
     reg [31:0] load_coeff=0;
     wire load_ready, busy, done, error, result_valid, result_complete;
+    wire zeroize_busy,zeroize_done;
     wire [11:0] result_coeff;
     wire [1:0] result_domain;
     reg [31:0] inputs[0:8191];
@@ -75,6 +76,16 @@ module tb_poly_reduce_pipe;
         load_vector(1,1); start=1; @(negedge clk); start=0; cycles=0;
         while(!done && cycles<300) begin @(negedge clk); cycles=cycles+1; end
         if(!done) $fatal(1,"reduce restart watchdog");
+        result_release=1;@(negedge clk);result_release=0;
+        for(i=0;i<128;i=i+1)begin dut.even_mem[i]=32'h1000+i;dut.odd_mem[i]=32'h2000+i;dut.ws_r.bank_even[i]=12'h321;dut.ws_r.bank_odd[i]=12'h322;end
+        dut.lane0.prod1=69'h12345;dut.lane0.a_d1=32'h23456;dut.lane1.prod2=33'h34567;dut.lane1.a_d2=32'h45678;
+        zeroize_req=1;@(negedge clk);zeroize_req=0;cycles=0;
+        while(!zeroize_done&&cycles<300)begin @(negedge clk);cycles=cycles+1;end
+        if(!zeroize_done||zeroize_busy||cycles<129)$fatal(1,"reduce zeroize watchdog/premature done cycles=%0d",cycles);
+        for(i=0;i<128;i=i+1)begin checks=checks+4;if(dut.even_mem[i]!==0||dut.odd_mem[i]!==0||dut.ws_r.bank_even[i]!==0||dut.ws_r.bank_odd[i]!==0)$fatal(1,"reduce scrub location i=%0d",i);end
+        checks=checks+4;if(dut.lane0.prod1!==0||dut.lane0.a_d1!==0||dut.lane1.prod2!==0||dut.lane1.a_d2!==0)$fatal(1,"reduce lane scrub");
+        load_vector(2,1);start=1;@(negedge clk);start=0;cycles=0;while(!done&&cycles<300)begin@(negedge clk);cycles=cycles+1;end
+        if(!done||error)$fatal(1,"reduce clean restart after zeroize");
         $display("POLY_REDUCE vectors=32 checks=%0d cycles=%0d",checks,cycles);
         if(failures) $fatal(1,"reduce control failure");
         $display("PASS tb_poly_reduce_pipe");
