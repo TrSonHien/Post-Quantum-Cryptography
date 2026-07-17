@@ -21,6 +21,13 @@ Thumbs.db
 .codex/
 .agents/workflows/
 
+# Local AI/session handoff material.  These files are intentionally available
+# in the development worktree but are not published with the public project.
+AGENTS.md
+Roadmap.md
+Raodmap.md
+TODO.md
+
 # ----------------------------------------------------------------------
 # Python/C reference-model scratch artifacts
 # ----------------------------------------------------------------------
