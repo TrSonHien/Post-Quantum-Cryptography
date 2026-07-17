@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 `include "kyber_params.vh"
 
 // -----------------------------------------------------------------------------
@@ -33,45 +33,58 @@
 //   - It does not access memory.
 //   - It does not perform basemul.
 // -----------------------------------------------------------------------------
+/*
+ * Module: poly_basemul_addr_gen
+ * Status: WRAPPER_OR_ADAPTER
+ * Purpose: Polynomial/polyvec workspace, transform adapter, or arithmetic controller.
+ * Standard role: FIPS 203 polynomial/polyvec support.
+ * Input representation: NORMAL/NTT coefficient domain as named by ports.
+ * Output representation: NORMAL/NTT coefficient domain as named by ports.
+ * Interface: valid-only pipeline as declared.
+ * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
+ * State ownership: owns control and/or pipeline registers.
+ * Submodules: none (leaf).
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
 
-module poly_basemul_addr_gen #(
-    parameter ADDR_WIDTH = `KYBER_N_WIDTH
-)(
-    input  wire clk,
-    input  wire rst_n,
+module poly_basemul_addr_gen
+    #(
+        parameter ADDR_WIDTH = `KYBER_N_WIDTH)
+    (
+        input wire clk,
+        input wire rst_n,
 
-    input  wire start,
+        input wire start,
 
-    output wire valid,
-    output reg  busy,
-    output reg  done,
+        output wire valid,
+        output reg busy,
+        output reg done,
 
-    output wire [ADDR_WIDTH-1:0] a_addr0,
-    output wire [ADDR_WIDTH-1:0] a_addr1,
-    output wire [ADDR_WIDTH-1:0] b_addr0,
-    output wire [ADDR_WIDTH-1:0] b_addr1,
-    output wire [ADDR_WIDTH-1:0] r_addr0,
-    output wire [ADDR_WIDTH-1:0] r_addr1,
+        output wire [ADDR_WIDTH - 1 : 0] a_addr0,
+        output wire [ADDR_WIDTH - 1 : 0] a_addr1,
+        output wire [ADDR_WIDTH - 1 : 0] b_addr0,
+        output wire [ADDR_WIDTH - 1 : 0] b_addr1,
+        output wire [ADDR_WIDTH - 1 : 0] r_addr0,
+        output wire [ADDR_WIDTH - 1 : 0] r_addr1,
 
-    output wire [6:0] zeta_addr,
-    output wire       zeta_neg,
+        output wire [6 : 0] zeta_addr,
+        output wire zeta_neg,
 
-    output wire [6:0] op_index
-);
+        output wire [6 : 0] op_index);
 
-    localparam [6:0] LAST_OP = 7'd127;
+    localparam [6 : 0] LAST_OP = 7'd127;
 
-    reg [6:0] op_reg;
+    reg [6 : 0] op_reg;
 
-    wire [5:0]            group_i;
-    wire                  is_odd;
-    wire [ADDR_WIDTH-1:0] base_addr;
+    wire [5 : 0] group_i;
+    wire is_odd;
+    wire [ADDR_WIDTH - 1 : 0] base_addr;
 
-    assign valid    = busy;
+    assign valid = busy;
     assign op_index = op_reg;
 
-    assign group_i = op_reg[6:1];
-    assign is_odd  = op_reg[0];
+    assign group_i = op_reg[6 : 1];
+    assign is_odd = op_reg[0];
 
     // base_addr = 4 * group_i
     assign base_addr = {group_i, 2'b0};
@@ -86,23 +99,23 @@ module poly_basemul_addr_gen #(
     assign r_addr1 = a_addr1;
 
     assign zeta_addr = 7'd64 + group_i;
-    assign zeta_neg  = is_odd;
+    assign zeta_neg = is_odd;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             op_reg <= 7'd0;
-            busy   <= 1'b0;
-            done   <= 1'b0;
+            busy <= 1'b0;
+            done <= 1'b0;
         end else begin
             done <= 1'b0;
 
             if (start && !busy) begin
                 op_reg <= 7'd0;
-                busy   <= 1'b1;
+                busy <= 1'b1;
             end else if (busy) begin
                 if (op_reg == LAST_OP) begin
-                    busy   <= 1'b0;
-                    done   <= 1'b1;
+                    busy <= 1'b0;
+                    done <= 1'b1;
                     op_reg <= 7'b0;
                 end else begin
                     op_reg <= op_reg + 1'b1;
@@ -110,5 +123,4 @@ module poly_basemul_addr_gen #(
             end
         end
     end
-
 endmodule
