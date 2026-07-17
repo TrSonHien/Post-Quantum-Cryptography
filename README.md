@@ -14,7 +14,8 @@ The RTL is being built and verified incrementally. Passing unit/block tests are 
 
 ## Current Milestone
 
-M7: deterministic K-PKE KeyGen, Encrypt, and Decrypt closure; M8 entry-ready
+M8 academic functional baseline complete; M9 validation and synthesis remain
+pending
 
 ## Current Scope
 
@@ -88,6 +89,8 @@ The `pd/` directory is intentionally left as a placeholder for later manual use.
 
 ## Current Next Target
 
-Begin M8 architecture audit for ML-KEM internal/public control while preserving
-the frozen deterministic M7 K-PKE boundary. M2.3b server synthesis and final
-authoritative NIST CAVP/ACVP validation remain pending.
+Begin M9 authoritative-vector preparation and a later manual full-project
+regression. M2.3b server synthesis and final authoritative NIST CAVP/ACVP
+validation remain pending. The M8 baseline has selected M8-local secret-state
+clearing and control invalidation; it does not claim exhaustive lower-datapath
+physical destruction or side-channel resistance.

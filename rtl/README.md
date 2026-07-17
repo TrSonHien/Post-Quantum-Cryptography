@@ -41,5 +41,8 @@ M4 polynomial/polyvec RTL:
   arithmetic, transforms, and exact MultiplyNTTs accumulation.
 
 M5 Keccak/SHA3/SHAKE, M6 codec/sampler, and deterministic M7 K-PKE standalone
-controllers are implemented and differentially verified. M8 ML-KEM control is
-not implemented.
+controllers are implemented and differentially verified. M8 internal/public
+controllers and the typed top form an academic functional baseline with
+reduced Python differential regressions. Selected M8-local secret state is
+explicitly cleared; exhaustive lower-datapath physical destruction and
+side-channel hardening are deferred.

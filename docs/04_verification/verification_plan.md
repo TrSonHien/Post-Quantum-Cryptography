@@ -50,3 +50,12 @@ noncanonical ek/dk decoding and arbitrary ciphertext processing. Expected
 values come from
 the unchanged independent FIPS-first Python model. This is not final NIST
 CAVP/ACVP validation.
+
+## M8 academic functional verification
+
+M8 uses deterministic `mlkem-vector-v1` data from the unchanged independent
+Python model. The academic functional suite covers exact DK layout, EK modulus
+and DK hash checks, fixed 1088/32 compare/select work, exact implicit-rejection
+K, reduced indexed internal vectors, two public RBG chains, basic failure
+handling, reset/restart, and M7 preservation. This is basic differential
+verification, not final NIST CAVP/ACVP validation or a side-channel claim.

@@ -613,9 +613,11 @@ keygen_top.v
 
 ## Phase 8 — Encaps RTL Integration
 
-**Status: entry-ready, not started.** M8 covers final ML-KEM KeyGen, Encaps,
-Decaps, input checking, implicit rejection, and top-level security policy; none
-is implemented by M7.
+**Status: academic functional baseline complete.** M8 covers final ML-KEM
+KeyGen, Encaps, Decaps, input checking, implicit rejection, and top-level
+control. Basic differential and end-to-end verification are complete; exhaustive
+security hardening, authoritative CAVP/ACVP validation, and synthesis remain
+future work.
 
 **Estimated time:** 2 months
 

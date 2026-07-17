@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M7 deterministic K-PKE complete; M8 architecture is entry-ready, not started
+M8 academic functional baseline complete
 
 ## Completed
 
@@ -66,14 +66,21 @@ M7 deterministic K-PKE complete; M8 architecture is entry-ready, not started
 - M7.0-M7.6 FIPS Algorithms 13--15, matrix/transpose and nonce orchestration,
   deterministic KeyGen/Encrypt/Decrypt, independent differential and chained
   roundtrip verification, protocol/reset closure, and M8 handoff (completed).
+- M8.0 architecture, deterministic/public API, record, input-check, and
+  zeroization-policy freeze (completed at `54910f6`).
+- M8.1--M8.6 academic functional integration: internal/public KeyGen, Encaps,
+  Decaps, unified top, external RBG handling, basic public input checks,
+  implicit rejection, reduced Python differential verification, and restart
+  coverage.
 
 ## In Progress
 
 - M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
+- M9 authoritative-vector and expanded validation planning.
 
 ## Blocked By
 
-- None
+- None for the academic M8 functional milestone.
 
 ## Latest Failing Test
 
@@ -81,8 +88,17 @@ None
 
 ## Next Target
 
-M8 ML-KEM architecture audit only; M8 functional RTL is not started. M2.3b
-server ASIC synthesis and final CAVP/ACVP ML-KEM verification remain pending.
+Prepare M9 authoritative-vector validation and leave the optional full-project
+regression for a manual overnight run. M2.3b server synthesis and final
+CAVP/ACVP verification remain pending.
+
+## M8 Baseline Limitations
+
+The current academic RTL baseline provides control-state invalidation and
+selected explicit secret-state clearing. Exhaustive physical destruction of all
+retained lower-level datapath state is deferred to a future security hardening
+milestone. Full side-channel resistance is not established; exhaustive long-run
+regression, final NIST CAVP/ACVP validation, and M2.3b synthesis are pending.
 
 ## Current Focus
 

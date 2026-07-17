@@ -42,3 +42,14 @@ Pass requires every focused M7 program, primitive-boundary cases, deterministic
 regeneration, full M6/M5/M4/M3 preservation, Python tests, clean temporary
 cleanup, and the final
 `M7_REGRESSION_STATUS=PASS` machine-readable summary.
+
+## M8 regression tiers
+
+`run_m8_smoke.sh` runs nine M8 unit/block smoke programs with a hard timeout.
+`run_m8_regression.sh` is nonrecursive and runs smoke; 2 KeyGen_internal, 2
+Encaps_internal, 4 valid Decaps_internal, and 4 fallback cases; 2 public
+chains; public input checks; deterministic-vector reproduction; and one M7
+decrypt sanity test. Defaults may be overridden with `M8_KEYGEN_VECTORS`,
+`M8_ENCAPS_VECTORS`, `M8_DECAPS_VECTORS`, `M8_FALLBACK_VECTORS`, and
+`M8_PUBLIC_CHAINS`. `run_full_project_regression.sh` remains optional and is
+reserved for a later manual overnight/M9 run.

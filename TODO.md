@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M7 deterministic K-PKE complete; M8 architecture entry-ready, not started
+M8 academic functional baseline complete
 
 ## Completed
 
@@ -63,6 +63,9 @@ M7 deterministic K-PKE complete; M8 architecture entry-ready, not started
 - [x] M7.5 standalone differential and chained K-PKE roundtrip verification
 - [x] M7.6 unified regression, architecture closure, and M8 handoff
 - [x] M8.0 ML-KEM architecture, public/internal boundary, and security freeze
+- [x] M8.1--M8.6 academic functional ML-KEM-768 baseline: internal/public
+  KeyGen, Encaps, Decaps, unified top, basic input checks, implicit rejection,
+  external RNG interface, and reduced Python differential verification
 
 ## In Progress
 
@@ -70,13 +73,13 @@ M7 deterministic K-PKE complete; M8 architecture entry-ready, not started
 
 ## Blocked By
 
-- None
+- None for the academic M8 functional completion gate.
 
 ## Next Target
 
-M8.1 key layout, public input-check, constant-work compare/select, and physical
-zeroization primitives, with M2.3b server ASIC synthesis still pending. Final
-NIST CAVP/ACVP ML-KEM vector verification remains pending.
+Prepare M9 authoritative-vector validation and optionally run the full-project
+regression manually overnight. M2.3b server ASIC synthesis and final NIST
+CAVP/ACVP ML-KEM verification remain pending.
 
 ## Current Focus
 
@@ -113,6 +116,182 @@ are comparison/reference variants only.
 The original `thoughts.txt` was preserved as `archive/thoughts.txt`. It contains early PQC hardware notes, including broader ML-DSA ideas. Current repository scope is ML-KEM-768 unless the project direction changes explicitly.
 
 ## Session Log
+
+### 2026-07-17 M8 Academic Functional Baseline
+
+Requested: continue the intentional dirty M8 WIP on branch `test`, retain the
+existing controllers and useful zeroize work, close the reduced academic M8
+functional target, and avoid exhaustive lower-datapath security hardening.
+
+Changed: preserved the existing M8 WIP; audited internal/public controllers and
+top; made indexed Python vectors real TB inputs; added a structured vector and
+begin/middle/end deterministic ciphertext mutations; changed internal/public
+chain defaults to 2/2/4/4/2; added vector progress and hard bounded runner
+control; made the M8 functional regression nonrecursive; and synchronized M8
+status, regression, handoff, and limitation documentation.
+
+Commands run: shell syntax and JSON validation; `run_mlkem_internal_chain.sh`;
+`run_mlkem_public_chain.sh`; `run_m8_regression.sh`; `run_m8_smoke.sh`; plus
+the final `git diff --check` planned before commit. The optional
+`run_full_project_regression.sh` was not run.
+
+Verified: internal KeyGen 2/2 EK/DK byte-exact versus Python; internal Encaps
+2/2 K/c byte-exact; valid Decaps 4/4; exact implicit-rejection fallback 4/4
+with full 1088-byte compare and 32-byte select; public chains 2/2; public
+input/RNG checks; reset/restart and selected M8-local zeroize checks; smoke
+9/9 in 61 seconds; functional regression 7/7 in 556 seconds.
+
+Limitations: the current academic RTL baseline provides control-state
+invalidation and selected explicit secret-state clearing. Exhaustive physical
+destruction of all retained lower-level datapath state, comprehensive
+side-channel hardening, exhaustive regression, authoritative CAVP/ACVP
+validation, and synthesis closure remain future work. M2.3b is pending.
+
+## Next Session Start Here
+
+1. Start with `reports/m8_completion_report.md` and
+   `docs/04_design/m8_to_m9_handoff.md`.
+2. Treat M8 as the academic functional baseline; do not infer production-grade
+   zeroization, side-channel resistance, synthesis, Fmax, or CAVP/ACVP status.
+3. For M9, import authoritative vectors and schedule the optional full-project
+   regression manually; keep M2.3b as a separate server-synthesis task.
+
+### 2026-07-15 M8 Development Integration (Closure Blocked)
+
+Requested: autonomously implement and close M8.0--M8.6 with deterministic
+internal ML-KEM, entropy-fed public APIs, mandatory checks, implicit rejection,
+physical destruction, typed top, tiered regressions, commits, and M9 handoff.
+
+Changed: committed M8.0 architecture/security documents as `54910f6`; added
+M8 byte/layout/check/compare/zeroize primitives; deterministic KeyGen/Encaps/
+Decaps internal controllers; public wrappers; unified top; Python vector
+generator; focused TBs/runners; three regression tiers; backward-compatible
+`RUN_LOWER_REGRESSIONS` switches; and development reports. Replaced the legacy
+placeholder system TB. M2--M7 functional outputs and Python/C semantics were
+not changed.
+
+Commands run: startup path/branch/status/log/stash/worktree/process/artifact
+audit; deterministic two-directory vector diff; every new focused runner;
+`run_m8_smoke.sh`; `run_m8_regression.sh`; shell syntax checks; and repeated
+`git diff --check`. Full-project closure was not run.
+
+Verified: smoke PASS 9/9, 28,241 checks, 54 seconds. Focused PASS 17/17,
+339,193 checks, 90,463 byte comparisons, 3 valid-Decaps cases, 7 rejection/
+mismatch cases, and 32,331 M8-owned scrub checks in 496 seconds. One actual
+public KeyGen-to-Encaps-to-Decaps top chain matches Python. Compare/select is
+exactly 1,088/32 iterations and exact modified-ciphertext fallback K passes.
+Standalone M7 KeyGen/Encrypt/Decrypt preservation passes.
+
+Remains: reused M5--M7 child payload lacks a physical scrub path; required
+12/16/32/8 closure vector counts and full reset/protocol matrices are not met;
+the full project regression and M8.1--M8.6 commits were intentionally withheld.
+M2.3b and final authoritative CAVP/ACVP remain pending.
+
+Next Session Start Here: read `reports/m8_completion_report.md`,
+`reports/m8_0_mlkem_audit.md`, and `docs/04_design/mlkem_zeroization_policy.md`;
+start by designing minimal zeroize interfaces through M5 H/G/J and the actual
+M7 child workspaces without changing functional outputs, add independent
+hierarchical scrub tests, then rerun `sim/scripts/run_m8_regression.sh`.
+
+### 2026-07-15 M8 WIP Preservation and Scrub Audit Continuation
+
+Requested: preserve the dirty M8 baseline at `54910f6`, create an external
+safety snapshot, reproduce smoke/focused claims, audit exact completion state,
+and resolve physical scrub without changing functional outputs or treating
+reset as erasure.
+
+Changed: created `/tmp/mlkem_m8_wip_20260715_233000`; added explicit zeroize
+ports through M5 H/G/J, hash stream, sponge, and permutation state; added
+controller-owned sequential scrub interfaces to M7 KeyGen/Encrypt/Decrypt;
+added M5/M7 zeroize and reset-semantics TBs/runners; propagated child scrub
+completion through M8 internals; strengthened unified-top idle/active-zeroize
+and restart tests; updated regression membership and the M8 audit/policy/report.
+
+Commands run: repository/status/process audit and snapshot commands;
+`git diff --check`; M8 smoke/focused; M5 and M7 focused regressions; standalone
+M7 KeyGen/Encrypt/Decrypt; M4 focused regression; M5/M7 zeroize tests; reset
+payload-retention test; H/G/J regression; and unified-top test. All simulations
+used runner timeouts/watchdogs and temporary build directories.
+
+Verified: the untouched baseline reproduced smoke 9/9 in 53 seconds and
+focused 17/17 in 496 seconds. After changes, smoke remains 9/9; M5 focused is
+16/16 with 125,412 checks; M7 focused is 11/11 with 497,724 checks; M4 is
+26/26 with 316,935 checks. M5 clears 19,200 sponge/permutation state bits and
+M7 controller arrays clear 21,408 locations. Reset retains payload while
+invalidating control, so it is not counted as physical erasure.
+
+The final corrected focused rerun intentionally remains FAIL at unified-top
+explicit zeroize (`tb/system/tb_mlkem768_top.v:18`): the top pulses private
+reset for one cycle, and correct reset semantics retain `mlkem_keygen.entropy`.
+The same missing explicit-abort/scrub propagation affects public Encaps/Decaps
+and their internal/M7 child hierarchies. This is the first mandatory failure.
+
+Remains: M7 child `poly_workspace` banks, NTT/INTT ping-pong/preload storage,
+fixed-delay payload stages, and codec/sampler payload still lack a complete
+explicit scrub path. Public-wrapper and internal-controller explicit zeroize
+must replace the rejected private-reset shortcut. Current vector-count control regenerates multiple JSON
+vectors but RTL TBs consume only `smoke_*`; required internal/public chain TBs
+and M8.6 full-project closure are absent. No M8.1--M8.6 commit was made because
+the physical-scrub gate remains open.
+
+## Next Session Start Here
+
+1. Preserve `/tmp/mlkem_m8_wip_20260715_233000` and the current dirty tree.
+2. Add explicit, independently tested overwrite control through the listed M7
+   child storage without changing normal reset or Algorithms 13--15 outputs.
+3. Fix vector-count consumption and add internal/public chain TBs before the
+   one permitted nonrecursive full-project regression.
+
+### 2026-07-16 M8 Hierarchical Zeroization Bottom-Up Closure (Partial)
+
+Requested: persist the M8 safety snapshot, freeze every retained-state owner
+and one explicit zeroize protocol, then close physical destruction bottom-up
+without changing mathematical outputs or using reset as erasure.
+
+Changed: confirmed the durable snapshot at
+`/home/hien/Backups/mlkem_m8_wip_20260715_233000`; added the retained-state
+inventory, zeroize implementation plan, and partial machine-readable coverage
+manifest; added explicit owner-level scrub to polynomial/polyvec workspaces,
+fixed-delay and arithmetic pipelines, NTT/INTT banks/preload/pipeline children,
+and M5 H/G/J services. Added focused zeroize tests/runners for every completed
+owner. Began M6 PRF/XOF child propagation; codec/sampler propagation remains
+uncommitted and incomplete.
+
+Commands run: startup/status/process and persistent-snapshot checks;
+elaboration-based retained-state inventory; all new focused zeroize runners;
+ordinary modular arithmetic, butterfly, scaler, NTT, INTT, H/G/J, PRF, and XOF
+runners; nonrecursive M3, M4, and M5 focused regressions; JSON validation;
+`git diff --check`; explicit staged-diff reviews; and isolated commits.
+
+Verified: 50 state-owner types, 449 elaborated instances, 4,190 state objects,
+and 1,020,266 retained bits have identified ownership with zero unresolved
+owners. The partial manifest has 8 passing entries and 2,902 explicitly
+checked elements. Workspace scrub is fixed at 130 cycles and polyvec scrub at
+132; four NTT banks scrub 512 locations in 130 cycles. Combined NTT/INTT scrub
+and restart passes 1,314 checks over 1,284 inspected locations. M3 passes 22/22
+with 361,656 checks; M4 passes 26/26 with 316,935 checks; M5 passes 16/16 with
+125,520 checks, including 123 focused zeroize checks and a clean SHA3 restart.
+PRF/XOF ordinary vectors and a 32-check reset-interrupt zeroize test pass.
+
+Commits created:
+
+- `76e885a security(storage): scrub workspaces and transform state`
+- `2ca09b5 security(m5): add verified physical zeroize to Keccak services`
+
+Remains: finish M6 codec, CBD, noise, SampleNTT/parser, and transform-adapter
+zeroization; run the complete M6 focused tier; propagate acknowledgements
+through M7 controllers; then close M8 internal/public/top automatic, explicit,
+abort, and mandatory boot scrub. Do not run full-project closure until those
+gates pass. M2.3b and authoritative CAVP/ACVP validation remain pending.
+
+## Next Session Start Here
+
+1. Preserve the dirty M8 tree and both safety snapshots; do not reset or clean.
+2. Continue at M6 storage owners: `sample_poly_cbd_pipe`, codec staging,
+   `mlkem_noise_sampler`, `sample_ntt_parser`, and `mlkem_sample_ntt`.
+3. Run each new zeroize unit, its ordinary oracle, then nonrecursive M6 focused.
+4. Do not mark M7 or M8 scrub complete until every child acknowledgement and
+   manifest entry is covered.
 
 ### 2026-07-13 M7.0-M7.6 Deterministic K-PKE Closure
 
