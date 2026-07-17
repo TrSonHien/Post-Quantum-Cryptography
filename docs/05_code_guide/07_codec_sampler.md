@@ -41,6 +41,17 @@ FIPS 203 byte encoding, decoding, compression, or format support
 - Treat named domain signals as authoritative; NORMAL and NTT are distinct representations.
 - Fixed cycle counts are stated only where the implementation contract proves them; controllers otherwise use done/busy completion.
 
+### Dependency graph, representations, and reading order
+
+Read bit/byte primitives, coefficient codecs, poly/polyvec codecs, then CBD,
+noise, and SampleNTT.  Encodings are LSB-first coefficient encodings and
+low-byte-first stream words; sampler outputs are explicitly NORMAL or NTT as
+named by each port.  Codec and sampler controllers own their local shift,
+count, and output holding state until valid/ready completion.  Active modules
+are identified in the catalog because compatibility format wrappers also
+remain.  Use M6 regression and the named block runners; SampleNTT is not
+described here as constant-time.
+
 ## sampler
 
 ### Purpose

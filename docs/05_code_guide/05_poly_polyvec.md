@@ -39,3 +39,14 @@ FIPS 203 polynomial/polyvec operation support
 - Use the module catalog for parents, children, domain, handshake, state ownership, TB, and runner links.
 - Treat named domain signals as authoritative; NORMAL and NTT are distinct representations.
 - Fixed cycle counts are stated only where the implementation contract proves them; controllers otherwise use done/busy completion.
+
+### Dependency graph, ownership, and reading order
+
+Read `poly_workspace`/`polyvec_workspace`, binary/reduce pipes, transforms,
+basecase multiplication, then polyvec controllers.  These controllers own
+coefficient arrays and change their NORMAL/NTT ownership only after child
+completion and result drain.  The `*_pipe` implementations are active;
+non-pipe helpers remain for legacy paths and focused tests.  Follow begin,
+load, start, wait, read/drain, release phases and the matching M4 runners in
+the catalog.  A common error is reading an output before the registered-valid
+drain phase has completed.

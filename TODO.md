@@ -4000,3 +4000,54 @@ post-layout, or CAVP/ACVP claim was made.
    a synthesis server for `synth/m9/run_genus.sh` and the M2.3b sweep.
 3. Keep production security hardening, exhaustive regression, authoritative
    CAVP/ACVP validation, and synthesis closure as future work.
+
+### 2026-07-18 RTL readability and architecture-documentation campaign
+
+Requested:
+
+- Create a review-only readability branch from `e4d2418`, format and document
+  the complete synthesizable RTL, classify active versus legacy modules, and
+  preserve every functional Verilog token.
+
+Files changed:
+
+- Added `docs/05_code_guide/` hierarchy, module catalog, reading roadmap,
+  legacy map, and nine subsystem guides.
+- Added structured headers and formatting to all synthesizable RTL modules and
+  the shared parameter include.
+- Added `reports/rtl_readability_campaign.md`.
+- Updated `TODO.md` with this handoff.
+
+Commands run:
+
+- Per-file `/tmp/check_verilog_logic_tokens.py` comparisons against immutable
+  `git show e4d2418` snapshots; final 115/115 PASS.
+- `sim/scripts/run_m2_1_primitives.sh`, `run_m2_2_regression.sh`,
+  `run_m3_regression.sh`, `run_m4_regression.sh`, `run_m5_regression.sh`,
+  `run_m6_regression.sh`, `run_kpke_roundtrip.sh`, and
+  `sim/scripts/run_m9_elaboration.sh`.
+- Deterministic two-run `tb/tools/gen_mlkem_vectors.py` comparison.
+
+Verified:
+
+- Complete hierarchy elaborates; M2/M3/M5/M6 focused regressions and M7
+  roundtrip pass.  Vector reproducibility passes.
+- M4 stops at the pre-existing `tb_poly_transform_pipe` wildcard-port
+  elaboration defect, reproduced unchanged at `e4d2418`.
+- Long M8 Decaps simulation could not complete in the interactive execution
+  channel; release evidence remains smoke 9/9 and functional regression 7/7
+  PASS, and logic token equivalence proves the readability branch has not
+  changed that logic.
+
+Remains to do:
+
+- Manually review `readability/rtl-docs-v0.1`; run full M8 smoke/regression on
+  a normal shell if a fresh end-to-end transcript is required.
+- Fix the M4 testbench wildcard connection only in a separate testbench task.
+
+## Next Session Start Here
+
+1. Read `reports/rtl_readability_campaign.md` and
+   `docs/05_code_guide/rtl_reading_roadmap.md`.
+2. Review the readability branch; do not merge it into `test` automatically.
+3. Preserve the token-equivalence rule for any follow-up comment-only edits.
