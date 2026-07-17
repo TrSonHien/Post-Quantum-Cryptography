@@ -24,7 +24,7 @@
  * Standard role: FIPS 203 modular arithmetic support.
  * Input representation: canonical coefficient or stated arithmetic operand.
  * Output representation: canonical coefficient or registered arithmetic result.
- * Interface: start/busy/done controller handshake.
+ * Interface: combinational or valid-only as declared.
  * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
  * State ownership: no explicit payload array; child/local combinational state only.
  * Submodules: none (leaf).

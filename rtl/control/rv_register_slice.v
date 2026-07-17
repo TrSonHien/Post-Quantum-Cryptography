@@ -6,7 +6,7 @@
  * Standard role: control/pipeline primitive.
  * Input representation: declared payload and control metadata.
  * Output representation: declared payload and control metadata.
- * Interface: valid/ready where named; otherwise local start/busy/done.
+ * Interface: valid/ready handshake as declared.
  * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
  * State ownership: owns control and/or pipeline registers.
  * Submodules: none (leaf).
