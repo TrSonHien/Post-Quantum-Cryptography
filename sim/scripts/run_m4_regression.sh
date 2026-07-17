@@ -23,9 +23,11 @@ test_one poly_reduce 60s 8193 ./sim/scripts/run_poly_reduce_pipe.sh
 test_one poly_ntt 90s 8451 ./sim/scripts/run_poly_ntt_pipe.sh
 test_one poly_intt 90s 8451 ./sim/scripts/run_poly_intt_pipe.sh
 test_one poly_roundtrip 120s 15360 ./sim/scripts/run_poly_ntt_intt_roundtrip.sh
+if [[ "${RUN_LOWER_REGRESSIONS:-1}" != "0" ]]; then
 test_one m3_unified 220s 361656 ./sim/scripts/run_m3_regression.sh
 test_one m2_memory 80s 5417 ./sim/scripts/run_m2_1_primitives.sh
 test_one m2_arithmetic 150s 312935 ./sim/scripts/run_m2_2_regression.sh
+fi
 test_one legacy_poly_add 60s 1024 ./sim/scripts/run_poly_add.sh
 test_one legacy_poly_sub 60s 1024 ./sim/scripts/run_poly_sub.sh
 test_one legacy_basemul 60s 514 ./sim/scripts/run_basemul_unit.sh
@@ -34,8 +36,10 @@ test_one legacy_poly_basemul 60s 768 ./sim/scripts/run_poly_basemul_montgomery.s
 test_one legacy_ntt 60s 512 ./sim/scripts/run_ntt_core.sh
 test_one legacy_intt 60s 768 ./sim/scripts/run_intt_core.sh
 test_one legacy_ntt_roundtrip 60s 1024 ./sim/scripts/run_ntt_intt_roundtrip.sh
+if [[ "${RUN_LOWER_REGRESSIONS:-1}" != "0" ]]; then
 test_one python_selftest 30s 1 python3 -m ref_model.python_model.selftest
 test_one python_foundations 30s 13 python3 -m ref_model.python_model.test_foundations
 test_one python_schema 30s 5 python3 -m ref_model.compare.test_compare_tools
 test_one vector_repro 90s 3 bash -c 'for g in gen_m4_poly_vectors.py gen_m4_3_vectors.py gen_m4_4_vectors.py gen_m4_5_vectors.py;do mkdir -p "$1/$g/a" "$1/$g/b";python3 "tb/tools/$g" --output-dir "$1/$g/a";python3 "tb/tools/$g" --output-dir "$1/$g/b";diff -qr "$1/$g/a" "$1/$g/b";done' _ "$D/repro"
+fi
 summary PASS

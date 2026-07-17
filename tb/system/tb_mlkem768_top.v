@@ -1,5 +1,8 @@
 `timescale 1ns/1ps
-module tb_mlkem768_top;
+`ifndef MLKEM_TOP_TB_MODULE
+`define MLKEM_TOP_TB_MODULE tb_mlkem768_top
+`endif
+module `MLKEM_TOP_TB_MODULE;
  reg clk=0,rst_n=0,cmd_valid=0;reg[1:0]cmd_mode=0;reg in_valid=0,in_last=0;reg[31:0]in_data=0;reg[3:0]in_keep=0;reg[1:0]in_kind=0;reg rng_req_ready=0,rng_data_valid=0,rng_last=0,rng_fail=0;reg[31:0]rng_data=0;reg[3:0]rng_keep=0;reg out_ready=1;
  wire cmd_ready,busy,done,error,in_ready,rng_req_valid,rng_data_ready,out_valid,out_last;wire[15:0]rng_req_len_bytes;wire[31:0]out_data;wire[3:0]out_keep;wire[1:0]out_kind;
  reg[7:0]d[0:31],z[0:31],m[0:31],exp_ek[0:1183],exp_dk[0:2399],exp_c[0:1087],exp_k[0:31],got_ek[0:1183],got_dk[0:2399],got_c[0:1087],got_k[0:31];integer i,w,off,zero_checks=0;
@@ -29,7 +32,7 @@ module tb_mlkem768_top;
   if(dut.de.core.mismatch!==0||dut.de.core.mask!==0||dut.de.core.dc.dk[0]!==0||dut.de.core.ec.m[0]!==0)$fatal(1,"Decaps reject/K-PKE hierarchy not scrubbed");zero_checks=zero_checks+4;
   if(dut.de.core.gc.u.u.u_ctx.state_reg!==0||dut.de.core.jc.u.u.u_ctx.state_reg!==0)$fatal(1,"Decaps G/J hierarchy not scrubbed");zero_checks=zero_checks+2;
  end endtask
- initial begin string dir;repeat(2)tick;rst_n=1;tick;while(!cmd_ready)tick;$display("M8_TOP_PROGRESS boot_scrub_done cycle=%0t",$time);if(!$value$plusargs("VEC_DIR=%s",dir))$fatal;$readmemh({dir,"/smoke_d.mem"},d);$readmemh({dir,"/smoke_z.mem"},z);$readmemh({dir,"/smoke_m.mem"},m);$readmemh({dir,"/smoke_ek.mem"},exp_ek);$readmemh({dir,"/smoke_dk.mem"},exp_dk);$readmemh({dir,"/smoke_c.mem"},exp_c);$readmemh({dir,"/smoke_k.mem"},exp_k);
+ initial begin string dir,pfx;repeat(2)tick;rst_n=1;tick;while(!cmd_ready)tick;$display("M8_TOP_PROGRESS boot_scrub_done cycle=%0t",$time);if(!$value$plusargs("VEC_DIR=%s",dir))$fatal;if(!$value$plusargs("VEC_PREFIX=%s",pfx))pfx="smoke";$readmemh({dir,"/",pfx,"_d.mem"},d);$readmemh({dir,"/",pfx,"_z.mem"},z);$readmemh({dir,"/",pfx,"_m.mem"},m);$readmemh({dir,"/",pfx,"_ek.mem"},exp_ek);$readmemh({dir,"/",pfx,"_dk.mem"},exp_dk);$readmemh({dir,"/",pfx,"_c.mem"},exp_c);$readmemh({dir,"/",pfx,"_k.mem"},exp_k);
   command(0);rng_send(64,0);off=0;while(!done)begin if(out_valid)begin for(i=0;i<4;i=i+1)if(out_kind==0)got_ek[off*4+i]=out_data[i*8+:8];else got_dk[(off-296)*4+i]=out_data[i*8+:8];off=off+1;end tick;end if(error||off!=896)$fatal;for(i=0;i<1184;i=i+1)if(got_ek[i]!==exp_ek[i])$fatal;for(i=0;i<2400;i=i+1)if(got_dk[i]!==exp_dk[i])$fatal;check_kg_zero;$display("M8_TOP_PROGRESS keygen_done cycle=%0t",$time);tick;
   command(1);send_record(0,1184,0);rng_send(32,1);off=0;while(!done)begin if(out_valid)begin for(i=0;i<4;i=i+1)if(out_kind==2)got_k[off*4+i]=out_data[i*8+:8];else got_c[(off-8)*4+i]=out_data[i*8+:8];off=off+1;end tick;end if(error||off!=280)$fatal;for(i=0;i<1088;i=i+1)if(got_c[i]!==exp_c[i])$fatal;check_en_zero;$display("M8_TOP_PROGRESS encaps_done cycle=%0t",$time);tick;
   command(2);send_record(1,2400,1);send_record(2,1088,2);off=0;while(!done)begin if(out_valid)begin for(i=0;i<4;i=i+1)got_k[off*4+i]=out_data[i*8+:8];off=off+1;end tick;end if(error||off!=8)$fatal;for(i=0;i<32;i=i+1)if(got_k[i]!==exp_k[i])$fatal;check_de_zero;$display("M8_TOP_PROGRESS decaps_done cycle=%0t",$time);tick;
