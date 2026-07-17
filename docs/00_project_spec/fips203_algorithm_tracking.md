@@ -100,6 +100,17 @@ Required later before any FIPS-equivalence claim:
 6. Explicit proof or rejection of each legacy C candidate mapping.
 7. Separate invalid-input tests for FIPS encapsulation and decapsulation checks.
 
+## M8 implementation update (2026-07-17)
+
+The M0 table above preserves its original planning-state wording.  Subsequent
+M8 evidence implements and differentially verifies the tracked ML-KEM rows at
+the academic baseline level: `KeyGen_internal` passes 2/2 Python byte-exact
+vectors, `Encaps_internal` 2/2, valid `Decaps_internal` 4/4, and modified
+ciphertext fallback 4/4 with exact `J(z || c)` selection.  Two public
+KeyGen-to-Encaps-to-Decaps chains and the basic public EK/DK/ciphertext/RNG
+checks pass.  This updates implementation status, not the validation authority:
+final NIST CAVP/ACVP vectors and certification remain pending.
+
 ## M0.2 result
 
 The detailed FIPS 203 algorithm tracking register is complete for M0.2 when:
