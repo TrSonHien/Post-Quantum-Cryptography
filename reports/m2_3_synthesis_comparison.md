@@ -8,6 +8,15 @@
 
 *Note: Since no usable synthesis tool or PDK standard-cell library is present on the local workspace, **no synthesis timing data (Fmax, WNS, TNS), gate/cell area, or legacy-to-pipeline improvement ratios are currently available**. Complete reproducible synthesis scripts, wrappers, and constraints are prepared under [synth/m2_3/](file:///home/hien/Projects/Post_Quantum_Cryptography/synth/m2_3/) to be executed on a target server with licensed EDA tools.*
 
+## M9.2 Re-audit (2026-07-17)
+
+`timeout 60s synth/m2_3/run_synth_sweep.sh` was rerun without changing the
+candidate methodology.  It correctly detected the absence of both Yosys and
+Genus and of a configured Liberty library, then exited without starting a
+synthesis job.  M2.3b therefore remains **PARTIAL / ENVIRONMENT-BLOCKED**.
+See `reports/m9_2_m2_3b_completion_report.md` for the exact server command and
+the explicit statement that no timing, area, or selection result is claimed.
+
 ---
 
 ## 2. Pipelined Arithmetic Candidate Architecture & Provisional Selection Matrix
