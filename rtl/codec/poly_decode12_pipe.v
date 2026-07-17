@@ -1,16 +1,16 @@
 `timescale 1ns / 1ps
 /*
  * Module: poly_decode12_pipe
- * Status: LEGACY_OR_SUPERSEDED
- * Purpose: Byte/bit, coefficient, or K-PKE record codec adapter.
- * Standard role: FIPS 203 encoding/decoding support.
- * Input representation: LSB-first coefficient bits, byte stream, or seed as named by ports.
- * Output representation: canonical coefficient, NTT coefficient, or byte stream as named by ports.
- * Interface: valid/ready handshake as declared.
- * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
- * State ownership: no explicit payload array; child/local combinational state only.
+ * Status: ACTIVE_SHARED_LEAF
+ * Purpose: 12-bit polynomial decoder selected by active K-PKE public-key codecs.
+ * Standard role: FIPS 203 decoding support.
+ * Input representation: LSB-first 12-bit coefficient byte stream.
+ * Output representation: canonical coefficients in expected_domain.
+ * Interface: valid/ready stream with busy/done completion.
+ * Latency / completion: variable; completion indicated by done.
+ * State ownership: delegated to byte_decode_poly_pipe.
  * Submodules: byte_decode_poly_pipe.
- * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ * Verification: active K-PKE roundtrip and M8 release regressions.
  */
 module poly_decode12_pipe
     (

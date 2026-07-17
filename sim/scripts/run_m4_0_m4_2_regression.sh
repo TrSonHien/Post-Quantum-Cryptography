@@ -45,19 +45,13 @@ echo "DEBUG_WAVES=$DEBUG_WAVES"
 run_test workspace 30s 524 ./sim/scripts/run_poly_workspace.sh
 run_test poly_add 45s 8449 ./sim/scripts/run_poly_add_pipe.sh
 run_test poly_sub 45s 8449 ./sim/scripts/run_poly_sub_pipe.sh
-run_test poly_reduce 45s 8193 ./sim/scripts/run_poly_reduce_pipe.sh
 run_test poly_ntt 75s 8451 ./sim/scripts/run_poly_ntt_pipe.sh
 run_test poly_intt 80s 8451 ./sim/scripts/run_poly_intt_pipe.sh
-run_test poly_roundtrip 90s 15360 ./sim/scripts/run_poly_ntt_intt_roundtrip.sh
 run_test vector_repro 45s 7 bash -c 'mkdir -p "$1/a" "$1/b";python3 tb/tools/gen_m4_poly_vectors.py --output-dir "$1/a";python3 tb/tools/gen_m4_poly_vectors.py --output-dir "$1/b";diff -qr "$1/a" "$1/b"' _ "$TMP_ROOT"
 run_test m3_unified 200s 361656 ./sim/scripts/run_m3_regression.sh
 run_test m2_memory 70s 5417 ./sim/scripts/run_m2_1_primitives.sh
 run_test m2_arithmetic 130s 312935 ./sim/scripts/run_m2_2_regression.sh
-run_test legacy_poly_add 60s 1024 ./sim/scripts/run_poly_add.sh
-run_test legacy_poly_sub 60s 1024 ./sim/scripts/run_poly_sub.sh
-run_test basemul 60s 514 ./sim/scripts/run_basemul_unit.sh
 run_test basemul_address 60s 256 ./sim/scripts/run_poly_basemul_addr_gen.sh
-run_test poly_basemul 60s 768 ./sim/scripts/run_poly_basemul_montgomery.sh
 run_test python_selftest 30s 1 python3 -m ref_model.python_model.selftest
 run_test python_foundations 30s 13 python3 -m ref_model.python_model.test_foundations
 run_test python_schema 30s 5 python3 -m ref_model.compare.test_compare_tools

@@ -1,16 +1,16 @@
 `timescale 1ns / 1ps
 /*
  * Module: poly_ntt_pipe
- * Status: LEGACY_OR_SUPERSEDED
- * Purpose: Polynomial/polyvec workspace, transform adapter, or arithmetic controller.
+ * Status: ACTIVE_SHARED_LEAF
+ * Purpose: Forward polynomial NTT adapter used by the active polyvec NTT path.
  * Standard role: FIPS 203 polynomial/polyvec support.
- * Input representation: NORMAL/NTT coefficient domain as named by ports.
- * Output representation: NORMAL/NTT coefficient domain as named by ports.
- * Interface: valid/ready handshake as declared.
- * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
- * State ownership: no explicit payload array; child/local combinational state only.
+ * Input representation: NORMAL coefficient domain.
+ * Output representation: NTT coefficient domain.
+ * Interface: busy/done controller with indexed workspace load/result access.
+ * Latency / completion: variable; completion indicated by done.
+ * State ownership: delegated to poly_transform_pipe.
  * Submodules: poly_transform_pipe.
- * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ * Verification: active K-PKE roundtrip and M8 release regressions.
  */
 module poly_ntt_pipe
     (

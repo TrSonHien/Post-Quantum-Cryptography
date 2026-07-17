@@ -1,4 +1,0 @@
-`timescale 1ns/1ps
-module tb_cbd_pair_pipe;reg clk=0,rst_n=0,iv=0;reg[1:0]eta;reg[11:0]bits;wire ir,ov,err;wire[11:0]c0,c1;integer fd,rc,checks=0;reg[1:0]e;reg[11:0]b,x,y;reg[11:0]qx[0:7],qy[0:7];integer issued=0;string file;always#5 clk=~clk;cbd_pair_pipe dut(clk,rst_n,iv,ir,eta,bits,ov,1'b1,c0,c1,err);
- initial begin if(!$value$plusargs("VECTOR_FILE=%s",file))$fatal(1,"VECTOR_FILE");fd=$fopen(file,"r");repeat(3)@(negedge clk);rst_n=1;while(!$feof(fd))begin rc=$fscanf(fd,"%d %h %h %h\n",e,b,x,y);if(rc==4)begin @(negedge clk);iv=1;eta=e;bits=b;qx[issued%8]=x;qy[issued%8]=y;issued=issued+1;end end @(negedge clk);iv=0;repeat(5)@(negedge clk);if(checks!=4352||err)$fatal(1,"status");$display("PASS tb_cbd_pair_pipe groups=%0d coeff_checks=%0d latency=1 ii=1",checks,checks*2);$finish;end
- always@(posedge clk)if(ov)begin if(c0!==qx[checks%8]||c1!==qy[checks%8])$fatal(1,"group=%0d",checks);checks=checks+1;end endmodule

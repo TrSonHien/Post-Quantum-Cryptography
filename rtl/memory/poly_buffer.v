@@ -11,7 +11,7 @@
 //       0 <= coeff < KYBER_Q
 //
 // Purpose:
-//   Used by ntt_core.v and intt_core.v to store r[256].
+//   Retained adapter for compatibility-oriented polynomial storage access.
 //
 // Initial architecture:
 //   - 2 asynchronous read ports
