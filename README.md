@@ -14,8 +14,10 @@ The RTL is being built and verified incrementally. Passing unit/block tests are 
 
 ## Current Milestone
 
-M8 academic functional baseline complete; M9 validation and synthesis remain
-pending
+M9 academic RTL release: functional verification and complete hierarchy
+elaboration are complete.  Technology-mapped synthesis remains
+environment-blocked locally because Yosys, Genus, and a standard-cell Liberty
+library are unavailable.
 
 ## Current Scope
 
@@ -36,6 +38,14 @@ Current verified milestones include:
 - INTT core
 - NTT -> INTT round-trip
 - basemul foundation
+- M8 internal/public ML-KEM KeyGen, Encaps, Decaps, implicit rejection, and
+  reduced Python differential/end-to-end verification
+- M9 complete `mlkem768_top` elaboration with Verilator and Icarus
+
+The academic baseline provides selected M8-local secret clearing and control
+invalidation, not exhaustive lower-datapath physical zeroization or complete
+side-channel hardening.  It has no final authoritative NIST CAVP/ACVP closure.
+No post-layout timing, power, ASIC area, or achieved-Fmax claim is made.
 
 Explicitly excluded from the current phase:
 
@@ -89,8 +99,7 @@ The `pd/` directory is intentionally left as a placeholder for later manual use.
 
 ## Current Next Target
 
-Begin M9 authoritative-vector preparation and a later manual full-project
-regression. M2.3b server synthesis and final authoritative NIST CAVP/ACVP
-validation remain pending. The M8 baseline has selected M8-local secret-state
-clearing and control invalidation; it does not claim exhaustive lower-datapath
-physical destruction or side-channel resistance.
+Run the prepared M2.3b and full-top synthesis scripts on a server with Yosys
+or Genus plus an intended technology library, then import authoritative NIST
+CAVP/ACVP vectors in a later verification milestone.  The optional full-project
+regression remains a manual overnight task.

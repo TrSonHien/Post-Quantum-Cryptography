@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-M8 academic functional baseline complete
+M9 academic RTL release: functionally verified and elaboration-ready
 
 ## Completed
 
@@ -72,11 +72,19 @@ M8 academic functional baseline complete
   Decaps, unified top, external RBG handling, basic public input checks,
   implicit rejection, reduced Python differential verification, and restart
   coverage.
+- M9.0--M9.1 repository/release audit, dedicated synthesis file list, release
+  interface freeze, and complete `mlkem768_top` Verilator/Icarus elaboration.
+- M9.2--M9.6 academic release verification, synthesis handoff/reporting,
+  evidence-based structural bottleneck analysis, and release documentation;
+  the 7/7 lightweight gate passes while mapped synthesis is explicitly
+  environment-blocked.
 
 ## In Progress
 
-- M2.3b: Server ASIC synthesis comparison and candidate selection (pending server execution).
-- M9 authoritative-vector and expanded validation planning.
+- M2.3b: Server ASIC synthesis comparison and candidate selection
+  (environment-blocked: no local synthesis tool or Liberty library).
+- M9 technology-mapped/full-top synthesis (environment-blocked: no local
+  Yosys, Genus, or configured technology library).
 
 ## Blocked By
 
@@ -88,17 +96,20 @@ None
 
 ## Next Target
 
-Prepare M9 authoritative-vector validation and leave the optional full-project
-regression for a manual overnight run. M2.3b server synthesis and final
-CAVP/ACVP verification remain pending.
+Run the prepared M2.3b and M9 synthesis scripts on a server with an intended
+technology library, then pursue authoritative CAVP/ACVP validation in a later
+milestone.  The optional full-project regression remains a manual overnight
+task.
 
-## M8 Baseline Limitations
+## M9 Release Limitations
 
 The current academic RTL baseline provides control-state invalidation and
 selected explicit secret-state clearing. Exhaustive physical destruction of all
 retained lower-level datapath state is deferred to a future security hardening
 milestone. Full side-channel resistance is not established; exhaustive long-run
-regression, final NIST CAVP/ACVP validation, and M2.3b synthesis are pending.
+regression, final NIST CAVP/ACVP validation, M2.3b mapped synthesis, and
+full-top mapped synthesis are pending.  No post-layout timing, power, area, or
+Fmax claim is made.
 
 ## Current Focus
 

@@ -156,6 +156,41 @@ validation, and synthesis closure remain future work. M2.3b is pending.
 3. For M9, import authoritative vectors and schedule the optional full-project
    regression manually; keep M2.3b as a separate server-synthesis task.
 
+### 2026-07-17 M9 Academic RTL Release
+
+Requested: produce the M9 academic release baseline, audit the release top,
+provide elaboration/lint and synthesis readiness evidence, complete M2.3b
+where possible, run one lightweight release regression, document bottlenecks,
+and tag the release without claiming unavailable PPA evidence.
+
+Changed: no RTL. Added `synth/m9/` synthesis file list, exploratory SDC,
+Yosys/Genus handoffs, validation scripts, the frozen `mlkem768_top` release
+interface, M9 audit/lint/synthesis/bottleneck/release reports, and updated
+README, Roadmap, milestone/FIPS tracking, report index, and this handoff.
+
+Commands run: `sim/scripts/run_m9_elaboration.sh`; the existing bounded
+`synth/m2_3/run_synth_sweep.sh`; `synth/m9/run_yosys.sh` and
+`synth/m9/run_genus.sh`; and one `sim/scripts/run_m9_release_checks.sh`.
+
+Verified: complete top elaboration passes in Verilator 5.048 and Icarus 13.0;
+M8 smoke 9/9 in 62 seconds; M8 functional 7/7 in 555 seconds; focused M7
+roundtrip and deterministic vector reproduction pass.  M9 release gate is
+PARTIAL only because Yosys, Genus, and a Liberty library are absent locally.
+
+Remains: run M2.3b and full-top generic/mapped synthesis on a suitable server,
+then add real cell/memory/area/timing/PVT evidence.  Authoritative CAVP/ACVP,
+post-layout timing/power, exhaustive regression, and security hardening remain
+future work.
+
+## Next Session Start Here
+
+1. Read `reports/m9_completion_report.md` and
+   `docs/04_design/m9_release_handoff.md`.
+2. On a synthesis server set `LIB_FILE` and run `synth/m2_3/run_synth_sweep.sh`
+   plus `synth/m9/run_genus.sh`; use `synth/m9/run_yosys.sh` if Yosys is loaded.
+3. Do not infer area, Fmax, timing closure, power, or CAVP/ACVP status from
+   this academic elaboration-ready release.
+
 ### 2026-07-15 M8 Development Integration (Closure Blocked)
 
 Requested: autonomously implement and close M8.0--M8.6 with deterministic
@@ -3946,3 +3981,22 @@ Remains to do:
 1. Read `AGENTS.md`, `TODO.md`, `docs/00_project_spec/m2_plan.md`, and the M2.1 report.
 2. Preserve legacy RTL while integrating M1-compliant primitives incrementally.
 3. Await explicit approval and a module contract before M2.2.
+
+### 2026-07-17 M9 Release Closure (final handoff)
+
+M9 added no RTL changes.  The release interface, audit/lint reports, M2.3b and
+full-top synthesis handoffs, bottleneck analysis, and `run_m9_release_checks.sh`
+were added.  The release gate passed 7/7 in 948 seconds: elaboration, smoke,
+reduced M8 functional regression, M7 roundtrip, and vector reproducibility all
+pass.  Synthesis is PARTIAL/ENVIRONMENT-BLOCKED solely because local Yosys,
+Genus, and a Liberty library are absent.  No area, timing, Fmax, power,
+post-layout, or CAVP/ACVP claim was made.
+
+## Next Session Start Here
+
+1. Read `reports/m9_completion_report.md` and
+   `docs/04_design/m9_release_handoff.md`.
+2. Run `synth/m9/run_yosys.sh` when Yosys is available, then set `LIB_FILE` on
+   a synthesis server for `synth/m9/run_genus.sh` and the M2.3b sweep.
+3. Keep production security hardening, exhaustive regression, authoritative
+   CAVP/ACVP validation, and synthesis closure as future work.

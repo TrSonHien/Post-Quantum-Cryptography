@@ -619,6 +619,12 @@ control. Basic differential and end-to-end verification are complete; exhaustive
 security hardening, authoritative CAVP/ACVP validation, and synthesis remain
 future work.
 
+**M9 update (2026-07-17):** the academic RTL release now has a dedicated
+`mlkem768_top` synthesis file list and clean full-hierarchy elaboration.  No
+local Yosys, Genus, or standard-cell library is available, so M2.3b and full
+top technology-mapped synthesis remain environment-blocked.  No area, Fmax,
+post-layout timing, or power result is claimed.
+
 **Estimated time:** 2 months
 
 ### Goal
