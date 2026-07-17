@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 `include "kyber_params.vh"
 
 // -----------------------------------------------------------------------------
@@ -16,26 +16,38 @@
 //   - Reset clears out_valid only; payload registers need not reset.
 //   - No signed arithmetic or signed signals.
 // -----------------------------------------------------------------------------
-module mod_sub_pipe (
-    input  wire        clk,
-    input  wire        rst_n,
-    input  wire        in_valid,
-    input  wire [11:0] a,
-    input  wire [11:0] b,
-    output reg         out_valid,
-    output reg  [11:0] r,
-    input  wire        zeroize_req,
-    output reg         zeroize_busy,
-    output reg         zeroize_done
-);
+/*
+ * Module: mod_sub_pipe
+ * Status: ACTIVE_SHARED_LEAF
+ * Purpose: Mod-q arithmetic leaf used by the polynomial datapath.
+ * Standard role: FIPS 203 modular arithmetic support.
+ * Input representation: canonical coefficient or stated arithmetic operand.
+ * Output representation: canonical coefficient or registered arithmetic result.
+ * Interface: valid-only pipeline as declared.
+ * Latency / completion: fixed 1 cycle.
+ * State ownership: owns control and/or pipeline registers.
+ * Submodules: none (leaf).
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
+module mod_sub_pipe
+    (input wire clk,
+     input wire rst_n,
+     input wire in_valid,
+     input wire [11 : 0] a,
+     input wire [11 : 0] b,
+     output reg out_valid,
+     output reg [11 : 0] r,
+     input wire zeroize_req,
+     output reg zeroize_busy,
+     output reg zeroize_done);
 
-    wire [12:0] diff_wrapped;
-    wire [11:0] r_next;
+    wire [12 : 0] diff_wrapped;
+    wire [11 : 0] r_next;
 
     // To avoid underflow, we conditionally add KYBER_Q.
     // Since a, b are canonical, a + KYBER_Q >= b is guaranteed if a < b.
     assign diff_wrapped = {1'b0, a} + 13'd3329 - {1'b0, b};
-    assign r_next       = (a >= b) ? (a - b) : diff_wrapped[11:0];
+    assign r_next = (a >= b) ? (a - b) : diff_wrapped[11 : 0];
 
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -63,5 +75,4 @@ module mod_sub_pipe (
             r <= r_next;
         end
     end
-
 endmodule

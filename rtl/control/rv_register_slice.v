@@ -1,20 +1,31 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
+/*
+ * Module: rv_register_slice
+ * Status: TEST_OR_COMPATIBILITY_ONLY
+ * Purpose: Shared parameter or control primitive.
+ * Standard role: control/pipeline primitive.
+ * Input representation: declared payload and control metadata.
+ * Output representation: declared payload and control metadata.
+ * Interface: valid/ready where named; otherwise local start/busy/done.
+ * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
+ * State ownership: owns control and/or pipeline registers.
+ * Submodules: none (leaf).
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
 
-module rv_register_slice #(
-    parameter PAYLOAD_WIDTH = 32,
-    parameter METADATA_WIDTH = 16
-)(
-    input  wire                      clk,
-    input  wire                      rst_n,
-    input  wire                      in_valid,
-    output wire                      in_ready,
-    input  wire [PAYLOAD_WIDTH-1:0]  in_payload,
-    input  wire [METADATA_WIDTH-1:0] in_metadata,
-    output reg                       out_valid,
-    input  wire                      out_ready,
-    output reg  [PAYLOAD_WIDTH-1:0]  out_payload,
-    output reg  [METADATA_WIDTH-1:0] out_metadata
-);
+module rv_register_slice
+    #(parameter PAYLOAD_WIDTH = 32,
+      parameter METADATA_WIDTH = 16)
+    (input wire clk,
+     input wire rst_n,
+     input wire in_valid,
+     output wire in_ready,
+     input wire [PAYLOAD_WIDTH - 1 : 0] in_payload,
+     input wire [METADATA_WIDTH - 1 : 0] in_metadata,
+     output reg out_valid,
+     input wire out_ready,
+     output reg [PAYLOAD_WIDTH - 1 : 0] out_payload,
+     output reg [METADATA_WIDTH - 1 : 0] out_metadata);
 
     assign in_ready = !out_valid || out_ready;
 
@@ -29,5 +40,4 @@ module rv_register_slice #(
             end
         end
     end
-
 endmodule

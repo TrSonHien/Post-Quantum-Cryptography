@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 `include "kyber_params.vh"
 
 // -----------------------------------------------------------------------------
@@ -59,46 +59,57 @@
 //
 //     0 <= r < q
 // -----------------------------------------------------------------------------
-module montgomery_reduce (
-    input  wire [31:0] a,
-    output wire [15:0] r
-);
+/*
+ * Module: montgomery_reduce
+ * Status: ACTIVE_SHARED_LEAF
+ * Purpose: Mod-q arithmetic leaf used by the polynomial datapath.
+ * Standard role: FIPS 203 modular arithmetic support.
+ * Input representation: canonical coefficient or stated arithmetic operand.
+ * Output representation: canonical coefficient or registered arithmetic result.
+ * Interface: start/busy/done controller handshake.
+ * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
+ * State ownership: no explicit payload array; child/local combinational state only.
+ * Submodules: none (leaf).
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
+module montgomery_reduce
+    (input wire [31 : 0] a,
+     output wire [15 : 0] r);
 
-    localparam [31:0] Q = `KYBER_Q;
+    localparam [31 : 0] Q = `KYBER_Q;
 
     // -q^-1 mod 2^16
     //
     // q^-1 mod 2^16  = 62209
     // -p^-1 mod 2^16 = 3327
-    localparam [15:0] MONT_Q_DASH = 16'd3327;
+    localparam [15 : 0] MONT_Q_DASH = 16'd3327;
 
     // m = low_16_bits(a * MONT_Q_DASH)
-    wire [47:0] a_qdash_full;
-    wire [15:0] m;
-    
+    wire [47 : 0] a_qdash_full;
+    wire [15 : 0] m;
+
     // Operands are explicitly zero-extanded to preserve the full product
     assign a_qdash_full = {16'b0, a} * {{32{1'b0}}, MONT_Q_DASH};
-    assign m           = a_qdash_full[15:0];
+    assign m = a_qdash_full[15 : 0];
 
     // t = (a + m*q) >> 16
-    wire [47:0] m_q_full;
-    wire [32:0] sum_full;
-    wire [16:0] t_raw;
+    wire [47 : 0] m_q_full;
+    wire [32 : 0] sum_full;
+    wire [16 : 0] t_raw;
 
     assign m_q_full = {{32{1'b0}}, m} * {16'b0, Q};
 
     // For Kyber's valid input range, m*q fits comfortably below bit 32
-    assign sum_full = {1'b0, a} + m_q_full[32:0];
+    assign sum_full = {1'b0, a} + m_q_full[32 : 0];
 
     // Logical shift is sufficient because the complete datapath is unsigned
-    assign t_raw = sum_full[32:16];
+    assign t_raw = sum_full[32 : 16];
 
     // Canonical correction
-    wire [16:0] t_canonical;
+    wire [16 : 0] t_canonical;
 
-    assign t_canonical = (t_raw >= Q[16:0]) ? (t_raw - Q[16:0]) : t_raw;
-    assign r = t_canonical[15:0];
-
+    assign t_canonical = (t_raw >= Q[16 : 0]) ? (t_raw - Q[16 : 0]) : t_raw;
+    assign r = t_canonical[15 : 0];
 endmodule
 
 // -----------------------------------------------------------------------------
@@ -148,41 +159,52 @@ endmodule
 //
 // This implementation supports the full unsigned 32-bit input range.
 // -----------------------------------------------------------------------------
-module barrett_reduce (
-    input  wire [31:0] a,
-    output wire [15:0] r
-);
+/*
+ * Module: barrett_reduce
+ * Status: LEGACY_OR_SUPERSEDED
+ * Purpose: Mod-q arithmetic leaf used by the polynomial datapath.
+ * Standard role: FIPS 203 modular arithmetic support.
+ * Input representation: canonical coefficient or stated arithmetic operand.
+ * Output representation: canonical coefficient or registered arithmetic result.
+ * Interface: start/busy/done controller handshake.
+ * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
+ * State ownership: no explicit payload array; child/local combinational state only.
+ * Submodules: none (leaf).
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
+module barrett_reduce
+    (input wire [31 : 0] a,
+     output wire [15 : 0] r);
 
-    localparam [31:0] Q = `KYBER_Q;
+    localparam [31 : 0] Q = `KYBER_Q;
 
     // floor(2^48 / 3329)
-    localparam [36:0] BARRETT_MU = 37'd84_552_411_147;
+    localparam [36 : 0] BARRETT_MU = 37'd84_552_411_147;
 
     // quotient = (a * BARRETT_MU) >> 48
-    wire [68:0] a_mu_full;
-    wire [20:0] quotient;
+    wire [68 : 0] a_mu_full;
+    wire [20 : 0] quotient;
 
     // 32-bit a time 37-bit reciprocal produces a 69-bit result
     // Explicit zero extention avoids accidental expression truncation
     assign a_mu_full = {{37{1'b0}}, a} * {{32{1'b0}}, BARRETT_MU};
-    assign quotient  = a_mu_full[68:48];
+    assign quotient = a_mu_full[68 : 48];
 
     // remainder0 = a - quotient*q
-    wire [52:0] quotient_q_full;
-    wire [52:0] a_extended;
-    wire [52:0] remainder0;
+    wire [52 : 0] quotient_q_full;
+    wire [52 : 0] a_extended;
+    wire [52 : 0] remainder0;
 
     assign quotient_q_full = {{32{1'b0}}, quotient} * {21'b0, Q};
-    assign a_extended      = {{21{1'b0}}, a};
+    assign a_extended = {{21{1'b0}}, a};
 
     // quotient never exceeds floor(a/q), so this subtraction is non-negative
     assign remainder0 = a_extended - quotient_q_full;
 
     // Canonical correction
-    wire [52:0] remainder1;
+    wire [52 : 0] remainder1;
     assign remainder1 = (remainder0 >= Q) ? (remainder0 - Q) : remainder0;
-    assign r          = remainder1[15:0];
-
+    assign r = remainder1[15 : 0];
 endmodule
 
 // -----------------------------------------------------------------------------
@@ -203,13 +225,24 @@ endmodule
 // This module is useful when range analysis proves that one subtraction is
 // sufficient.
 // -----------------------------------------------------------------------------
-module conditional_sub_q (
-    input  wire [15:0] a,
-    output wire [15:0] r
-);
+/*
+ * Module: conditional_sub_q
+ * Status: LEGACY_OR_SUPERSEDED
+ * Purpose: Mod-q arithmetic leaf used by the polynomial datapath.
+ * Standard role: FIPS 203 modular arithmetic support.
+ * Input representation: canonical coefficient or stated arithmetic operand.
+ * Output representation: canonical coefficient or registered arithmetic result.
+ * Interface: start/busy/done controller handshake.
+ * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
+ * State ownership: no explicit payload array; child/local combinational state only.
+ * Submodules: none (leaf).
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
+module conditional_sub_q
+    (input wire [15 : 0] a,
+     output wire [15 : 0] r);
 
-    localparam [31:0] Q = `KYBER_Q;
+    localparam [31 : 0] Q = `KYBER_Q;
 
     assign r = (a >= Q) ? (a - Q) : a;
-
 endmodule

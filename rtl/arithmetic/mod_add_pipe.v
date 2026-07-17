@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 `include "kyber_params.vh"
 
 // -----------------------------------------------------------------------------
@@ -16,27 +16,39 @@
 //   - Reset clears out_valid only; payload registers need not reset.
 //   - Internal sum width is 13 bits (KYBER_SUM_WIDTH), preserving range 0..6656.
 // -----------------------------------------------------------------------------
-module mod_add_pipe (
-    input  wire        clk,
-    input  wire        rst_n,
-    input  wire        in_valid,
-    input  wire [11:0] a,
-    input  wire [11:0] b,
-    output reg         out_valid,
-    output reg  [11:0] r,
-    input  wire        zeroize_req,
-    output reg         zeroize_busy,
-    output reg         zeroize_done
-);
+/*
+ * Module: mod_add_pipe
+ * Status: ACTIVE_SHARED_LEAF
+ * Purpose: Mod-q arithmetic leaf used by the polynomial datapath.
+ * Standard role: FIPS 203 modular arithmetic support.
+ * Input representation: canonical coefficient or stated arithmetic operand.
+ * Output representation: canonical coefficient or registered arithmetic result.
+ * Interface: valid-only pipeline as declared.
+ * Latency / completion: fixed 1 cycle.
+ * State ownership: owns control and/or pipeline registers.
+ * Submodules: none (leaf).
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
+module mod_add_pipe
+    (input wire clk,
+     input wire rst_n,
+     input wire in_valid,
+     input wire [11 : 0] a,
+     input wire [11 : 0] b,
+     output reg out_valid,
+     output reg [11 : 0] r,
+     input wire zeroize_req,
+     output reg zeroize_busy,
+     output reg zeroize_done);
 
     // Sum is up to 3328 + 3328 = 6656, requiring 13 bits.
-    wire [12:0] sum;
-    wire [12:0] sum_sub;
-    wire [11:0] r_next;
+    wire [12 : 0] sum;
+    wire [12 : 0] sum_sub;
+    wire [11 : 0] r_next;
 
-    assign sum      = {1'b0, a} + {1'b0, b};
-    assign sum_sub  = sum - 13'd3329;
-    assign r_next   = (sum >= 13'd3329) ? sum_sub[11:0] : sum[11:0];
+    assign sum = {1'b0, a} + {1'b0, b};
+    assign sum_sub = sum - 13'd3329;
+    assign r_next = (sum >= 13'd3329) ? sum_sub[11 : 0] : sum[11 : 0];
 
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -64,5 +76,4 @@ module mod_add_pipe (
             r <= r_next;
         end
     end
-
 endmodule
