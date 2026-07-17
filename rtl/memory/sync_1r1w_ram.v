@@ -1,24 +1,35 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 
 // Generic synchronous 1-read/1-write memory. Read requests accepted at edge t
 // produce rd_valid/rd_data during cycle t+1. Memory and rd_data are not reset.
-module sync_1r1w_ram #(
-    parameter DATA_WIDTH = 12,
-    parameter ADDR_WIDTH = 7,
-    parameter DEPTH = 128
-)(
-    input  wire                  clk,
-    input  wire                  rst_n,
-    input  wire                  rd_en,
-    input  wire [ADDR_WIDTH-1:0] rd_addr,
-    output reg                   rd_valid,
-    output reg  [DATA_WIDTH-1:0] rd_data,
-    input  wire                  wr_en,
-    input  wire [ADDR_WIDTH-1:0] wr_addr,
-    input  wire [DATA_WIDTH-1:0] wr_data
-);
+/*
+ * Module: sync_1r1w_ram
+ * Status: ACTIVE_SHARED_LEAF
+ * Purpose: Synchronous storage, bank mapping, or ping-pong ownership primitive.
+ * Standard role: workspace/bank ownership support.
+ * Input representation: declared payload and control metadata.
+ * Output representation: declared payload and control metadata.
+ * Interface: synchronous read-request/valid-response plus write-enable ports.
+ * Latency / completion: fixed one-cycle read response; writes commit on the clock edge.
+ * State ownership: owns indexed payload/workspace state; reset behavior is local.
+ * Submodules: none (leaf).
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
+module sync_1r1w_ram
+    #(parameter DATA_WIDTH = 12,
+      parameter ADDR_WIDTH = 7,
+      parameter DEPTH = 128)
+    (input wire clk,
+     input wire rst_n,
+     input wire rd_en,
+     input wire [ADDR_WIDTH - 1 : 0] rd_addr,
+     output reg rd_valid,
+     output reg [DATA_WIDTH - 1 : 0] rd_data,
+     input wire wr_en,
+     input wire [ADDR_WIDTH - 1 : 0] wr_addr,
+     input wire [DATA_WIDTH - 1 : 0] wr_data);
 
-    reg [DATA_WIDTH-1:0] mem [0:DEPTH-1];
+    reg [DATA_WIDTH - 1 : 0] mem[0 : DEPTH - 1];
 
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -39,5 +50,4 @@ module sync_1r1w_ram #(
 `endif
         end
     end
-
 endmodule

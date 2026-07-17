@@ -1,3 +1,12 @@
+/*
+ * Shared ML-KEM-768 parameter include.
+ *
+ * This include is an ACTIVE_SHARED_LEAF dependency rather than a module.  It
+ * defines the frozen ML-KEM-768 dimensions, byte sizes, and implementation
+ * widths used throughout the synthesizable release hierarchy.  The macros
+ * describe canonical parameter values; they do not carry runtime payload
+ * state.  Include it before declarations that use these widths.
+ */
 `ifndef KYBER_PARAMS_VH
 `define KYBER_PARAMS_VH
 
