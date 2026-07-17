@@ -11,7 +11,9 @@ FIPS 203 byte encoding, decoding, compression, or format support
 - `byte_encode_poly_pipe`
 - `message_to_poly_pipe`
 - `poly_compress_encode_pipe`
+- `poly_decode12_pipe`
 - `poly_decode_decompress_pipe`
+- `poly_encode12_pipe`
 - `poly_to_message_pipe`
 - `polyvec_codec_pipe`
 - `polyvec_compress_encode10_pipe`
@@ -19,21 +21,13 @@ FIPS 203 byte encoding, decoding, compression, or format support
 - `polyvec_decode_decompress10_pipe`
 - `polyvec_encode12_pipe`
 
-### Retained support / legacy modules
+### Adapter and historical note
 
-- `bits_to_bytes_pipe`
-- `bytes_to_bits_pipe`
-- `compress_coeff_pipe`
-- `decompress_coeff_pipe`
-- `kpke_ciphertext_pack_pipe`
-- `kpke_ciphertext_unpack_pipe`
-- `kpke_dk_pack_pipe`
-- `kpke_dk_unpack_pipe`
-- `kpke_ek_pack_pipe`
-- `kpke_ek_unpack_pipe`
-- `kpke_format_pipe`
-- `poly_decode12_pipe`
-- `poly_encode12_pipe`
+- `kpke_format_pipe` is a retained active adapter.
+- `poly_encode12_pipe` and `poly_decode12_pipe` are active through the K-PKE
+  public-key polyvec codecs.
+- Superseded codec micro-pipelines are available only in Git history before
+  `pre-legacy-prune-b683bd7`.
 
 ### Reading notes
 
@@ -43,13 +37,12 @@ FIPS 203 byte encoding, decoding, compression, or format support
 
 ### Dependency graph, representations, and reading order
 
-Read bit/byte primitives, coefficient codecs, poly/polyvec codecs, then CBD,
+Read active byte codecs, coefficient codecs, poly/polyvec codecs, then CBD,
 noise, and SampleNTT.  Encodings are LSB-first coefficient encodings and
 low-byte-first stream words; sampler outputs are explicitly NORMAL or NTT as
 named by each port.  Codec and sampler controllers own their local shift,
-count, and output holding state until valid/ready completion.  Active modules
-are identified in the catalog because compatibility format wrappers also
-remain.  Use M6 regression and the named block runners; SampleNTT is not
+count, and output holding state until valid/ready completion.  Use M6
+regression and the named block runners; SampleNTT is not
 described here as constant-time.
 
 ## sampler
@@ -64,9 +57,10 @@ FIPS 203 Algorithms 7--8 sampling support
 - `sample_ntt_parser`
 - `sample_poly_cbd_pipe`
 
-### Retained support / legacy modules
+### Historical note
 
-- `cbd_pair_pipe`
+The current sampler path uses `sample_poly_cbd_pipe`; the earlier pairwise CBD
+helper is available only in Git history before `pre-legacy-prune-b683bd7`.
 
 ### Reading notes
 

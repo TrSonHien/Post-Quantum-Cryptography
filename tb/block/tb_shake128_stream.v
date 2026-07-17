@@ -1,4 +1,0 @@
-`timescale 1ns/1ps
-module tb_shake128_stream;wire clk,rst_n,cv,cr;wire[1:0]m;wire[31:0]ml,ol;wire iv,ir;wire[31:0]id;wire[3:0]ik;wire il,ov,orr;wire[31:0]od;wire[3:0]ok;wire o_last,b,d,e;
-keccak_stream_test_driver #(.FILTER_MODE(2),.RUN_ERROR_TESTS(0)) driver(.clk(clk),.rst_n(rst_n),.cmd_valid(cv),.cmd_ready(cr),.mode(m),.msg_len_bytes(ml),.out_len_bytes(ol),.in_valid(iv),.in_ready(ir),.in_data(id),.in_keep(ik),.in_last(il),.out_valid(ov),.out_ready(orr),.out_data(od),.out_keep(ok),.out_last(o_last),.busy(b),.done(d),.error(e));
-shake128_stream dut(.clk(clk),.rst_n(rst_n),.cmd_valid(cv),.cmd_ready(cr),.msg_len_bytes(ml),.out_len_bytes(ol),.in_valid(iv),.in_ready(ir),.in_data(id),.in_keep(ik),.in_last(il),.out_valid(ov),.out_ready(orr),.out_data(od),.out_keep(ok),.out_last(o_last),.busy(b),.done(d),.error(e));endmodule

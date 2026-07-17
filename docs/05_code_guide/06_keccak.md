@@ -20,9 +20,11 @@ FIPS 202 SHA3/SHAKE or FIPS 203 H/G/J/PRF/XOF support
 - `sha3_512_stream`
 - `shake256_stream`
 
-### Retained support / legacy modules
+### Historical note
 
-- `shake128_stream`
+The current ML-KEM-768 release uses SHAKE256/XOF services.  Superseded
+SHAKE128 compatibility RTL remains available only in Git history before
+`pre-legacy-prune-b683bd7`.
 
 ### Reading notes
 

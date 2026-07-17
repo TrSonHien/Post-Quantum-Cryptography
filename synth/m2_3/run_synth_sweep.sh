@@ -50,9 +50,7 @@ mkdir -p "${SCRIPT_DIR}/reports"
 # Candidate HDL definition list
 # Format: TOP_NAME|HDL_FILES
 CANDIDATES=(
-    "mod_add_wrap|mod_add.v wrappers/mod_add_wrap.v"
     "mod_add_pipe|mod_add_pipe.v"
-    "mod_sub_wrap|mod_sub.v wrappers/mod_sub_wrap.v"
     "mod_sub_pipe|mod_sub_pipe.v"
     "montgomery_reduce_wrap|reduction.v wrappers/montgomery_reduce_wrap.v"
     "montgomery_reduce_pipe|montgomery_reduce_pipe.v"
@@ -60,9 +58,7 @@ CANDIDATES=(
     "mod_mul_pipe|montgomery_reduce_pipe.v mod_mul_pipe.v"
     "barrett_reduce_wrap|reduction.v wrappers/barrett_reduce_wrap.v"
     "barrett_reduce_pipe|barrett_reduce_pipe.v"
-    "butterfly_unit_wrap|reduction.v mod_mul.v mod_add.v mod_sub.v butterfly_unit.v wrappers/butterfly_unit_wrap.v"
     "butterfly_pipe|fixed_latency_delay.v montgomery_reduce_pipe.v mod_mul_pipe.v mod_add_pipe.v mod_sub_pipe.v butterfly_pipe.v"
-    "intt_butterfly_unit_wrap|reduction.v mod_mul.v mod_add.v mod_sub.v intt_butterfly_unit.v wrappers/intt_butterfly_unit_wrap.v"
     "intt_butterfly_pipe|fixed_latency_delay.v montgomery_reduce_pipe.v mod_mul_pipe.v mod_add_pipe.v mod_sub_pipe.v intt_butterfly_pipe.v"
 )
 

@@ -94,14 +94,7 @@ run_test inverse_core 60s 7936 ./sim/scripts/run_intt_core_pipe.sh
 run_test pipelined_roundtrip 60s 15360 ./sim/scripts/run_ntt_intt_pipe_roundtrip.sh
 run_test m2_1_primitives 60s 5417 ./sim/scripts/run_m2_1_primitives.sh
 run_test m2_2_regression 120s 312935 ./sim/scripts/run_m2_2_regression.sh
-run_test legacy_forward_ntt 60s 512 ./sim/scripts/run_ntt_core.sh
-run_test legacy_inverse_ntt 60s 768 ./sim/scripts/run_intt_core.sh
-run_test legacy_roundtrip 60s 1024 ./sim/scripts/run_ntt_intt_roundtrip.sh
-run_test poly_add 60s 1024 ./sim/scripts/run_poly_add.sh
-run_test poly_sub 60s 1024 ./sim/scripts/run_poly_sub.sh
-run_test basemul 60s 514 ./sim/scripts/run_basemul_unit.sh
 run_test basemul_address 60s 256 ./sim/scripts/run_poly_basemul_addr_gen.sh
-run_test poly_basemul 60s 768 ./sim/scripts/run_poly_basemul_montgomery.sh
 run_test python_selftest 30s 1 python3 -m ref_model.python_model.selftest
 run_test python_foundations 30s 13 python3 -m ref_model.python_model.test_foundations
 run_test python_schema_compare 30s 5 python3 -m ref_model.compare.test_compare_tools

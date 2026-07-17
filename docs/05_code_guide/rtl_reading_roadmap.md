@@ -1,6 +1,8 @@
 # RTL Reading Roadmap
 
 Read the release from stable constants and leaves toward the public controller.  Every linked source is synthesizable and listed in `synth/m9/rtl.f`.
+Superseded RTL implementations remain available in Git history before
+`pre-legacy-prune-b683bd7`, not as current-tree reading targets.
 
 ## Leaf-to-top path
 

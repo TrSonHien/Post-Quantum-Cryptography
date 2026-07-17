@@ -103,3 +103,10 @@ Run the prepared M2.3b and full-top synthesis scripts on a server with Yosys
 or Genus plus an intended technology library, then import authoritative NIST
 CAVP/ACVP vectors in a later verification milestone.  The optional full-project
 regression remains a manual overnight task.
+
+# Current release-tree note
+
+The `test` branch is the academic functional ML-KEM-768 release tree.  Its
+current RTL hierarchy is rooted at `mlkem768_top`; superseded RTL
+implementations are available in Git history before `pre-legacy-prune-b683bd7`.
+See `docs/05_code_guide/` for the current module catalog and active hierarchy.
