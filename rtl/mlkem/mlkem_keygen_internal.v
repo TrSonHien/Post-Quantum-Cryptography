@@ -37,7 +37,12 @@ module mlkem_keygen_internal
         input wire zeroize_req,
         output wire zeroize_busy,
         output reg zeroize_done);
+    // Algorithm 16 phases: capture d || z, run K-PKE.KeyGen, hash ek, then
+    // assemble dk = dkPKE || ek || H(ek) || z before output and cleanup.
     localparam IDLE = 0, INPUT = 1, K_CMD = 2, K_FEED = 3, K_WAIT = 4, H_CMD = 5, H_FEED = 6, H_WAIT = 7, ASSEMBLE = 8, OUTPUT = 9, SCRUB = 10, SCRUB_WAIT = 11;
+
+    // Local byte arrays own the input seeds and derived key records until the
+    // final stream is accepted.  Child K-PKE and H own their own workspaces.
     reg [3 : 0] state;
     reg [7 : 0] d[0 : 31], z[0 : 31], ek[0 : 1183], dkpke[0 : 1151], h[0 : 31], dk[0 : 2399];
     reg [4 : 0] in_word;
@@ -114,6 +119,7 @@ module mlkem_keygen_internal
                   child_zeroize,
                   hzb,
                   hzd);
+    // Result capture, local-state scrub, and the variable-latency controller.
     always @(posedge clk) begin
         done <= 0;
         zeroize_done <= 0;
@@ -172,6 +178,7 @@ module mlkem_keygen_internal
             end else
                 case (state)
                     IDLE:
+                        // Accept an internal KeyGen request.
                         if (cmd_valid) begin
                             busy <= 1;
                             error <= 0;
@@ -180,6 +187,7 @@ module mlkem_keygen_internal
                             state <= INPUT;
                         end
                     INPUT:
+                        // Capture exactly d || z in low-byte-first stream order.
                         if (in_valid) begin
                             if (in_keep != 4'hf || in_last != (in_word == 15)) begin
                                 error <= 1;
@@ -235,6 +243,7 @@ module mlkem_keygen_internal
                         if (h_done)
                             state <= ASSEMBLE;
                     ASSEMBLE: begin
+                        // Copy K-PKE secret key, ek, H(ek), and z into dk.
                         for (j = 0; j < 1152; j = j + 1)
                             dk[j] <= dkpke[j];
                         for (j = 0; j < 1184; j = j + 1)
@@ -247,6 +256,7 @@ module mlkem_keygen_internal
                         state <= OUTPUT;
                     end
                     OUTPUT:
+                        // Stream ek first, followed by the assembled dk record.
                         if (out_valid && out_ready) begin
                             if (out_word == 895) begin
                                 scrub_addr <= 0;
@@ -258,6 +268,7 @@ module mlkem_keygen_internal
                                 out_word <= out_word + 1'b1;
                         end
                     SCRUB: begin
+                        // Clear selected M8-local entropy and key payload state.
                         if (scrub_addr < 32) begin
                             d[scrub_addr] <= 0;
                             z[scrub_addr] <= 0;

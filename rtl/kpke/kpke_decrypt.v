@@ -35,6 +35,9 @@ module kpke_decrypt
         input wire zeroize,
         output reg zeroize_busy,
         output reg zeroize_done);
+    // -------------------------------------------------------------------------
+    // Representation tags and Algorithm 15 state encoding
+    // -------------------------------------------------------------------------
     localparam [1 : 0] NORMAL = 1, NTT = 2;
     localparam [5 : 0] IDLE = 0, INPUT = 1, DU_START = 2, DU_FEED = 3, DU_WAIT = 4, DV_START = 5, DV_FEED = 6, DV_WAIT = 7, DK_START = 8, DK_FEED = 9, DK_WAIT = 10,
                        N_BEGIN = 11, N_LOAD = 12, N_START = 13, N_WAIT = 14, N_READ = 15, N_DRAIN = 16, N_RELEASE = 17, B_BEGIN = 18, B_LOAD = 19, B_START = 20, B_WAIT = 21, B_READ = 22, B_DRAIN = 23, B_RELEASE = 24,
@@ -281,6 +284,7 @@ module kpke_decrypt
                             child_zeroize_req[7],
                             child_zeroize_busy[7],
                             child_zeroize_done[7]);
+    // Child result capture, local scrub, and variable-latency Algorithm 15 FSM.
     always @(posedge clk) begin
         if (!rst_n) begin
             state <= IDLE;

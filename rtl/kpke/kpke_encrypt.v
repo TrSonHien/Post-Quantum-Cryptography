@@ -35,6 +35,9 @@ module kpke_encrypt
         input wire zeroize,
         output reg zeroize_busy,
         output reg zeroize_done);
+    // -------------------------------------------------------------------------
+    // Representation tags and Algorithm 14 state encoding
+    // -------------------------------------------------------------------------
     localparam NORMAL = 1, NTT = 2;
     localparam [6 : 0] IDLE = 0, INPUT = 1, DEC_START = 2, DEC_FEED = 3, DEC_WAIT = 4,
                        NY_START = 5, NY_WAIT = 6, NE_START = 7, NE_WAIT = 8, E2_START = 9, E2_WAIT = 10,
@@ -363,6 +366,7 @@ module kpke_encrypt
             child_zeroize_req[10],
             child_zeroize_busy[10],
             child_zeroize_done[10]);
+    // Child result capture, local scrub, and variable-latency Algorithm 14 FSM.
     always @(posedge clk) begin
         if (!rst_n) begin
             state <= IDLE;

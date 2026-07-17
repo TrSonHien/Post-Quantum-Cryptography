@@ -4051,3 +4051,36 @@ Remains to do:
    `docs/05_code_guide/rtl_reading_roadmap.md`.
 2. Review the readability branch; do not merge it into `test` automatically.
 3. Preserve the token-equivalence rule for any follow-up comment-only edits.
+
+### 2026-07-18 Readability follow-up: main-branch presentation style
+
+Requested:
+
+- Refine the readability branch using the frozen `PQC_main` coding presentation
+  as a read-only reference: clear declaration groups, purposeful section
+  boundaries, visible controller phases, and readable child connections.
+
+Files changed:
+
+- `rtl/mlkem/mlkem768_top.v`
+- `rtl/mlkem/mlkem_keygen_internal.v`
+- `rtl/mlkem/mlkem_encaps_internal.v`
+- `rtl/mlkem/mlkem_decaps_internal.v`
+- `rtl/kpke/kpke_keygen.v`
+- `rtl/kpke/kpke_encrypt.v`
+- `rtl/kpke/kpke_decrypt.v`
+
+Verified:
+
+- All seven edited files pass exact logic-token equivalence against the
+  `e4d2418` snapshots.
+- `sim/scripts/run_m9_elaboration.sh` passes with the existing warning counts.
+- The changes are comment-only; positional child connections and declaration
+  ordering remain frozen.
+
+## Next Session Start Here
+
+1. Review the presentation style in the ML-KEM/K-PKE release controllers.
+2. Apply the same section-oriented treatment to active NTT/poly/Keccak blocks
+   only if further readability refinement is requested.
+3. Do not alter Verilog logic tokens or merge the review branch automatically.

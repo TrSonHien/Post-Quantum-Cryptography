@@ -37,7 +37,12 @@ module mlkem_encaps_internal
         input wire zeroize_req,
         output wire zeroize_busy,
         output reg zeroize_done);
+    // Algorithm 17 phases: capture ek || m, derive h = H(ek), derive K || r
+    // from G(m || h), then run K-PKE.Encrypt and stream K followed by c.
     localparam IDLE = 0, INPUT = 1, H_CMD = 2, H_FEED = 3, H_WAIT = 4, G_CMD = 5, G_FEED = 6, G_WAIT = 7, E_CMD = 8, E_FEED = 9, E_WAIT = 10, OUTPUT = 11, SCRUB = 12, SCRUB_WAIT = 13;
+
+    // Local storage retains ek, m, h, K, r, and c only for this controller
+    // transaction.  Byte streams are low-byte-first within each word.
     reg [3 : 0] state;
     reg [7 : 0] ek[0 : 1183], m[0 : 31], h[0 : 31], k[0 : 31], r[0 : 31], c[0 : 1087];
     reg [8 : 0] in_word, h_word, e_word;
@@ -141,6 +146,7 @@ module mlkem_encaps_internal
                     child_zeroize,
                     ezb,
                     ezd);
+    // Result capture, local-state scrub, and the variable-latency controller.
     always @(posedge clk) begin
         done <= 0;
         zeroize_done <= 0;
@@ -206,6 +212,7 @@ module mlkem_encaps_internal
             end else
                 case (state)
                     IDLE:
+                        // Accept an internal Encaps request.
                         if (cmd_valid) begin
                             busy <= 1;
                             error <= 0;
@@ -214,6 +221,7 @@ module mlkem_encaps_internal
                             state <= INPUT;
                         end
                     INPUT:
+                        // Capture exactly ek || m before launching H.
                         if (in_valid) begin
                             if (in_keep != 4'hf || in_last != (in_word == 303)) begin
                                 error <= 1;
@@ -237,6 +245,7 @@ module mlkem_encaps_internal
                             end
                         end
                     H_CMD:
+                        // Derive h = H(ek).
                         if (hc_ready) begin
                             h_word <= 0;
                             gout_word <= 0;
@@ -253,6 +262,7 @@ module mlkem_encaps_internal
                         if (h_done)
                             state <= G_CMD;
                     G_CMD:
+                        // Derive K || r = G(m || h).
                         if (gc_ready) begin
                             g_word <= 0;
                             gout_word <= 0;
@@ -269,6 +279,7 @@ module mlkem_encaps_internal
                         if (g_done)
                             state <= E_CMD;
                     E_CMD:
+                        // Encrypt ek, m, r through the existing K-PKE child.
                         if (ec_ready) begin
                             e_word <= 0;
                             c_word <= 0;
@@ -287,6 +298,7 @@ module mlkem_encaps_internal
                             state <= OUTPUT;
                         end
                     OUTPUT:
+                        // Stream the shared secret followed by ciphertext.
                         if (out_valid && out_ready) begin
                             if (out_word == 279) begin
                                 scrub_addr <= 0;
@@ -299,6 +311,7 @@ module mlkem_encaps_internal
                                 out_word <= out_word + 1;
                         end
                     SCRUB: begin
+                        // Clear selected M8-local message, coins, key, and ciphertext state.
                         if (scrub_addr < 32) begin
                             m[scrub_addr] <= 0;
                             h[scrub_addr] <= 0;

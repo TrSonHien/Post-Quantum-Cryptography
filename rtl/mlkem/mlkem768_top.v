@@ -43,25 +43,50 @@ module mlkem768_top
         output wire [3 : 0] out_keep,
         output wire out_last,
         output wire [1 : 0] out_kind);
+    // -------------------------------------------------------------------------
+    // Public command encoding and top-level controller phases
+    // -------------------------------------------------------------------------
+    // cmd_mode selects a public FIPS 203 operation.  `active` owns the stream
+    // and status mux until that child reports completion.
     localparam KEYGEN = 0, ENCAPS = 1, DECAPS = 2, ZEROIZE = 3;
     localparam BOOT_REQ = 0, BOOT_WAIT = 1, IDLE = 2, ACTIVE = 3, ZERO_REQ = 4, ZERO_WAIT = 5;
+
+    // -------------------------------------------------------------------------
+    // Top-level ownership and child-controller interfaces
+    // -------------------------------------------------------------------------
     reg [2 : 0] state;
     reg [1 : 0] active;
     reg [2 : 0] child_zeroize_req, child_zeroized;
+
+    // Public KeyGen: RNG request, output record, and completion status.
     wire kr, krq, krd, kov, kol, kok, kb, kdone, kerr, kzb, kzd;
     wire [15 : 0] krlen;
     wire [31 : 0] kod;
     wire [3 : 0] kokeep;
+
+    // Public Encaps: input record, RNG request, output record, and status.
     wire er, eir, erq, erd, eov, eol, eok, eb, edone, eerr, ezb, ezd;
     wire [15 : 0] erlen;
     wire [31 : 0] eod;
     wire [3 : 0] eokeep;
+
+    // Public Decaps: input record, output shared secret, and status.
     wire dr, dir, dov, dol, db, ddone, derr, dzb, dzd;
     wire [31 : 0] dod;
     wire [3 : 0] dokeep;
+
+    // A zeroize transaction completes only after every selected public child
+    // acknowledges its existing zeroize interface.
     wire [2 : 0] child_zeroize_done = {dzd, ezd, kzd};
+
+    // -------------------------------------------------------------------------
+    // Command acceptance and child-controller instantiation
+    // -------------------------------------------------------------------------
     assign cmd_ready = (state == IDLE) || ((state == ACTIVE) && (cmd_mode == ZEROIZE));
     assign busy = (state != IDLE);
+
+    // The positional port connections are part of the frozen release contract.
+    // Their line order follows each child module declaration exactly.
     mlkem_keygen kg(clk,
                     rst_n,
                     cmd_valid && cmd_ready && state == IDLE && cmd_mode == KEYGEN,
@@ -87,6 +112,7 @@ module mlkem768_top
                     child_zeroize_req[0],
                     kzb,
                     kzd);
+
     mlkem_encaps en(clk,
                     rst_n,
                     cmd_valid && cmd_ready && state == IDLE && cmd_mode == ENCAPS,
@@ -117,6 +143,7 @@ module mlkem768_top
                     child_zeroize_req[1],
                     ezb,
                     ezd);
+
     mlkem_decaps de(clk,
                     rst_n,
                     cmd_valid && cmd_ready && state == IDLE && cmd_mode == DECAPS,
@@ -138,6 +165,12 @@ module mlkem768_top
                     child_zeroize_req[2],
                     dzb,
                     dzd);
+
+    // -------------------------------------------------------------------------
+    // Active-child stream and RNG muxing
+    // -------------------------------------------------------------------------
+    // The stream becomes meaningful only in ACTIVE.  KeyGen consumes no input;
+    // Encaps accepts EK words, and Decaps accepts DK/ciphertext record kinds.
     assign in_ready = state == ACTIVE && active == ENCAPS ? eir : state == ACTIVE && active == DECAPS ? dir
                                                                                                       : 1'b0;
     assign rng_req_valid = state == ACTIVE && active == KEYGEN ? krq : state == ACTIVE && active == ENCAPS ? erq
@@ -157,6 +190,13 @@ module mlkem768_top
                                                                 : dol;
     assign out_kind = active == KEYGEN ? (kok ? 2'd1 : 2'd0) : active == ENCAPS ? (eok ? 2'd3 : 2'd2)
                                                                                 : 2'd2;
+
+    // -------------------------------------------------------------------------
+    // Top-level FSM
+    // -------------------------------------------------------------------------
+    // BOOT_* performs the inherited child cleanup before commands are accepted.
+    // ACTIVE owns one public operation; ZERO_* can interrupt it through the
+    // documented public zeroize request path.
     always @(posedge clk) begin
         done <= 0;
         if (!rst_n) begin
@@ -169,12 +209,14 @@ module mlkem768_top
         end else
             case (state)
                 BOOT_REQ: begin
+                    // Request child cleanup after reset before exposing IDLE.
                     error <= 0;
                     child_zeroize_req <= 3'b111;
                     child_zeroized <= 0;
                     state <= BOOT_WAIT;
                 end
                 BOOT_WAIT: begin
+                    // Wait for all three public children to acknowledge cleanup.
                     child_zeroize_req <= 0;
                     child_zeroized <= child_zeroized | child_zeroize_done;
                     if (&(child_zeroized | child_zeroize_done)) begin
@@ -183,6 +225,7 @@ module mlkem768_top
                     end
                 end
                 IDLE:
+                    // Latch command ownership; data/RNG handshakes follow in ACTIVE.
                     if (cmd_valid) begin
                         error <= 0;
                         if (cmd_mode == ZEROIZE)
@@ -193,6 +236,7 @@ module mlkem768_top
                         end
                     end
                 ACTIVE: begin
+                    // Route completion/error from the selected public operation.
                     if (cmd_valid && cmd_mode == ZEROIZE)
                         state <= ZERO_REQ;
                     else if ((active == KEYGEN && kdone) || (active == ENCAPS && edone) || (active == DECAPS && ddone)) begin
@@ -203,12 +247,14 @@ module mlkem768_top
                     end
                 end
                 ZERO_REQ: begin
+                    // Launch an explicit top-level zeroize transaction.
                     error <= 0;
                     child_zeroize_req <= 3'b111;
                     child_zeroized <= 0;
                     state <= ZERO_WAIT;
                 end
                 ZERO_WAIT: begin
+                    // Suppress ordinary completion until every child has cleared.
                     child_zeroize_req <= 0;
                     child_zeroized <= child_zeroized | child_zeroize_done;
                     if (&(child_zeroized | child_zeroize_done)) begin

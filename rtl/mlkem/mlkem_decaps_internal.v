@@ -38,7 +38,18 @@ module mlkem_decaps_internal
         input wire zeroize_req,
         output wire zeroize_busy,
         output reg zeroize_done);
+    // -------------------------------------------------------------------------
+    // FIPS 203 Algorithm 18 phases
+    // -------------------------------------------------------------------------
+    // D_* decrypts (dkPKE || c), G_* derives (K_prime || r_prime), J_* derives
+    // K_bar = J(z || c), and E_* independently re-encrypts c_prime.
     localparam IDLE = 0, INPUT = 1, D_CMD = 2, D_FEED = 3, D_WAIT = 4, G_CMD = 5, G_FEED = 6, G_WAIT = 7, J_CMD = 8, J_FEED = 9, J_WAIT = 10, E_CMD = 11, E_FEED = 12, E_WAIT = 13, COMPARE = 14, SELECT = 15, OUTPUT = 16, SCRUB = 17, SCRUB_WAIT = 18;
+
+    // -------------------------------------------------------------------------
+    // M8-local record storage and phase counters
+    // -------------------------------------------------------------------------
+    // dk = dkPKE || ek || H(ek) || z.  c and c_prime are full 1088-byte
+    // ciphertext records.  All byte arrays use low-byte-first stream lanes.
     reg [4 : 0] state;
     reg [7 : 0] dk[0 : 2399], c[0 : 1087], mp[0 : 31], kp[0 : 31], rp[0 : 31], kb[0 : 31], cp[0 : 1087], kout[0 : 31];
     reg [9 : 0] in_word, d_word, e_word, cp_word;
@@ -50,6 +61,10 @@ module mlkem_decaps_internal
     reg mismatch;
     reg [7 : 0] mask;
     integer lane, reset_i;
+
+    // -------------------------------------------------------------------------
+    // Child-engine interfaces: K-PKE decrypt, G, J, and K-PKE encrypt
+    // -------------------------------------------------------------------------
     wire dc_ready, d_in_ready, d_out_valid, d_done, d_error, d_nc, dzb, dzd;
     wire [31 : 0] d_out_data, d_cycles;
     wire [3 : 0] d_out_keep, dop0, dop1, dop2, dop3, dop4;
@@ -67,6 +82,10 @@ module mlkem_decaps_internal
     wire [3 : 0] e_out_keep, eop0, eop1, eop2, eop3, eop4, eop5, eop6;
     wire e_out_last, e_busy;
     reg dzd_seen, gzd_seen, jzd_seen, ezd_seen, explicit_scrub;
+
+    // -------------------------------------------------------------------------
+    // Parent stream contract and zeroize propagation
+    // -------------------------------------------------------------------------
     wire child_zeroize = (state == SCRUB) && (scrub_addr == 0);
     assign zeroize_busy = explicit_scrub && ((state == SCRUB) || (state == SCRUB_WAIT));
     assign cmd_ready = state == IDLE && !zeroize_req;
@@ -75,6 +94,12 @@ module mlkem_decaps_internal
     assign out_keep = 4'hf;
     assign out_last = state == OUTPUT && out_word == 7;
     assign out_data = {kout[out_word * 4 + 3], kout[out_word * 4 + 2], kout[out_word * 4 + 1], kout[out_word * 4]};
+
+    // -------------------------------------------------------------------------
+    // Child command/data wiring
+    // -------------------------------------------------------------------------
+    // d_feed carries dkPKE followed by c.  The child is responsible for the
+    // K-PKE parse; this controller retains m_prime after its output handshake.
     wire [31 : 0] d_feed = (d_word < 288) ? {dk[d_word * 4 + 3], dk[d_word * 4 + 2], dk[d_word * 4 + 1], dk[d_word * 4]} : {c[(d_word - 288) * 4 + 3], c[(d_word - 288) * 4 + 2], c[(d_word - 288) * 4 + 1], c[(d_word - 288) * 4]};
     kpke_decrypt dc(clk,
                     rst_n,
@@ -103,6 +128,8 @@ module mlkem_decaps_internal
                     child_zeroize,
                     dzb,
                     dzd);
+
+    // G consumes m_prime || stored H(ek) and returns K_prime || r_prime.
     wire [31 : 0] g_feed = (g_word < 8) ? {mp[g_word * 4 + 3], mp[g_word * 4 + 2], mp[g_word * 4 + 1], mp[g_word * 4]} : {dk[2336 + (g_word - 8) * 4 + 3], dk[2336 + (g_word - 8) * 4 + 2], dk[2336 + (g_word - 8) * 4 + 1], dk[2336 + (g_word - 8) * 4]};
     mlkem_g gc(clk,
                rst_n,
@@ -125,6 +152,8 @@ module mlkem_decaps_internal
                child_zeroize,
                gzb,
                gzd);
+
+    // J consumes z || c to create the exact implicit-rejection fallback key.
     wire [31 : 0] j_feed = (j_word < 8) ? {dk[2368 + j_word * 4 + 3], dk[2368 + j_word * 4 + 2], dk[2368 + j_word * 4 + 1], dk[2368 + j_word * 4]} : {c[(j_word - 8) * 4 + 3], c[(j_word - 8) * 4 + 2], c[(j_word - 8) * 4 + 1], c[(j_word - 8) * 4]};
     mlkem_j jc(clk,
                rst_n,
@@ -147,6 +176,8 @@ module mlkem_decaps_internal
                child_zeroize,
                jzb,
                jzd);
+
+    // Re-encryption consumes ek || m_prime || r_prime and produces c_prime.
     wire [31 : 0] e_feed = (e_word < 296) ? {dk[1152 + e_word * 4 + 3], dk[1152 + e_word * 4 + 2], dk[1152 + e_word * 4 + 1], dk[1152 + e_word * 4]} : (e_word < 304) ? {mp[(e_word - 296) * 4 + 3], mp[(e_word - 296) * 4 + 2], mp[(e_word - 296) * 4 + 1], mp[(e_word - 296) * 4]}
                                                                                                                                                                       : {rp[(e_word - 304) * 4 + 3], rp[(e_word - 304) * 4 + 2], rp[(e_word - 304) * 4 + 1], rp[(e_word - 304) * 4]};
     kpke_encrypt ec(clk,
@@ -178,6 +209,10 @@ module mlkem_decaps_internal
                     child_zeroize,
                     ezb,
                     ezd);
+
+    // -------------------------------------------------------------------------
+    // Result capture, explicit zeroize, and Algorithm 18 FSM
+    // -------------------------------------------------------------------------
     always @(posedge clk) begin
         done <= 0;
         zeroize_done <= 0;
@@ -262,6 +297,7 @@ module mlkem_decaps_internal
             end else
                 case (state)
                     IDLE:
+                        // Accept one concatenated dk || c record.
                         if (cmd_valid) begin
                             busy <= 1;
                             error <= 0;
@@ -272,6 +308,7 @@ module mlkem_decaps_internal
                             state <= INPUT;
                         end
                     INPUT:
+                        // Validate exact four-byte beats and preserve dk/c layout.
                         if (in_valid) begin
                             if (in_keep != 4'hf || in_last != (in_word == 871)) begin
                                 error <= 1;
@@ -296,6 +333,7 @@ module mlkem_decaps_internal
                             end
                         end
                     D_CMD:
+                        // Launch K-PKE.Decrypt(dkPKE, c).
                         if (dc_ready) begin
                             d_word <= 0;
                             dout_word <= 0;
@@ -312,6 +350,7 @@ module mlkem_decaps_internal
                         if (d_done)
                             state <= G_CMD;
                     G_CMD:
+                        // Launch G(m_prime || H(ek)).
                         if (gc_ready) begin
                             g_word <= 0;
                             gout_word <= 0;
@@ -328,6 +367,7 @@ module mlkem_decaps_internal
                         if (g_done)
                             state <= J_CMD;
                     J_CMD:
+                        // Launch J(z || c) before re-encryption; both paths run.
                         if (jc_ready) begin
                             j_word <= 0;
                             jout_word <= 0;
@@ -344,6 +384,7 @@ module mlkem_decaps_internal
                         if (j_done)
                             state <= E_CMD;
                     E_CMD:
+                        // Launch K-PKE.Encrypt(ek, m_prime, r_prime).
                         if (ec_ready) begin
                             e_word <= 0;
                             cp_word <= 0;
@@ -364,6 +405,7 @@ module mlkem_decaps_internal
                             state <= COMPARE;
                         end
                     COMPARE: begin
+                        // Accumulate every ciphertext byte; no early exit.
                         mismatch <= mismatch | ((c[idx] ^ cp[idx]) != 0);
                         compare_count <= compare_count + 1;
                         if (idx == 1087) begin
@@ -374,6 +416,7 @@ module mlkem_decaps_internal
                             idx <= idx + 1;
                     end
                     SELECT: begin
+                        // Select K_prime on match, otherwise the J(z || c) fallback.
                         kout[idx[5 : 0]] <= (kp[idx[5 : 0]] & ~mask) | (kb[idx[5 : 0]] & mask);
                         select_count <= select_count + 1;
                         if (idx == 31) begin
@@ -385,6 +428,7 @@ module mlkem_decaps_internal
                             idx <= idx + 1;
                     end
                     OUTPUT:
+                        // Stream the selected 32-byte shared secret.
                         if (out_valid && out_ready) begin
                             if (out_word == 7) begin
                                 scrub_addr <= 0;
@@ -398,6 +442,7 @@ module mlkem_decaps_internal
                                 out_word <= out_word + 1;
                         end
                     SCRUB: begin
+                        // Clear selected M8-local payload before returning ownership.
                         dk[scrub_addr] <= 0;
                         if (scrub_addr < 1088) begin
                             c[scrub_addr] <= 0;
@@ -416,6 +461,7 @@ module mlkem_decaps_internal
                             scrub_addr <= scrub_addr + 1;
                     end
                     SCRUB_WAIT:
+                        // Wait for all launched children to acknowledge zeroize.
                         if ((dzd_seen || dzd) && (gzd_seen || gzd) && (jzd_seen || jzd) && (ezd_seen || ezd)) begin
                             busy <= 0;
                             if (explicit_scrub)

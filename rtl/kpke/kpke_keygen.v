@@ -44,6 +44,10 @@ module kpke_keygen
         input wire zeroize,
         output reg zeroize_busy,
         output reg zeroize_done);
+    // -------------------------------------------------------------------------
+    // Representation tags and Algorithm 13 state encoding
+    // -------------------------------------------------------------------------
+    // NORMAL/NTT describe explicit polynomial workspace ownership.
     localparam NORMAL = 2'b01, NTT = 2'b10;
     localparam [5 : 0] IDLE = 0, INPUT = 1, G_CMD = 2, G_FEED = 3, G_WAIT = 4,
                        NOISE_S_START = 5, NOISE_S_WAIT = 6, NOISE_E_START = 7, NOISE_E_WAIT = 8,
@@ -115,6 +119,7 @@ module kpke_keygen
     assign g_in_valid = (state == G_FEED);
     assign g_in_keep = (g_in_word == 8) ? 4'b0001 : 4'hf;
     assign g_in_last = (g_in_word == 8);
+    // Child launch/request wiring: these signals advance the named child FSMs.
     always @* begin
         if (g_in_word < 8)
             g_in_data = {d[g_in_word * 4 + 3], d[g_in_word * 4 + 2], d[g_in_word * 4 + 1], d[g_in_word * 4]};
@@ -306,6 +311,7 @@ module kpke_keygen
                              .zeroize_busy(child_zeroize_busy[6]),
                              .zeroize_done(child_zeroize_done[6]));
 
+    // Child result capture, local scrub, and variable-latency Algorithm 13 FSM.
     always @(posedge clk) begin
         if (!rst_n) begin
             state <= IDLE;

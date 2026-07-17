@@ -47,3 +47,14 @@ No synthesizer, mapped synthesis, PPA study, physical design, zeroization
 expansion, functional refactor, lint-warning cleanup, or interface redesign was
 performed.  Existing warnings are documented by the release reports rather
 than changed in a readability campaign.
+
+## Presentation-style follow-up
+
+The frozen `PQC_main` worktree was inspected read-only after review feedback.
+The ML-KEM release top and internal controllers, plus the K-PKE KeyGen/Encrypt/
+Decrypt controllers, now use the same student-oriented presentation principles:
+named declaration groups, architectural section separators, child-interface
+context, stream/ownership notes, and intent comments at important FSM phases.
+The existing positional ports and signal/declaration order are intentionally
+preserved.  Exact token equivalence and complete hierarchy elaboration pass
+after this follow-up.
