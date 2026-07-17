@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 `include "kyber_params.vh"
 
 // -----------------------------------------------------------------------------
@@ -40,123 +40,136 @@
 //     posedge, not after an extra cycle.
 //   - done pulses for one cycle after the final valid schedule.
 // -----------------------------------------------------------------------------
+/*
+ * Module: ntt_addr_gen
+ * Status: WRAPPER_OR_ADAPTER
+ * Purpose: NTT/INTT arithmetic leaf, scheduler, ROM, or transform controller.
+ * Standard role: FIPS 203 Algorithms 9--12 support.
+ * Input representation: NORMAL/NTT coefficient domain as named by ports.
+ * Output representation: NORMAL/NTT coefficient domain as named by ports.
+ * Interface: valid-only pipeline as declared.
+ * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
+ * State ownership: owns control and/or pipeline registers.
+ * Submodules: none (leaf).
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
 
-module ntt_addr_gen #(
-    parameter ADDR_WIDTH = `KYBER_N_WIDTH,
-    parameter ZETA_WIDTH = 7
-)(
-    input wire clk,
-    input wire rst_n,
+module ntt_addr_gen
+    #(
+        parameter ADDR_WIDTH = `KYBER_N_WIDTH,
+        parameter ZETA_WIDTH = 7)
+    (
+        input wire clk,
+        input wire rst_n,
 
-    input wire start,
-    input wire mode,    // 0: forward NTT, 1: inverse NTT
+        input wire start,
+        input wire mode,
+        // 0: forward NTT, 1: inverse NTT
 
-    output wire valid,
-    output reg  done,
-    output reg  busy,
+        output wire valid,
+        output reg done,
+        output reg busy,
 
-    output wire [ADDR_WIDTH-1:0] addr_a,
-    output wire [ADDR_WIDTH-1:0] addr_b,
-    output wire [ZETA_WIDTH-1:0] zeta_addr,
-    output wire [ADDR_WIDTH-1:0] len_out
-);
+        output wire [ADDR_WIDTH - 1 : 0] addr_a,
+        output wire [ADDR_WIDTH - 1 : 0] addr_b,
+        output wire [ZETA_WIDTH - 1 : 0] zeta_addr,
+        output wire [ADDR_WIDTH - 1 : 0] len_out);
 
-    localparam [8:0] N = 9'd256;
+    localparam [8 : 0] N = 9'd256;
 
-    // Latched mode while generator is running 
+    // Latched mode while generator is running
     reg mode_reg;
 
     // Current loop variables
-    reg [ADDR_WIDTH-1:0] len_reg;
-    reg [ADDR_WIDTH-1:0] start_reg;
-    reg [ADDR_WIDTH-1:0] j_reg;
-    reg [ZETA_WIDTH-1:0] zeta_reg;
+    reg [ADDR_WIDTH - 1 : 0] len_reg;
+    reg [ADDR_WIDTH - 1 : 0] start_reg;
+    reg [ADDR_WIDTH - 1 : 0] j_reg;
+    reg [ZETA_WIDTH - 1 : 0] zeta_reg;
 
     // 9-bit calculations are needed because start + 2*len can become 256.
-    wire [8:0] group_last_j;
-    wire [8:0] next_start;
-    wire       at_last_j_in_group;
-    wire       has_next_group;
-    wire       at_final_stage;
+    wire [8 : 0] group_last_j;
+    wire [8 : 0] next_start;
+    wire at_last_j_in_group;
+    wire has_next_group;
+    wire at_final_stage;
 
     assign group_last_j = {1'b0, start_reg} + {1'b0, len_reg} - 9'd1;
-    assign next_start   = {1'b0, start_reg} + ({1'b0, len_reg} << 1);
+    assign next_start = {1'b0, start_reg} + ({1'b0, len_reg} << 1);
 
     assign at_last_j_in_group = ({1'b0, j_reg} == group_last_j);
-    assign has_next_group     = (next_start < N);
+    assign has_next_group = (next_start < N);
 
     assign at_final_stage = (!mode_reg && (len_reg == 8'd2)) || (mode_reg && (len_reg == 8'd128));
 
-    assign valid     = busy;
-    assign addr_a    = j_reg;
-    assign addr_b    = j_reg + len_reg;
+    assign valid = busy;
+    assign addr_a = j_reg;
+    assign addr_b = j_reg + len_reg;
     assign zeta_addr = zeta_reg;
-    assign len_out   = len_reg;
-  
+    assign len_out = len_reg;
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            mode_reg   <= 1'b0;
-            len_reg    <= {ADDR_WIDTH{1'b0}};
-            start_reg  <= {ADDR_WIDTH{1'b0}};
-            j_reg      <= {ADDR_WIDTH{1'b0}};
-            zeta_reg   <= {ZETA_WIDTH{1'b0}};
-            busy       <= 1'b0;
-            done       <= 1'b0;
+            mode_reg <= 1'b0;
+            len_reg <= {ADDR_WIDTH{1'b0}};
+            start_reg <= {ADDR_WIDTH{1'b0}};
+            j_reg <= {ADDR_WIDTH{1'b0}};
+            zeta_reg <= {ZETA_WIDTH{1'b0}};
+            busy <= 1'b0;
+            done <= 1'b0;
         end else begin
             done <= 1'b0;
 
             if (start && !busy) begin
                 mode_reg <= mode;
-                busy     <= 1'b1;
+                busy <= 1'b1;
 
                 start_reg <= {ADDR_WIDTH{1'b0}};
-                j_reg     <= {ADDR_WIDTH{1'b0}};
+                j_reg <= {ADDR_WIDTH{1'b0}};
 
                 if (!mode) begin
                     // Forward NTT starts at len=128 and zetas[1]
-                    len_reg  <= 8'd128;
+                    len_reg <= 8'd128;
                     zeta_reg <= 7'd1;
                 end else begin
                     // Inverse NTT starts at len=2 and zetas_inv[0]
-                    len_reg  <= 8'd2;
+                    len_reg <= 8'd2;
                     zeta_reg <= 7'd0;
                 end
 
             end else if (busy) begin
                 if (!at_last_j_in_group) begin
-                   // Continue inside current group
-                   j_reg <= j_reg + 1'b1;
+                    // Continue inside current group
+                    j_reg <= j_reg + 1'b1;
 
                 end else begin
-                   // Current group finished
-                   if (has_next_group) begin
-                       // Move to next group in same stage
-                       start_reg <= next_start[ADDR_WIDTH-1:0];
-                       j_reg     <= next_start[ADDR_WIDTH-1:0];
-                       zeta_reg  <= zeta_reg + 1'b1;
+                    // Current group finished
+                    if (has_next_group) begin
+                        // Move to next group in same stage
+                        start_reg <= next_start[ADDR_WIDTH - 1 : 0];
+                        j_reg <= next_start[ADDR_WIDTH - 1 : 0];
+                        zeta_reg <= zeta_reg + 1'b1;
 
-                   end else begin
-                       // Current stage finished
-                       if (at_final_stage) begin
-                           // All butterfly stages finished 
-                           busy <= 1'b0;
-                           done <= 1'b1;
+                    end else begin
+                        // Current stage finished
+                        if (at_final_stage) begin
+                            // All butterfly stages finished
+                            busy <= 1'b0;
+                            done <= 1'b1;
 
-                       end else begin
-                           // Move to next stage
-                           start_reg <= {ADDR_WIDTH{1'b0}};
-                           j_reg     <= {ADDR_WIDTH{1'b0}};
-                           zeta_reg  <= zeta_reg + 1'b1;
+                        end else begin
+                            // Move to next stage
+                            start_reg <= {ADDR_WIDTH{1'b0}};
+                            j_reg <= {ADDR_WIDTH{1'b0}};
+                            zeta_reg <= zeta_reg + 1'b1;
 
-                           if (!mode_reg)  
-                               len_reg <= len_reg >> 1;  // /2
-                           else 
-                               len_reg <= len_reg << 1;  // *2
+                            if (!mode_reg)
+                                len_reg <= len_reg >> 1; // /2
+                            else
+                                len_reg <= len_reg << 1; // *2
                         end
                     end
                 end
             end
         end
     end
-
 endmodule

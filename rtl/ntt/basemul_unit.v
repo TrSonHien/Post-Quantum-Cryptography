@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 `include "kyber_params.vh"
 
 // -----------------------------------------------------------------------------
@@ -66,135 +66,140 @@
 //   combinational. If future mod_mul/Montgomery reduction becomes pipelined,
 //   this module will need latency realignment for t1/t2/t3/t4 and out_valid.
 // -----------------------------------------------------------------------------
+/*
+ * Module: basemul_unit
+ * Status: LEGACY_OR_SUPERSEDED
+ * Purpose: NTT/INTT arithmetic leaf, scheduler, ROM, or transform controller.
+ * Standard role: FIPS 203 Algorithms 9--12 support.
+ * Input representation: NORMAL/NTT coefficient domain as named by ports.
+ * Output representation: NORMAL/NTT coefficient domain as named by ports.
+ * Interface: valid-only pipeline as declared.
+ * Latency / completion: See the declared valid/ready or busy/done contract; no fixed latency is implied for controllers.
+ * State ownership: owns control and/or pipeline registers.
+ * Submodules: mod_add, mod_mul.
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
 
-module basemul_unit #(
-    parameter WIDTH = `KYBER_Q_WIDTH
-)(
-    input  wire clk,
-    input  wire rst_n,
+module basemul_unit
+    #(
+        parameter WIDTH = `KYBER_Q_WIDTH)
+    (
+        input wire clk,
+        input wire rst_n,
 
-    input  wire             in_valid,
-    input  wire [WIDTH-1:0] a0,
-    input  wire [WIDTH-1:0] a1,
-    input  wire [WIDTH-1:0] b0,
-    input  wire [WIDTH-1:0] b1,
-    input  wire [WIDTH-1:0] zeta,
+        input wire in_valid,
+        input wire [WIDTH - 1 : 0] a0,
+        input wire [WIDTH - 1 : 0] a1,
+        input wire [WIDTH - 1 : 0] b0,
+        input wire [WIDTH - 1 : 0] b1,
+        input wire [WIDTH - 1 : 0] zeta,
 
-    output reg              out_valid,
-    output reg  [WIDTH-1:0] r0,
-    output reg  [WIDTH-1:0] r1
-);
+        output reg out_valid,
+        output reg [WIDTH - 1 : 0] r0,
+        output reg [WIDTH - 1 : 0] r1);
 
     // -------------------------------------------------------------------------
     // Stage 1: four independent fqmul operations.
     // -------------------------------------------------------------------------
-    wire [WIDTH-1:0] s1_t0_next;
-    wire [WIDTH-1:0] s1_t2_next;
-    wire [WIDTH-1:0] s1_t3_next;
-    wire [WIDTH-1:0] s1_t4_next;
+    wire [WIDTH - 1 : 0] s1_t0_next;
+    wire [WIDTH - 1 : 0] s1_t2_next;
+    wire [WIDTH - 1 : 0] s1_t3_next;
+    wire [WIDTH - 1 : 0] s1_t4_next;
 
-    reg              s1_valid;
-    reg  [WIDTH-1:0] s1_t0;
-    reg  [WIDTH-1:0] s1_t2;
-    reg  [WIDTH-1:0] s1_t3;
-    reg  [WIDTH-1:0] s1_t4;
-    reg  [WIDTH-1:0] s1_zeta;
+    reg s1_valid;
+    reg [WIDTH - 1 : 0] s1_t0;
+    reg [WIDTH - 1 : 0] s1_t2;
+    reg [WIDTH - 1 : 0] s1_t3;
+    reg [WIDTH - 1 : 0] s1_t4;
+    reg [WIDTH - 1 : 0] s1_zeta;
 
-    mod_mul u_mul_a1_b1 (
-        .a (a1),
-        .b (b1),
-        .c (s1_t0_next)
-    );
+    mod_mul u_mul_a1_b1(
+                    .a(a1),
+                    .b(b1),
+                    .c(s1_t0_next));
 
-    mod_mul u_mul_a0_b0 (
-        .a (a0),
-        .b (b0),
-        .c (s1_t2_next)
-    );
+    mod_mul u_mul_a0_b0(
+                    .a(a0),
+                    .b(b0),
+                    .c(s1_t2_next));
 
-    mod_mul u_mul_a0_b1 (
-        .a (a0),
-        .b (b1),
-        .c (s1_t3_next)
-    );
+    mod_mul u_mul_a0_b1(
+                    .a(a0),
+                    .b(b1),
+                    .c(s1_t3_next));
 
-    mod_mul u_mul_a1_b0 (
-        .a (a1),
-        .b (b0),
-        .c (s1_t4_next)
-    );
+    mod_mul u_mul_a1_b0(
+                    .a(a1),
+                    .b(b0),
+                    .c(s1_t4_next));
 
     // -------------------------------------------------------------------------
     // Stage 2: multiply t0 by zeta and align the remaining terms.
     // -------------------------------------------------------------------------
-    wire [WIDTH-1:0] s2_t1_next;
+    wire [WIDTH - 1 : 0] s2_t1_next;
 
-    reg              s2_valid;
-    reg  [WIDTH-1:0] s2_t1;
-    reg  [WIDTH-1:0] s2_t2;
-    reg  [WIDTH-1:0] s2_t3;
-    reg  [WIDTH-1:0] s2_t4;
+    reg s2_valid;
+    reg [WIDTH - 1 : 0] s2_t1;
+    reg [WIDTH - 1 : 0] s2_t2;
+    reg [WIDTH - 1 : 0] s2_t3;
+    reg [WIDTH - 1 : 0] s2_t4;
 
-    mod_mul u_mul_t0_zeta (
-        .a (s1_t0),
-        .b (s1_zeta),
-        .c (s2_t1_next)
-    );
+    mod_mul u_mul_t0_zeta(
+                    .a(s1_t0),
+                    .b(s1_zeta),
+                    .c(s2_t1_next));
 
     // -------------------------------------------------------------------------
     // Stage 3: final modular additions.
     // -------------------------------------------------------------------------
-    wire [WIDTH-1:0] r0_next;
-    wire [WIDTH-1:0] r1_next;
+    wire [WIDTH - 1 : 0] r0_next;
+    wire [WIDTH - 1 : 0] r1_next;
 
-    mod_add u_add_r0 (
-        .a (s2_t1),
-        .b (s2_t2),
-        .c (r0_next)
-    );
+    mod_add u_add_r0(
+                    .a(s2_t1),
+                    .b(s2_t2),
+                    .c(r0_next));
 
-    mod_add u_add_r1 (
-        .a (s2_t3),
-        .b (s2_t4),
-        .c (r1_next)
-    );
+    mod_add u_add_r1(
+                    .a(s2_t3),
+                    .b(s2_t4),
+                    .c(r1_next));
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             s1_valid <= 1'b0;
-            s1_t0    <= {WIDTH{1'b0}};
-            s1_t2    <= {WIDTH{1'b0}};
-            s1_t3    <= {WIDTH{1'b0}};
-            s1_t4    <= {WIDTH{1'b0}};
-            s1_zeta  <= {WIDTH{1'b0}};
+            s1_t0 <= {WIDTH{1'b0}};
+            s1_t2 <= {WIDTH{1'b0}};
+            s1_t3 <= {WIDTH{1'b0}};
+            s1_t4 <= {WIDTH{1'b0}};
+            s1_zeta <= {WIDTH{1'b0}};
 
             s2_valid <= 1'b0;
-            s2_t1    <= {WIDTH{1'b0}};
-            s2_t2    <= {WIDTH{1'b0}};
-            s2_t3    <= {WIDTH{1'b0}};
-            s2_t4    <= {WIDTH{1'b0}};
+            s2_t1 <= {WIDTH{1'b0}};
+            s2_t2 <= {WIDTH{1'b0}};
+            s2_t3 <= {WIDTH{1'b0}};
+            s2_t4 <= {WIDTH{1'b0}};
 
             out_valid <= 1'b0;
-            r0        <= {WIDTH{1'b0}};
-            r1        <= {WIDTH{1'b0}};
+            r0 <= {WIDTH{1'b0}};
+            r1 <= {WIDTH{1'b0}};
         end else begin
             s1_valid <= in_valid;
-            s1_t0    <= s1_t0_next;
-            s1_t2    <= s1_t2_next;
-            s1_t3    <= s1_t3_next;
-            s1_t4    <= s1_t4_next;
-            s1_zeta  <= zeta;
+            s1_t0 <= s1_t0_next;
+            s1_t2 <= s1_t2_next;
+            s1_t3 <= s1_t3_next;
+            s1_t4 <= s1_t4_next;
+            s1_zeta <= zeta;
 
             s2_valid <= s1_valid;
-            s2_t1    <= s2_t1_next;
-            s2_t2    <= s1_t2;
-            s2_t3    <= s1_t3;
-            s2_t4    <= s1_t4;
+            s2_t1 <= s2_t1_next;
+            s2_t2 <= s1_t2;
+            s2_t3 <= s1_t3;
+            s2_t4 <= s1_t4;
 
             out_valid <= s2_valid;
-            r0        <= r0_next;
-            r1        <= r1_next;
+            r0 <= r0_next;
+            r1 <= r1_next;
         end
     end
-
 endmodule

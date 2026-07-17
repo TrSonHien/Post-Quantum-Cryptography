@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 `include "kyber_params.vh"
 
 // -----------------------------------------------------------------------------
@@ -28,20 +28,33 @@
 //   - out_valid
 //   - out0[11:0], out1[11:0]
 // -----------------------------------------------------------------------------
-module butterfly_pipe (
-    input  wire        clk,
-    input  wire        rst_n,
-    input  wire        in_valid,
-    input  wire [11:0] u,
-    input  wire [11:0] v,
-    input  wire [11:0] zeta_mont,
-    output wire        out_valid,
-    output wire [11:0] out0,
-    output wire [11:0] out1,
-    input  wire        zeroize_req,
-    output reg         zeroize_busy,
-    output reg         zeroize_done
-);
+/*
+ * Module: butterfly_pipe
+ * Status: ACTIVE_SHARED_LEAF
+ * Purpose: NTT/INTT arithmetic leaf, scheduler, ROM, or transform controller.
+ * Standard role: FIPS 203 Algorithms 9--12 support.
+ * Input representation: NORMAL/NTT coefficient domain as named by ports.
+ * Output representation: NORMAL/NTT coefficient domain as named by ports.
+ * Interface: valid-only pipeline as declared.
+ * Latency / completion: fixed 5 pipeline stages.
+ * State ownership: owns control and/or pipeline registers.
+ * Submodules: fixed_latency_delay, mod_add_pipe, mod_mul_pipe, mod_sub_pipe.
+ * Verification: See docs/05_code_guide/module_catalog.md and the linked subsystem runner.
+ */
+module butterfly_pipe
+    (
+        input wire clk,
+        input wire rst_n,
+        input wire in_valid,
+        input wire [11 : 0] u,
+        input wire [11 : 0] v,
+        input wire [11 : 0] zeta_mont,
+        output wire out_valid,
+        output wire [11 : 0] out0,
+        output wire [11 : 0] out1,
+        input wire zeroize_req,
+        output reg zeroize_busy,
+        output reg zeroize_done);
 
     // Simulation assertions
     // synopsys translate_off
@@ -74,79 +87,97 @@ module butterfly_pipe (
     // synopsys translate_on
 
     // Stage 1-4: Montgomery multiply
-    wire [11:0] t;
-    wire        mul_valid;
-    wire mul_zeroize_done,delay_zeroize_done,add_zeroize_done,sub_zeroize_done;
-    wire mul_zeroize_busy,delay_zeroize_busy,add_zeroize_busy,sub_zeroize_busy;
-    reg child_zeroize_req;reg[3:0]child_done_seen;
-    wire add_out_valid;wire[11:0]add_out,sub_out;
+    wire [11 : 0] t;
+    wire mul_valid;
+    wire mul_zeroize_done, delay_zeroize_done, add_zeroize_done, sub_zeroize_done;
+    wire mul_zeroize_busy, delay_zeroize_busy, add_zeroize_busy, sub_zeroize_busy;
+    reg child_zeroize_req;
+    reg [3 : 0] child_done_seen;
+    wire add_out_valid;
+    wire [11 : 0] add_out, sub_out;
 
-    mod_mul_pipe u_mul (
-        .clk(clk),
-        .rst_n(rst_n),
-        .in_valid(in_valid&&!zeroize_busy),
-        .a(zeta_mont),
-        .b(v),
-        .out_valid(mul_valid),
-        .r(t),.zeroize_req(child_zeroize_req),.zeroize_busy(mul_zeroize_busy),
-        .zeroize_done(mul_zeroize_done)
-    );
+    mod_mul_pipe u_mul(
+                         .clk(clk),
+                         .rst_n(rst_n),
+                         .in_valid(in_valid && !zeroize_busy),
+                         .a(zeta_mont),
+                         .b(v),
+                         .out_valid(mul_valid),
+                         .r(t),
+                         .zeroize_req(child_zeroize_req),
+                         .zeroize_busy(mul_zeroize_busy),
+                         .zeroize_done(mul_zeroize_done));
 
     // Delay u by 4 stages to align with t
-    wire [11:0] u_delayed;
-    wire        val_delayed;
-    wire        dummy_meta;
+    wire [11 : 0] u_delayed;
+    wire val_delayed;
+    wire dummy_meta;
 
     fixed_latency_delay #(
-        .PAYLOAD_WIDTH(12),
-        .METADATA_WIDTH(1),
-        .LATENCY(4)
-    ) u_delay (
-        .clk(clk),
-        .rst_n(rst_n),
-        .in_valid(in_valid&&!zeroize_busy),
-        .in_payload(u),
-        .in_metadata(1'b0),
-        .out_valid(val_delayed),
-        .out_payload(u_delayed),
-        .out_metadata(dummy_meta),.zeroize_req(child_zeroize_req),
-        .zeroize_busy(delay_zeroize_busy),.zeroize_done(delay_zeroize_done)
-    );
+            .PAYLOAD_WIDTH(12),
+            .METADATA_WIDTH(1),
+            .LATENCY(4))
+        u_delay(
+                .clk(clk),
+                .rst_n(rst_n),
+                .in_valid(in_valid && !zeroize_busy),
+                .in_payload(u),
+                .in_metadata(1'b0),
+                .out_valid(val_delayed),
+                .out_payload(u_delayed),
+                .out_metadata(dummy_meta),
+                .zeroize_req(child_zeroize_req),
+                .zeroize_busy(delay_zeroize_busy),
+                .zeroize_done(delay_zeroize_done));
 
     // Stage 5: modular addition and subtraction
     // Inputs: u_delayed and t
-    mod_add_pipe u_add (
-        .clk(clk),
-        .rst_n(rst_n),
-        .in_valid(mul_valid),
-        .a(u_delayed),
-        .b(t),
-        .out_valid(add_out_valid),
-        .r(add_out),.zeroize_req(child_zeroize_req),.zeroize_busy(add_zeroize_busy),
-        .zeroize_done(add_zeroize_done)
-    );
+    mod_add_pipe u_add(
+                         .clk(clk),
+                         .rst_n(rst_n),
+                         .in_valid(mul_valid),
+                         .a(u_delayed),
+                         .b(t),
+                         .out_valid(add_out_valid),
+                         .r(add_out),
+                         .zeroize_req(child_zeroize_req),
+                         .zeroize_busy(add_zeroize_busy),
+                         .zeroize_done(add_zeroize_done));
 
-    mod_sub_pipe u_sub (
-        .clk(clk),
-        .rst_n(rst_n),
-        .in_valid(mul_valid),
-        .a(u_delayed),
-        .b(t),
-        .out_valid(), // out_valid is shared with u_add
-        .r(sub_out),.zeroize_req(child_zeroize_req),.zeroize_busy(sub_zeroize_busy),
-        .zeroize_done(sub_zeroize_done)
-    );
+    mod_sub_pipe u_sub(
+                         .clk(clk),
+                         .rst_n(rst_n),
+                         .in_valid(mul_valid),
+                         .a(u_delayed),
+                         .b(t),
+                         .out_valid(),
+                         // out_valid is shared with u_add
+                         .r(sub_out),
+                         .zeroize_req(child_zeroize_req),
+                         .zeroize_busy(sub_zeroize_busy),
+                         .zeroize_done(sub_zeroize_done));
 
-    assign out_valid=!zeroize_busy&&add_out_valid;
-    assign out0=add_out;assign out1=sub_out;
-    always@(posedge clk)begin
-        zeroize_done<=0;child_zeroize_req<=0;
-        if(!rst_n)begin zeroize_busy<=0;zeroize_done<=0;child_zeroize_req<=0;child_done_seen<=0;end
-        else if(zeroize_req===1'b1&&!zeroize_busy)begin zeroize_busy<=1;child_zeroize_req<=1;child_done_seen<=0;end
-        else if(zeroize_busy)begin
-            child_done_seen<=child_done_seen|{sub_zeroize_done,add_zeroize_done,delay_zeroize_done,mul_zeroize_done};
-            if(&(child_done_seen|{sub_zeroize_done,add_zeroize_done,delay_zeroize_done,mul_zeroize_done}))begin zeroize_busy<=0;zeroize_done<=1;end
+    assign out_valid = !zeroize_busy && add_out_valid;
+    assign out0 = add_out;
+    assign out1 = sub_out;
+    always @(posedge clk) begin
+        zeroize_done <= 0;
+        child_zeroize_req <= 0;
+        if (!rst_n) begin
+            zeroize_busy <= 0;
+            zeroize_done <= 0;
+            child_zeroize_req <= 0;
+            child_done_seen <= 0;
+        end else if (zeroize_req === 1'b1 && !zeroize_busy) begin
+            zeroize_busy <= 1;
+            child_zeroize_req <= 1;
+            child_done_seen <= 0;
+        end else if (zeroize_busy) begin
+            child_done_seen <= child_done_seen | {sub_zeroize_done, add_zeroize_done, delay_zeroize_done, mul_zeroize_done};
+            if (&(child_done_seen | {sub_zeroize_done, add_zeroize_done, delay_zeroize_done, mul_zeroize_done})) begin
+                zeroize_busy <= 0;
+                zeroize_done <= 1;
+            end
         end
     end
-
 endmodule
