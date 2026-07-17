@@ -12,6 +12,7 @@ FIPS 203 polynomial/polyvec operation support
 - `poly_basemul_pipe`
 - `poly_binary_pipe`
 - `poly_intt_pipe`
+- `poly_ntt_pipe`
 - `poly_sub_pipe`
 - `poly_transform_pipe`
 - `poly_workspace`
@@ -20,19 +21,11 @@ FIPS 203 polynomial/polyvec operation support
 - `polyvec_ntt_pipe`
 - `polyvec_workspace`
 
-### Retained support / legacy modules
+### Adapters and historical note
 
-- `poly_add`
-- `poly_basemul_addr_gen`
-- `poly_basemul_montgomery`
-- `poly_ntt_pipe`
-- `poly_reduce`
-- `poly_reduce_pipe`
-- `poly_sub`
-- `polyvec_add_pipe`
-- `polyvec_intt_pipe`
-- `polyvec_reduce_pipe`
-- `polyvec_sub_pipe`
+- `poly_basemul_addr_gen` is a retained adapter.
+- Superseded polynomial and polyvec implementations are available only in Git
+  history before `pre-legacy-prune-b683bd7`.
 
 ### Reading notes
 
@@ -43,10 +36,10 @@ FIPS 203 polynomial/polyvec operation support
 ### Dependency graph, ownership, and reading order
 
 Read `poly_workspace`/`polyvec_workspace`, binary/reduce pipes, transforms,
-basecase multiplication, then polyvec controllers.  These controllers own
+basecase multiplication, then polyvec controllers.  `poly_ntt_pipe` is an
+active adapter selected by `polyvec_ntt_pipe`.  These controllers own
 coefficient arrays and change their NORMAL/NTT ownership only after child
-completion and result drain.  The `*_pipe` implementations are active;
-non-pipe helpers remain for legacy paths and focused tests.  Follow begin,
+completion and result drain.  Follow begin,
 load, start, wait, read/drain, release phases and the matching M4 runners in
 the catalog.  A common error is reading an output before the registered-valid
 drain phase has completed.
